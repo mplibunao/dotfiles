@@ -65,7 +65,9 @@ chmod +x "${fake_bin}/launchctl" "${fake_bin}/sleep"
 
 render() {
   # $1: store path the snippet should treat as the plist content.
-  nix eval --impure --raw --expr "
+  # Prints the snippet on stdout. Nix's stderr is shown only when nix eval fails.
+  local snippet
+  snippet="$(nix eval --impure --raw --expr "
     let
       lib = (builtins.getFlake \"path:${repo_root}/nix\").inputs.nixpkgs.lib;
       loadAgent = import ${repo_root}/nix/home/mp/modules/cli-proxy/launch-agent.nix { inherit lib; };
@@ -76,8 +78,13 @@ render() {
       plistSource = \"$1\";
       logDir = \"${logs}\";
     }
-  " 2>/dev/null |
-    sed -e "s#/bin/launchctl#${fake_bin}/launchctl#g" -e "s#/usr/bin/awk#awk#g"
+  " 2>"${tmp}/render-err")" || {
+    cat "${tmp}/render-err" >&2
+    fail "nix eval could not render the snippet from launch-agent.nix"
+  }
+  printf '%s\n' "$snippet" |
+    sed -e "s#/bin/launchctl#${fake_bin}/launchctl#g" -e "s#/usr/bin/awk#awk#g" ||
+    fail "could not substitute the fake tools into the snippet"
 }
 
 install_plist() {
@@ -86,13 +93,29 @@ install_plist() {
   ln -sfn "${tmp}/plist-$1" "${launch_agents}/${label}.plist"
 }
 
+# prepare_switch VERSION: reset the call log and write the snippet for plist
+# VERSION. Any failure stops the harness, so no case runs an old or partial
+# snippet.
+prepare_switch() {
+  local rendered
+  : >"$calls"
+  # render runs in a command substitution, so its fail only ends that subshell.
+  rendered="$(render "/nix/store/fake-$1.plist")" || exit 1
+  printf '%s\n' "$rendered" >"${tmp}/snippet.sh" ||
+    fail "could not write the activation snippet"
+}
+
+# run_switch [DRY_RUN_CMD]: run the prepared snippet. The caller decides where
+# its stdout and stderr go.
+run_switch() {
+  PATH="${fake_bin}:${PATH}" FAKE_LAUNCHD="$fake_state" DRY_RUN_CMD="${1:-}" \
+    bash "${tmp}/snippet.sh"
+}
+
 # switch VERSION [DRY_RUN_CMD]: one activation run with plist VERSION.
 switch() {
-  local version="$1" dry="${2:-}"
-  : >"$calls"
-  render "/nix/store/fake-${version}.plist" >"${tmp}/snippet.sh"
-  PATH="${fake_bin}:${PATH}" FAKE_LAUNCHD="$fake_state" DRY_RUN_CMD="$dry" \
-    bash "${tmp}/snippet.sh"
+  prepare_switch "$1"
+  run_switch "${2:-}"
 }
 
 loaded_version() { sed -n 's#<plist>\(.*\)</plist>#\1#p' "${fake_state}/definition"; }
@@ -138,7 +161,10 @@ switch v3 >/dev/null
 
 # 7. Same plist, but the job is not running: the switch fails and keeps the job.
 touch "${fake_state}/no-pid"
-if switch v3 >/dev/null 2>"${tmp}/err"; then
+# Prepare outside the `if`, where errexit is off, and capture stderr for the
+# run only, so a render failure cannot pass for the expected error.
+prepare_switch v3
+if run_switch >/dev/null 2>"${tmp}/err"; then
   fail "a loaded job that is not running should fail the switch"
 fi
 grep -q 'loaded but not running' "${tmp}/err" || fail "missing not-running message"
