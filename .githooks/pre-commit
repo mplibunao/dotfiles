@@ -1,0 +1,26 @@
+#!/bin/sh
+# Keep plans out of commits. docs/plans/ is deliberately not ignored, so
+# RepoPrompt can still search and select plans; this hook is what keeps them
+# local. See docs/architecture/docs-and-records.md.
+#
+# The check reads the whole index rather than the staged diff, so a plan that
+# arrived through a merge, a rebase, or a commit made with --no-verify blocks
+# the next commit until it is removed from the index. Matching is
+# case-insensitive because macOS checkouts treat docs/Plans and docs/plans as
+# the same folder.
+
+if ! plans=$(git ls-files --cached -- ':(top,icase)docs/plans'); then
+  echo "pre-commit: could not read the index, so the plan check did not run." >&2
+  exit 1
+fi
+
+[ -z "$plans" ] && exit 0
+
+{
+  echo "pre-commit: plans in docs/plans/ are local working files and are never committed."
+  echo "These index entries are plans:"
+  printf '%s\n' "$plans" | sed 's/^/  /'
+  echo "Remove them from the index and keep the files on disk:"
+  echo "  git rm -r --cached -- <path>"
+} >&2
+exit 1
