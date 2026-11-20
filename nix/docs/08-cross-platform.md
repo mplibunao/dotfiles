@@ -285,7 +285,6 @@ home-manager switch --flake .#mp@linux-host
 | Tool | macOS | Linux |
 |------|-------|-------|
 | AeroSpace | Supported | N/A |
-| Yabai | Supported | N/A |
 | i3/Sway | N/A | Supported |
 
 ---
@@ -296,28 +295,21 @@ home-manager switch --flake .#mp@linux-host
 
 ```bash
 # Check all outputs evaluate
-nix flake check --all-systems
+nix flake check ./nix --no-build --all-systems
 
-# Check specific system
-nix eval .#darwinConfigurations.macbook.config.home-manager.users.mp.home.packages
-nix eval .#homeConfigurations."mp@linux".config.home.packages
+# Evaluate the Darwin system without building it
+nix eval --raw ./nix#darwinConfigurations.m5-mbp.system.drvPath
 ```
 
-### CI Strategy
+### Continuous Integration
 
-```yaml
-# .github/workflows/check.yml
-jobs:
-  check:
-    strategy:
-      matrix:
-        system: [aarch64-darwin, x86_64-darwin, x86_64-linux]
-    runs-on: ${{ matrix.system == 'x86_64-linux' && 'ubuntu-latest' || 'macos-latest' }}
-    steps:
-      - uses: actions/checkout@v4
-      - uses: DeterminateSystems/nix-installer-action@main
-      - run: nix flake check
-```
+[`.github/workflows/nix-check.yml`](../../.github/workflows/nix-check.yml) runs one job on `ubuntu-latest`:
+
+- the shell tests from `nix/tests/` that the workflow lists
+- `nix eval` of the `m5-mbp` Darwin system's derivation path
+- `nix flake check --no-build --all-systems`
+
+Import from derivation is off, so evaluation never needs a macOS builder. CI doesn't build or activate the system. Build it on the Mac with `nix/scripts/nix-verify`.
 
 ---
 

@@ -12,9 +12,7 @@ This document defines the rules, conventions, and safety boundaries for agents w
 
 - Window manager bindings (AeroSpace) use `key-mapping.preset = "dvorak"`
 - CapsLock is a physical Karabiner binding: tap sends Escape; hold emits Hyper (Shift+Command+Control+Option).
-- Validate keybind changes with `dotfiles/keybinds/` conflict detection tooling
-- The keybind system currently uses string-based canonicalization (keycode normalization planned)
-- See `keybinds/manifest.toml` for all tracked keybind sources
+- Before adding a binding, check for conflicts in `karabiner/karabiner.json`, `nix/home/mp/modules/aerospace/aerospace.toml`, and the `keybindings` block in `nix/home/mp/modules/kitty.nix`
 
 ### AeroSpace Key Semantics Contract
 
@@ -23,9 +21,7 @@ With `key-mapping.preset = 'dvorak'` in aerospace.toml:
 - Example: `alt-b` means press the key labeled 'b' on Dvorak layout
 - Navigation uses vim-style hjkl (character-based, for muscle memory consistency)
 
-This invariant is enforced in:
-- `aerospace.toml` (header comment)
-- `AeroSpaceExtractor` notes
+The `aerospace.toml` header comment states this invariant.
 
 **Do not mix physical and mnemonic interpretations.**
 
@@ -460,4 +456,4 @@ Once `nix/scripts/` is set up:
 - [docs/01-migration-phases.md](docs/01-migration-phases.md) - Stage definitions
 - [docs/04-operations-update-rollback.md](docs/04-operations-update-rollback.md) - Ops workflows
 - [docs/decisions/](docs/decisions/README.md) - ADRs (per-file; `docs/09-decisions-log.md` is now a stub pointing here)
-- [~/.agent/diagrams/tooling-personal/fish-shell/cheatsheet.html](file:///Users/mp/.agent/diagrams/tooling-personal/fish-shell/cheatsheet.html) - Interactive fish config cheat sheet (abbreviations, functions, plugins, features)
+- `~/.agent/diagrams/tooling-personal/fish-shell/cheatsheet.html` - Interactive fish config cheat sheet (abbreviations, functions, plugins, features), kept on the machine rather than in this repository

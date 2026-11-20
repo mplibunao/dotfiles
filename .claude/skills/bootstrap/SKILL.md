@@ -86,9 +86,8 @@ See [bootstrap-runbook.md](references/bootstrap-runbook.md#neovim-validation-fai
 
 When Phase 7 is complete:
 
-1. Run `bd ready` to check for available work
-2. Use the `nix` skill for ongoing configuration changes
-3. Point to `nix/AGENTS.md` for safety rules
+1. Use the `nix` skill for ongoing configuration changes
+2. Point to `nix/AGENTS.md` for safety rules
 
 ```bash
 # Verify handover

@@ -1,9 +1,6 @@
 # Dotfiles
 
-> **Migration in Progress**: This repo is transitioning to Nix (nix-darwin + Home Manager).
-> Legacy scripts and configs outside `nix/` are deprecated.
-
-Personal macOS configuration managed with Nix for reproducible, declarative system setup.
+Personal macOS configuration managed with Nix (nix-darwin and Home Manager) for reproducible, declarative system setup.
 
 ## Quick Start (Fresh Mac)
 
@@ -38,25 +35,18 @@ Personal macOS configuration managed with Nix for reproducible, declarative syst
 
 ```
 dotfiles/
-├── nix/                    # Nix configuration (active)
+├── nix/                    # Nix configuration
 │   ├── flake.nix           # Entry point
 │   ├── hosts/m5-mbp/       # Host-specific config
 │   ├── home/mp/            # User packages and dotfiles
 │   └── docs/               # Nix documentation
 │
-├── .claude/                # Claude Code integration (hidden)
-│   └── skills/bootstrap/   # Bootstrap automation
+├── karabiner/              # Karabiner-Elements config, linked into ~/.config/karabiner
 │
-├── .beads/                 # Issue tracking (hidden)
+├── .claude/                # Claude Code commands and the bootstrap skill
 │
-├── keybinds/               # Keybind conflict detection
-│
-└── [legacy dirs]           # Deprecated (fish/, kitty/, etc.)
+└── .github/workflows/      # Nix flake check on Linux
 ```
-
-**Note:** `.claude/` and `.beads/` are hidden directories. They contain:
-- `.claude/skills/bootstrap/` - Nix bootstrap automation
-- `.beads/` - Local issue tracking with bd/beads
 
 ## Documentation
 
@@ -77,41 +67,3 @@ If you fork this repo, update these values before bootstrapping:
 3. **Hostname** in flake commands (run `hostname -s` to get yours)
 
 See the bootstrap guide for a personalization checklist.
-
----
-
-<details>
-<summary>Legacy Documentation (deprecated)</summary>
-
-The content below is from the original README and may not work with the current Nix-based setup.
-
-### Legacy Setup (Not Recommended)
-
-The old `bootstrap.sh` script is deprecated. Running it will show a warning and offer to continue anyway.
-
-### Legacy Configs
-
-These directories contain old configurations that are being migrated to Nix:
-
-- `fish/` - Fish shell config (migrated to `nix/home/mp/modules/fish/`)
-- `kitty/` - Kitty terminal config (migrated to `nix/home/mp/modules/kitty/`)
-- `zsh/` - Zsh config (replaced by Fish)
-- `yabai/`, `skhd/` - Window manager (replaced by AeroSpace)
-- `karabiner/` - Key remapping (preserved, still needed)
-
-### Old Symlink Troubleshooting
-
-If you encounter empty symlinks, use relative paths from the destination directory:
-
-```bash
-cd ~
-ln -s Projects/personal/dotfiles/some/file .some-file
-```
-
-### Old Tool Notes
-
-- **Ranger**: `pip3 install ueberzug` for image support (Linux)
-- **Powerlevel9k/10k**: Replaced by Starship
-- **oh-my-zsh**: Replaced by Fish
-
-</details>

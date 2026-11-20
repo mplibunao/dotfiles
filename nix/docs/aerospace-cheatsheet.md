@@ -189,7 +189,6 @@ ls ~/Library/LaunchAgents | grep -i aerospace
 - **Nix overlays (float rules, PATH)**: `nix/home/mp/modules/aerospace/default.nix`
 - **Workspace registry**: `nix/data/workspaces.toml`
 - **Generated**: `~/.config/aerospace/aerospace.toml`
-- **Keybind inventory**: `keybinds/generated/INVENTORY.md` (full) and `keybinds/generated/INVENTORY_AI.md` (concise)
 
 ## Docs
 

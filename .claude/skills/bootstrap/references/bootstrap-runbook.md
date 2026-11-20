@@ -262,16 +262,10 @@ This installs a standalone binary to `~/.local/bin/claude` (no Node.js required)
 npm install -g @openai/codex
 ```
 
-### Beads Issue Tracker (Optional)
-```bash
-curl -sSL https://raw.githubusercontent.com/steveyegge/beads/main/scripts/install.sh | bash
-```
-
 ### Verify
 ```bash
 claude --version
 # codex --version (if installed)
-# bd --version (if installed)
 ```
 
 ---
@@ -302,12 +296,6 @@ nix-verify --to 2
 
 # Update flake inputs
 nix-ops update-inputs --yes --build
-```
-
-### Find Available Work
-```bash
-bd ready
-bd show <id>
 ```
 
 ---
@@ -341,10 +329,11 @@ Check `nixpkgs.hostPlatform` in host config matches your machine:
 - Intel: `x86_64-darwin`
 
 ### Home Manager collision errors
-If HM refuses to overwrite existing files:
+If HM refuses to overwrite existing files, move the file aside, then switch again with the user's approval:
 ```bash
 mv ~/.config/conflicting-file ~/.config/conflicting-file.backup
-darwin-rebuild switch --flake .#m5-mbp
+# Only run this with explicit user approval
+sudo darwin-rebuild switch --flake .#m5-mbp
 ```
 
 ### Neovim validation fails

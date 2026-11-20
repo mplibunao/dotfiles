@@ -55,6 +55,8 @@ Reasons:
 
 `manual-apps/` created; AudioPriorityBar onboarded as the first managed entry with `allow_unsigned` due to upstream artifact policy.
 
+> **2026-11-20 retirement note:** This repository became public without `manual-apps/` and its Claude command. AudioPriorityBar was still the tool's only entry, and `nix/docs/gui-apps.md` now lists it as a manual install. The record above stays as the original decision.
+
 ## Risks
 
 Allow-list exceptions (`allow_unsigned`, `allow_unnotarized`) bypass macOS authenticity guarantees. Mitigated by per-app justification recorded in the manifest.
