@@ -199,12 +199,14 @@ darwin_rebuild() {
           if [[ -n "$repo_root" ]]; then
             # Tracked sources only: the flake root is the repository root,
             # which can also hold ignored local files nixfmt must not rewrite.
-            # Like find -type f, skip entries that are missing or symlinks. A
-            # source folder swapped for an untracked symlink is caught by the
-            # untracked-source guard above; --allow-untracked bypasses that guard.
+            # Like find -type f, skip any path that passes through a symlink.
+            root_physical="$(pwd -P)"
             while IFS= read -r -d '' file; do
               [[ -f "$file" && ! -L "$file" ]] || continue
-              nix_files+=("./$file")
+              dir="$(dirname -- "$file")"
+              want="$root_physical/$dir"
+              [[ "$dir" == . ]] && want="$root_physical"
+              [[ "$(cd -- "./$dir" && pwd -P)" == "$want" ]] && nix_files+=("./$file")
             done < <(git --no-pager ls-files -z -- '*.nix')
             if (( ${#nix_files[@]} == 0 )); then
               echo "Error: git listed no tracked .nix files under $PWD." >&2
