@@ -6,7 +6,19 @@ Packages are organized into tiers by urgency and necessity, which keeps the clos
 
 ## Source of Truth
 
-**The tier files (`home/mp/package-tiers/tier*.nix`) are canonical.** The tables below are illustrative examples and may drift. When in doubt, check the actual tier files.
+The Nix files list the packages and apps, so this document doesn't. When in doubt, read them:
+
+| What | File |
+|------|------|
+| Tier 1 packages | [`home/mp/package-tiers/tier1.nix`](../../home/mp/package-tiers/tier1.nix) |
+| Tier 2 packages | [`home/mp/package-tiers/tier2.nix`](../../home/mp/package-tiers/tier2.nix) |
+| Casks and the allowed Homebrew brews | [`hosts/m5-mbp/homebrew.nix`](../../hosts/m5-mbp/homebrew.nix), described in [GUI apps](gui-apps.md). Its numbered group comments aren't these tiers. |
+
+Only Tiers 1 and 2 have files.
+
+A Home Manager program module installs some tools together with their configuration, so they aren't in a tier file: [Fish](../../modules/fish/default.nix), [Starship](../../modules/starship/default.nix), [Git and Delta](../../modules/git/default.nix), [Neovim](../../modules/neovim/default.nix), and [bat](../../modules/bat/default.nix).
+
+A few tools don't come from Nix at all. The [bootstrap runbook](../../.claude/skills/bootstrap/references/bootstrap-runbook.md#claude-code) sets up Claude Code and Codex, [Surf CLI](runbooks/surf-cli.md) follows its own runbook, and the CLIProxyAPI dashboard is a local checkout that [its runbook](runbooks/cli-proxy-api.md) covers.
 
 ## Tier Philosophy
 
@@ -18,155 +30,6 @@ Packages are organized into tiers by urgency and necessity, which keeps the clos
 | Evaluate | Unknown | TBD | Don't install until justified |
 
 [`CODING_STANDARDS.md`](../../CODING_STANDARDS.md#packages) says which tier a new package goes in.
-
----
-
-## Tier 1: Essential (Day 1)
-
-Core tools needed to be productive immediately.
-
-### Shell & Prompt
-
-| Package | Nix Name | Purpose |
-|---------|----------|---------|
-| Fish | `fish` | Primary shell |
-| Starship | `starship` | Cross-shell prompt |
-| Fisher | via fish plugins | Plugin manager |
-
-### Version Control
-
-| Package | Nix Name | Purpose |
-|---------|----------|---------|
-| Git | `git` | VCS |
-| Delta | `delta` | Git pager with syntax highlighting |
-
-### Editor
-
-| Package | Nix Name | Purpose |
-|---------|----------|---------|
-| Neovim | `neovim` | Primary editor |
-
-### Modern CLI Replacements
-
-| Package | Replaces | Nix Name | Purpose |
-|---------|----------|----------|---------|
-| bat | cat | `bat` | Syntax-highlighted file viewing |
-| lsd | ls | `lsd` | Modern ls with icons |
-| fd | find | `fd` | Fast file finder |
-| ripgrep | grep | `ripgrep` | Fast search |
-| fzf | - | `fzf` | Fuzzy finder |
-| zoxide | cd | `zoxide` | Smart directory jumping |
-
-### Terminal
-
-| Package | Nix Name | Notes |
-|---------|----------|-------|
-| Kitty | - | Installed via Homebrew cask; config via HM |
-
-### LLM Tools
-
-| Package | Install Method | Notes |
-|---------|---------------|-------|
-| claude-code | curl script | See bootstrap skill |
-| codex | npm global | `@openai/codex` |
-| Surf CLI | npm global | Official `surf-cli`; see [setup and upgrades](runbooks/surf-cli.md) |
-| OpenCode | Pinned upstream flake (tier1.nix) | RepoPrompt CE Agent Mode/MCP via ACP; see [ADR-021](../decisions/021-opencode-upstream-flake-for-repoprompt-acp.md) |
-| CLIProxyAPI | Pinned release tarball | LaunchAgent on 127.0.0.1:8317; see [ADR-026](../decisions/026-cliproxyapi-prebuilt-launchagent.md) |
-| cli-proxy-dashboard | Local pnpm checkout | Private repo, not a Nix package; see [the runbook](runbooks/cli-proxy-api.md) |
-
-Note: claude-code uses the official curl installer, and codex requires npm. OpenCode uses a pinned upstream release with an independent lock graph for RepoPrompt ACP compatibility. Nix owns its executable and RepoPrompt GUI discovery bridge; authentication, provider/model configuration, and OpenCode application data remain mutable local state outside package ownership.
-
----
-
-## Tier 2: Development (Day 2-3)
-
-Project-specific development tools.
-
-### Package Managers
-
-| Package | Nix Name | Purpose |
-|---------|----------|---------|
-| pnpm | Corepack via mise-managed Node | Repo-local package manager pins |
-| bun | `bun` | JS runtime + toolkit |
-| uv | `uv` | Python package manager |
-
-### Code Search / Rewrite
-
-| Package | Nix Name | Purpose |
-|---------|----------|---------|
-| ast-grep | `ast-grep` | Structural search/rewriter |
-
-### Infrastructure
-
-| Package | Nix Name | Purpose | Notes |
-|---------|----------|---------|-------|
-| Terraform | `terraform` | IaC | Check license (BSL) |
-| terraform-ls | `terraform-ls` | LSP for Terraform | |
-| tflint | `tflint` | Terraform linter | |
-| gcloud | `google-cloud-sdk` | GCP CLI | |
-| cloudflared | `cloudflared` | Cloudflare tunnel | Local demos via named tunnel |
-
-### Databases
-
-| Package | Nix Name | Purpose |
-|---------|----------|---------|
-| PostgreSQL | `postgresql` | Client and libs |
-
-### Data Processing
-
-| Package | Nix Name | Purpose |
-|---------|----------|---------|
-| jq | `jq` | JSON processor |
-| yq | `yq` | YAML processor |
-
-### TUI Tools
-
-| Package | Nix Name | Purpose |
-|---------|----------|---------|
-| lazygit | `lazygit` | Git TUI |
-| lazydocker | `lazydocker` | Docker TUI |
-
-### Containers
-
-| Package | Nix Name | Notes |
-|---------|----------|-------|
-| Docker Desktop | - | Installed via Homebrew cask (see gui-apps.md) |
-
----
-
-## Tier 3: Nice-to-Have (Week 1)
-
-Quality of life improvements, lower priority.
-
-### System Monitoring
-
-| Package | Nix Name | Purpose |
-|---------|----------|---------|
-| bottom | `bottom` | System monitor (btm) |
-| ncdu | `ncdu` | Disk usage analyzer |
-| duf | `duf` | Disk usage |
-
-### Media
-
-| Package | Nix Name | Purpose |
-|---------|----------|---------|
-| ffmpeg | `ffmpeg` | Video/audio processing |
-| imagemagick | `imagemagick` | Image processing |
-
-### Utilities
-
-| Package | Nix Name | Purpose |
-|---------|----------|---------|
-| tree | `tree` | Directory listing |
-| watch | `watch` | Periodic execution |
-| parallel | `parallel` | Parallel execution |
-
-### Window Management
-
-| Package | Notes |
-|---------|-------|
-| AeroSpace | Nix package (`pkgs.aerospace`) through `programs.aerospace`; config via HM |
-| Karabiner-Elements | Installed via Homebrew cask; config via HM |
 
 ---
 
@@ -242,80 +105,15 @@ nix eval nixpkgs#<package>.meta.platforms
 
 ---
 
-## File Structure
-
-Packages are organized in `home/mp/package-tiers/`:
-
-```nix
-# tier1.nix
-{ pkgs, ... }:
-{
-  home.packages = with pkgs; [
-    # Shell & Prompt
-    fish
-    starship
-
-    # Git
-    git
-    delta
-
-    # Editor
-    neovim
-
-    # Modern CLI
-    fzf
-    ripgrep
-    fd
-    bat
-    lsd
-    zoxide
-  ];
-}
-```
-
-```nix
-# tier2.nix
-{ pkgs, ... }:
-{
-  home.packages = with pkgs; [
-    # Package managers
-    bun
-    # pnpm is Corepack-managed per repo, not installed by Nix.
-    uv
-
-    # Infrastructure
-    terraform
-    terraform-ls
-    tflint
-    google-cloud-sdk
-
-    # Database
-    postgresql
-
-    # TUI Tools
-    lazydocker
-
-    # Code search / rewrite
-    ast-grep
-
-    # File watching
-    fswatch
-  ];
-}
-```
-
----
-
 ## Adding New Packages
 
 ### Process
 
-1. **Determine tier** based on urgency
+1. **Choose the tier and write the comment** by the rules in [Coding standards](../../CODING_STANDARDS.md#packages)
 2. **Check availability** on Darwin
-3. **Edit appropriate tier file**
-4. **Document the addition** (comment with purpose)
-5. **For independently pinned flake packages, review the source tag and lock graph**
-6. **Rebuild and verify**
+3. **Edit the tier file**
+4. **For independently pinned flake packages, review the source tag and lock graph**
+5. **Check the change** with the [command ladder](command-ladder.md)
 
 ### Example
 
@@ -325,7 +123,7 @@ To add `httpie`, check that it exists for Darwin with `nix search nixpkgs#httpie
     httpie # HTTP client
 ```
 
-Build it with the [command ladder](command-ladder.md). After the approved switch, `which http` finds it.
+After the approved switch, `which http` finds it.
 
 ---
 
@@ -334,7 +132,7 @@ Build it with the [command ladder](command-ladder.md). After the approved switch
 ### Process
 
 1. Remove the package declaration from its tier file.
-2. Run `nix-verify --to 2 --host <hostname>`. See the [command ladder](command-ladder.md). This checks the configuration without activating it.
+2. Check the change with the [command ladder](command-ladder.md) through the build, which doesn't activate it.
 3. After review and explicit operator approval, follow the [approval-gated activation procedure](command-ladder.md#level-4-apply).
 4. After activation and validation, use the [storage management guide](storage.md) to decide whether to clean up storage.
 

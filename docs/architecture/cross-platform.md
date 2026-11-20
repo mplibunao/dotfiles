@@ -1,322 +1,36 @@
 # Cross-Platform Support
 
-> Designing for portability between macOS and Linux.
-
-This configuration is structured to support multiple platforms while keeping macOS as the primary focus.
+Which platforms the flake supports, where code for one platform belongs, and what continuous integration (CI) checks on Linux.
 
 ---
 
 ## Current Scope
 
-### Supported Now
-
 | Platform | System | Status |
 |----------|--------|--------|
 | macOS (Apple Silicon) | `aarch64-darwin` | The only host in the flake (`m5-mbp`) |
 | macOS (Intel) | `x86_64-darwin` | Not supported; needs its own host, and some packages (such as CLIProxyAPI) only fetch Apple Silicon or Linux archives |
+| Linux | `x86_64-linux` | Package outputs only: CLIProxyAPI for Linux, and the Mac build of it unpacked on Linux. No Home Manager or NixOS configuration |
 
-### Planned Future
-
-| Platform | System | When |
-|----------|--------|------|
-| Linux (standalone HM) | `x86_64-linux` | When needed |
-| NixOS | `x86_64-linux` | When needed |
-| WSL | `x86_64-linux` | When needed |
+[`flake.nix`](../../flake.nix) defines the outputs.
 
 ---
 
-## Architecture for Portability
-
-### Layered Configuration
-
-```
-┌─────────────────────────────────────────────────────┐
-│                    flake.nix                        │
-│  Defines outputs for all platforms                  │
-└─────────────────┬───────────────────────────────────┘
-                  │
-         ┌────────┴────────┐
-         ▼                 ▼
-┌─────────────────┐ ┌─────────────────┐
-│ darwinConfigs   │ │ homeConfigs     │
-│ (macOS hosts)   │ │ (Linux users)   │
-└────────┬────────┘ └────────┬────────┘
-         │                   │
-         ▼                   ▼
-┌─────────────────────────────────────────────────────┐
-│                 home/mp/common.nix                  │
-│  Cross-platform home settings (shell, git, etc.)   │
-└─────────────────────────────────────────────────────┘
-```
-
-### What Goes Where
+## Platform Boundaries
 
 | Location | Purpose | Platform |
 |----------|---------|----------|
-| `home/mp/common.nix` | Shell, git, editor, CLI tools | All |
-| `home/mp/darwin.nix` | macOS paths, behaviors | Darwin only |
-| `home/mp/linux.nix` (not written yet) | Linux paths, systemd services | Linux only |
-| `hosts/<hostname>/` | Machine-specific settings, including nix-darwin modules | Per-machine |
-| `modules/<tool>/` | Home Manager modules, one per tool | All, unless the tool is macOS-only |
+| `home/mp/common.nix` | Shared settings: user, state version, session variables | Shared |
+| `home/mp/darwin.nix` | macOS entry point; imports every module | Darwin only |
+| `hosts/<hostname>/` | Machine-specific settings, including nix-darwin modules | Per machine |
+| `modules/<tool>/` | Home Manager modules, one per tool | Any platform, unless the tool is macOS-only |
+
+[Overview](overview.md#wiring) shows how these connect. No module checks which platform it runs on, because `darwin.nix` is the only home entry point. Put macOS-only options in `darwin.nix`, a host file, or a macOS-only module.
+
+Homebrew (under `/opt/homebrew`, declared in [`homebrew.nix`](../../hosts/m5-mbp/homebrew.nix)), launchd user services, and [AeroSpace](aerospace.md) exist only on macOS.
 
 ---
 
-## Cross-Platform Home Config
+## Continuous Integration
 
-### common.nix Structure
-
-```nix
-# home/mp/common.nix
-{ config, pkgs, lib, ... }:
-{
-  # Packages available everywhere
-  home.packages = with pkgs; [
-    ripgrep
-    fd
-    bat
-    fzf
-    jq
-  ];
-
-  # Programs with cross-platform options
-  programs.git = {
-    enable = true;
-    userName = "MP";
-    userEmail = "markpaololibunao@gmail.com";
-    delta.enable = true;
-  };
-
-  programs.fish = {
-    enable = true;
-    shellAbbrs = {
-      v = "nvim";
-      g = "git";
-    };
-  };
-
-  programs.starship = {
-    enable = true;
-    enableFishIntegration = true;
-  };
-
-  # Cross-platform config files
-  xdg.configFile."nvim/init.lua".source = ./nvim/init.lua;
-}
-```
-
-### darwin.nix Structure
-
-```nix
-# home/mp/darwin.nix
-{ config, pkgs, lib, ... }:
-{
-  imports = [
-    ./common.nix
-    ../../modules/kitty
-  ];
-
-  # macOS-specific packages
-  home.packages = with pkgs; [
-    # darwin-only tools if any
-  ];
-
-  # macOS-specific paths
-  programs.fish.interactiveShellInit = ''
-    # Homebrew (if used)
-    if test -d /opt/homebrew/bin
-      fish_add_path /opt/homebrew/bin
-    end
-  '';
-
-  # macOS-specific config
-  xdg.configFile."kitty/kitty.conf".text = ''
-    shell /run/current-system/sw/bin/fish
-    macos_option_as_alt yes
-  '';
-}
-```
-
-### linux.nix Structure (Future)
-
-```nix
-# home/mp/linux.nix
-{ config, pkgs, lib, ... }:
-{
-  imports = [
-    ./common.nix
-  ];
-
-  # Linux-specific packages
-  home.packages = with pkgs; [
-    # linux-only tools
-  ];
-
-  # Linux-specific paths
-  programs.fish.interactiveShellInit = ''
-    # Linux-specific init
-  '';
-
-  # Systemd user services (Linux only)
-  # services.syncthing.enable = true;
-}
-```
-
----
-
-## Platform Detection
-
-### In Nix Expressions
-
-```nix
-{ config, pkgs, lib, ... }:
-let
-  isDarwin = pkgs.stdenv.isDarwin;
-  isLinux = pkgs.stdenv.isLinux;
-in
-{
-  home.packages = with pkgs; [
-    # Common packages
-    ripgrep
-    fd
-  ] ++ lib.optionals isDarwin [
-    # macOS only
-  ] ++ lib.optionals isLinux [
-    # Linux only
-  ];
-
-  programs.fish.interactiveShellInit = ''
-    # Common init
-  '' + lib.optionalString isDarwin ''
-    # macOS-specific
-    fish_add_path /opt/homebrew/bin
-  '' + lib.optionalString isLinux ''
-    # Linux-specific
-  '';
-}
-```
-
-### Conditional Imports
-
-```nix
-# darwin.nix
-{ config, pkgs, lib, ... }:
-{
-  imports = [
-    ./common.nix
-  ] ++ lib.optionals pkgs.stdenv.isDarwin [
-    ../../modules/aerospace
-    ../../modules/karabiner
-  ];
-}
-```
-
----
-
-## Future: Adding Linux Support
-
-### Step 1: Create Linux Home Config
-
-```nix
-# home/mp/linux.nix
-{ config, pkgs, ... }:
-{
-  imports = [ ./common.nix ];
-
-  home.username = "mp";
-  home.homeDirectory = "/home/mp";
-  home.stateVersion = "24.11";
-
-  # Linux-specific settings
-}
-```
-
-### Step 2: Add to flake.nix
-
-```nix
-# flake.nix
-{
-  outputs = { self, nixpkgs, home-manager, darwin, ... }: {
-    # Existing darwin configs
-    darwinConfigurations."macbook" = darwin.lib.darwinSystem { ... };
-
-    # New: standalone home-manager for Linux
-    homeConfigurations."mp@linux-host" = home-manager.lib.homeManagerConfiguration {
-      pkgs = nixpkgs.legacyPackages.x86_64-linux;
-      modules = [ ./home/mp/linux.nix ];
-    };
-
-    # Future: NixOS configuration
-    # nixosConfigurations."linux-host" = nixpkgs.lib.nixosSystem { ... };
-  };
-}
-```
-
-### Step 3: Apply on Linux
-
-```bash
-# Standalone home-manager on Linux
-home-manager switch --flake .#mp@linux-host
-```
-
----
-
-## Platform-Specific Considerations
-
-### Paths
-
-| Item | macOS | Linux |
-|------|-------|-------|
-| Homebrew | `/opt/homebrew` | N/A |
-| Fish shell | `/run/current-system/sw/bin/fish` | `/run/current-system/sw/bin/fish` (NixOS) or `/home/user/.nix-profile/bin/fish` |
-| Config dir | `~/Library/...` or `~/.config/` | `~/.config/` |
-
-### Services
-
-| Feature | macOS (nix-darwin) | Linux (NixOS/systemd) |
-|---------|-------------------|----------------------|
-| User services | launchd | systemd --user |
-| System services | launchd | systemd |
-| Auto-start | launchd plist | systemd enable |
-
-### Window Management
-
-| Tool | macOS | Linux |
-|------|-------|-------|
-| AeroSpace | Supported | N/A |
-| i3/Sway | N/A | Supported |
-
----
-
-## Testing Cross-Platform
-
-### Verify Evaluation
-
-```bash
-# Check all outputs evaluate
-nix flake check . --no-build --all-systems
-
-# Evaluate the Darwin system without building it
-nix eval --raw .#darwinConfigurations.m5-mbp.system.drvPath
-```
-
-### Continuous Integration
-
-[`.github/workflows/nix-check.yml`](../../.github/workflows/nix-check.yml) defines the CI job. Linux CI runs the shell checks and evaluates the Darwin system with import from derivation disabled, so evaluation never needs a macOS builder. CI doesn't build or activate macOS. Build it on the Mac with `nix-verify` ([command ladder](command-ladder.md)).
-
----
-
-## Best Practices
-
-### DO
-
-- Keep `common.nix` truly cross-platform
-- Use `lib.optionals` for conditional packages
-- Test evaluation on all target systems
-- Document platform-specific behaviors
-
-### DON'T
-
-- Hardcode macOS paths in common config
-- Use darwin-only options in common modules
-- Assume Homebrew exists on all machines
-- Mix NixOS and standalone HM concepts in same file
+[`.github/workflows/nix-check.yml`](../../.github/workflows/nix-check.yml) defines the CI job. It runs on Linux with import from derivation disabled, so evaluation never needs a macOS builder. It runs the shell tests in `tests/` and evaluates the Darwin system. Its `nix flake check --no-build --all-systems` step also evaluates the Linux package outputs without building them. CI doesn't build or activate macOS. Build it on the Mac with `nix-verify` ([command ladder](command-ladder.md)).

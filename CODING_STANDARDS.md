@@ -10,7 +10,7 @@ Rules for changes to this configuration that need judgment. Formatting and lint 
 
 ## Packages
 
-Add a package to the lowest tier that fits how soon it's needed, and put a comment with its purpose on the same line. Tier 1 is for what I need to be productive at all, such as `ripgrep`, `fzf`, and `jq`; Tier 2 is for development tools, such as `terraform` and `google-cloud-sdk`. A tool that has a Home Manager program module, such as Git or Neovim, comes from its module instead. When it isn't clear a package is needed, leave it out until it is. Moving a package to a higher tier needs a reason. [Packages and tiers](docs/architecture/packages-and-tiers.md) defines the tiers and the steps for adding one.
+Add a package to the lowest tier that fits how soon it's needed, and put a comment with its purpose on the same line. A tool that has a Home Manager program module, such as Git or Neovim, comes from its module instead. When it isn't clear a package is needed, leave it out until it is. Moving a package to a higher tier needs a reason. [Packages and tiers](docs/architecture/packages-and-tiers.md#tier-philosophy) defines the tiers and has the steps for adding a package.
 
 ## Fish functions
 

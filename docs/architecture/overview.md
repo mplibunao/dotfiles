@@ -57,11 +57,7 @@ The layers of the declarative macOS configuration, what each one owns, and what 
 - `/etc/nix/nix.conf` (Nix settings)
 
 **Not managed by nix-darwin:**
-Because Determinate Nix owns the Nix installation, we set:
-```nix
-nix.enable = false;
-```
-This disables nix-darwin's Nix management to prevent conflicts.
+Because Determinate Nix owns the Nix installation, the host sets `nix.enable = false` ([`configuration.nix`](../../hosts/m5-mbp/configuration.nix)). This disables nix-darwin's Nix management to prevent conflicts.
 
 **Upgrade path:**
 ```bash
@@ -87,21 +83,7 @@ sudo determinate-nixd upgrade
 
 **Configuration location:** `hosts/<hostname>/configuration.nix`; see [Hosts](hosts.md)
 
-**Key options:**
-```nix
-{
-  nixpkgs.hostPlatform = "aarch64-darwin";  # Platform
-  nix.enable = false;                        # Determinate owns Nix
-
-  system.defaults.dock.autohide = true;
-  system.defaults.NSGlobalDomain.KeyRepeat = 2;
-
-  # Home Manager integration
-  home-manager.useGlobalPkgs = true;
-  home-manager.useUserPackages = true;
-  home-manager.users.mp = import ../../home/mp/darwin.nix;
-}
-```
+**Key settings:** [`configuration.nix`](../../hosts/m5-mbp/configuration.nix) wires in Home Manager. It also sets the platform and turns off nix-darwin's Nix management. [`defaults.nix`](../../hosts/m5-mbp/defaults.nix) holds the macOS defaults, and [`homebrew.nix`](../../hosts/m5-mbp/homebrew.nix) the Homebrew casks and brews.
 
 ---
 
@@ -119,66 +101,21 @@ sudo determinate-nixd upgrade
 | Program config | Git settings, editor config |
 | User services | Background daemons (rare on macOS) |
 
-**Configuration locations:**
-- `home/mp/common.nix` - Cross-platform settings
-- `home/mp/darwin.nix` - macOS-specific settings and the module imports
-- `home/mp/package-tiers/tier*.nix` - Package lists by priority
-- `modules/<tool>/default.nix` - One module per program
+**Configuration locations:** `home/mp/` and `modules/<tool>/`. [Wiring](#wiring) shows how they connect.
 
-**Key options:**
-```nix
-{
-  home.username = "mp";
-  home.homeDirectory = "/Users/mp";
-  home.stateVersion = "24.11";  # Don't change after initial setup
-
-  home.packages = with pkgs; [ ripgrep fd bat ];
-
-  programs.git = {
-    enable = true;
-    userName = "MP";
-    delta.enable = true;
-  };
-
-  xdg.configFile."kitty/kitty.conf".source = ./kitty.conf;
-}
-```
+**Key settings:** [`common.nix`](../../home/mp/common.nix) sets the user, home directory, state version, and session variables. Set the state version once and never change it ([Operations](operations.md#state-version-rules)).
 
 ---
 
-## Module Composition
+## Wiring
 
-### How Modules Import
+Following the imports from the flake shows where each setting comes from:
 
-```
-flake.nix
-    │
-    ▼
-darwinConfigurations."<hostname>"
-    │
-    ├── hosts/<hostname>/configuration.nix
-    │       │
-    │       ├── hosts/<hostname>/defaults.nix (host-specific macOS defaults)
-    │       └── hosts/<hostname>/homebrew.nix (casks + brews)
-    │
-    └── home-manager.darwinModules.home-manager
-            │
-            └── home/mp/darwin.nix
-                    │
-                    ├── home/mp/common.nix (cross-platform)
-                    ├── home/mp/package-tiers/tier1.nix
-                    ├── home/mp/package-tiers/tier2.nix
-                    └── modules/<tool>/default.nix (program modules)
-```
+1. [`flake.nix`](../../flake.nix) defines `darwinConfigurations."m5-mbp"`, which combines the host module with the Home Manager nix-darwin module.
+2. [`hosts/m5-mbp/configuration.nix`](../../hosts/m5-mbp/configuration.nix) imports [`homebrew.nix`](../../hosts/m5-mbp/homebrew.nix) and [`defaults.nix`](../../hosts/m5-mbp/defaults.nix), and sets `home-manager.users.mp` to [`home/mp/darwin.nix`](../../home/mp/darwin.nix).
+3. `home/mp/darwin.nix` imports [`common.nix`](../../home/mp/common.nix), the two [package tier](packages-and-tiers.md) files, and one module per tool from `modules/`.
 
-### Shared vs Host-Specific
-
-| Location | Purpose | When to Use |
-|----------|---------|-------------|
-| `home/mp/common.nix` | Cross-platform home | Settings that work on macOS and Linux |
-| `home/mp/darwin.nix` | macOS home settings | macOS-specific paths, behaviors |
-| `modules/<tool>/` | Program modules | Fish, Git, Kitty, Neovim, etc. |
-| `hosts/<hostname>/*` | Per-host config | Machine-specific settings |
+[Repository layout](repository-layout.md) says where a new change goes, and [Cross-platform](cross-platform.md#platform-boundaries) says where shared code ends and macOS-only code begins.
 
 ---
 

@@ -13,11 +13,7 @@ Personal macOS configuration managed with Nix (nix-darwin and Home Manager) for 
    - See [`.claude/skills/bootstrap/SKILL.md`](.claude/skills/bootstrap/SKILL.md)
    - Or use Claude Code: run `/bootstrap`
 
-3. **For existing Nix setups**, from the repository root:
-   ```bash
-   darwin-rebuild build --flake .#m5-mbp  # Build (safe)
-   sudo darwin-rebuild switch --flake .#m5-mbp  # Apply
-   ```
+3. **For a Mac that already builds**, check a change with the [command ladder](docs/architecture/command-ladder.md). Its last step, the switch, needs approval ([`AGENTS.md`](AGENTS.md)).
 
 ## What's Included
 
@@ -32,22 +28,7 @@ Personal macOS configuration managed with Nix (nix-darwin and Home Manager) for 
 
 ## Project Structure
 
-```
-dotfiles/
-├── flake.nix               # Entry point
-├── hosts/m5-mbp/           # Host-specific config
-├── home/mp/                # Home Manager entry point and package tiers
-├── modules/<tool>/         # One Home Manager module per tool, with the files it reads or links
-├── packages/               # Custom package derivations
-├── scripts/                # Operational scripts (nix-verify, nix-ops, ...)
-├── tests/                  # Tests for the scripts and modules
-├── data/                   # Data shared by modules (AeroSpace workspace registry)
-├── docs/                   # Architecture docs, decisions, ledgers, investigations
-│
-├── .claude/                # Claude Code commands and the bootstrap skill
-│
-└── .github/workflows/      # Nix flake check on Linux
-```
+[Repository layout](docs/architecture/repository-layout.md) shows what each folder contains and where a change goes.
 
 ## Documentation
 

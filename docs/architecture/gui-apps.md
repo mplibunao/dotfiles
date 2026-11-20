@@ -10,44 +10,9 @@
 
 ## Managed via nix-darwin Homebrew Casks
 
-These apps are declaratively managed in `hosts/m5-mbp/homebrew.nix`:
+[`hosts/m5-mbp/homebrew.nix`](../../hosts/m5-mbp/homebrew.nix) declares every cask under `homebrew.casks`, each with a comment saying what it is. That file is the list of casks, so this document doesn't repeat it. It numbers its group comments Tier 1 to Tier 4. They only group casks by purpose and have no relation to the closure tiers in [Packages and tiers](packages-and-tiers.md).
 
-### Tier 1: Development
-| App | Cask | Status |
-|-----|------|--------|
-| Cursor | `cursor` | ✅ Configured |
-| Docker Desktop | `docker` | ✅ Configured |
-| Karabiner-Elements | `karabiner-elements` | ✅ Configured |
-| Kitty | `kitty` | ✅ Configured |
-| Postgres.app | `postgres-unofficial` | ✅ Configured |
-| VS Code | `visual-studio-code` | ✅ Configured |
-
-### Tier 2: Productivity
-| App | Cask | Status |
-|-----|------|--------|
-| 1Password | `1password` | ✅ Configured |
-| Dropbox | `dropbox` | ✅ Configured |
-| Google Chrome | `google-chrome` | ✅ Configured |
-| Firefox | `firefox` | ✅ Configured |
-| Slack | `slack` | ✅ Configured |
-| Zoom | `zoom` | ✅ Configured |
-
-### Tier 3: Communication
-| App | Cask | Status |
-|-----|------|--------|
-| Telegram | `telegram` | ✅ Configured |
-| Viber | `viber` | ✅ Configured |
-
-### Tier 3: Utilities
-| App | Cask | Status |
-|-----|------|--------|
-| CodexBar | `steipete/tap/codexbar` | ✅ Configured |
-| KeyCastr | `keycastr` | ✅ Configured |
-| MonitorControl | `monitorcontrol` | ✅ Configured |
-| Obsidian | `obsidian` | ✅ Configured |
-| RepoPrompt CE | `repoprompt/repoprompt-ce/repoprompt-ce` | ✅ Configured |
-
-#### CodexBar (RepoPrompt profile home)
+### CodexBar (RepoPrompt profile home)
 
 CodexBar counts only the active Codex session home, and RepoPrompt CE runs its bundled Codex against an isolated one. `mp.codexbar.enable` keeps that home available as an alternate profile by reconciling a single array member of CodexBar's own writable config at activation time. It does not combine the normal and RepoPrompt homes into one total. ADR-022 records the ownership split; the commands below are the operational surface.
 
@@ -85,7 +50,7 @@ Every write first stores a byte-for-byte copy under `~/.local/state/codexbar-con
 
 On a machine where CodexBar has never run, there is no config to merge into and activation fails closed. Launch the app once so it writes its own skeleton, or leave `mp.codexbar.enable = false` until then. The config at `~/.config/codexbar/config.json` must exist before reconciliation. Activation doesn't copy, rename, reconcile, or delete the legacy `~/.codexbar/config.json`.
 
-#### KeyCastr (post-install)
+### KeyCastr (post-install)
 
 KeyCastr requires Input Monitoring permission (and if prompted, Accessibility).
 
@@ -96,30 +61,11 @@ KeyCastr requires Input Monitoring permission (and if prompted, Accessibility).
 **Troubleshooting:**
 If keystrokes don't appear: re-check Input Monitoring/Accessibility, then quit/relaunch KeyCastr. Permissions are tied to the specific installed app (bundle id/signature), so reinstalling/moving the app can require re-enabling.
 
-### Tier 4: Media/Other
-| App | Cask | Status |
-|-----|------|--------|
-| Discord | `discord` | ✅ Configured |
-| Figma | `figma` | ✅ Configured |
-| NordVPN | `nordvpn` | ✅ Configured |
-| Spotify | `spotify` | ✅ Configured |
-| Steam | `steam` | ✅ Configured |
-| VLC | `vlc` | ✅ Configured |
-
 ---
 
 ## Managed via nix-darwin Homebrew Brews (Exception)
 
-These CLI tools and runtime dependencies are managed in `hosts/m5-mbp/homebrew.nix` under `homebrew.brews` (see ADR-016):
-
-| Tool | Formula | Status |
-|------|---------|--------|
-| Bitbucket CLI | `gildas/tap/bitbucket-cli` | ✅ Configured |
-| Mole | `mole` | ✅ Configured |
-| RTK | `rtk` | ✅ Configured |
-| SQLite | `sqlite` | ✅ Configured — gno macOS sqlite-vec `libsqlite3.dylib` runtime dependency |
-| SwiftLint | `swiftlint` | ✅ Configured — RepoPrompt CE lint dependency |
-| Watchman | `watchman` | ✅ Configured |
+The same [manifest](../../hosts/m5-mbp/homebrew.nix) declares formulae for CLI tools and runtime dependencies under `homebrew.brews`, each with a comment giving its reason. [ADR-016](../decisions/016-homebrew-formulae-for-third-party-tap-tools.md) says when to use a formula instead of a Nix package. A formula from a third-party tap needs the checks in [Supply-chain verification](#supply-chain-verification-third-party-taps).
 
 ---
 
@@ -173,28 +119,13 @@ AudioPriorityBar, TinyCast, and NordVPN start at login. macOS keeps that list, n
 ## Adding a New App
 
 1. Find the cask name: `brew search <app>`
-2. **Preflight**: Verify token exists (Nix won't catch bad tokens until switch):
+2. **Preflight**: Verify the token exists. Nix won't catch a bad token until the switch:
    ```bash
    brew info --cask <new-cask-token>
    # For tap casks: brew info --cask steipete/tap/<cask-token>
    ```
-3. Add to `hosts/m5-mbp/homebrew.nix`:
-   ```nix
-   casks = [
-     "existing-app"
-     "new-app"  # Description
-   ];
-   ```
-4. Stage and verify:
-   ```bash
-   git add hosts/m5-mbp/homebrew.nix
-   nix flake check --no-build
-   darwin-rebuild build --flake .#m5-mbp
-   ```
-5. Apply (with user approval):
-   ```bash
-   sudo darwin-rebuild switch --flake .#m5-mbp
-   ```
+3. Add the token to `homebrew.casks` in `hosts/m5-mbp/homebrew.nix`, under the closest group comment, with a comment on the same line saying what the app is.
+4. Check the change with the [command ladder](command-ladder.md). The switch needs approval ([`AGENTS.md`](../../AGENTS.md)).
 
 **Note:** `cleanup = "uninstall"` will remove any manually-installed brews/casks not declared in homebrew.nix.
 

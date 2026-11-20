@@ -156,15 +156,15 @@ git add hosts/<new-hostname>/
 **IMPORTANT:** Nix flakes ignore untracked files. Stage every new file the flake reads before evaluation.
 
 ### Evaluate (Level 0 - Safe)
-```bash
-nix flake check --no-build
-```
+Run [level 0 of the command ladder](../../../../docs/architecture/command-ladder.md#level-0-evaluate).
 
 ### Build (Level 2 - Safe)
 ```bash
 # First build via nix run (darwin-rebuild not yet installed)
 nix run nix-darwin#darwin-rebuild -- build --flake .#m5-mbp
 ```
+
+After the first switch, builds use `darwin-rebuild` directly, as in [level 2 of the command ladder](../../../../docs/architecture/command-ladder.md#level-2-build).
 
 ### Apply (Level 4 - REQUIRES USER APPROVAL)
 Some mappings replace whatever is already at their path without a backup. Before the first switch, check those paths and move aside anything there worth keeping; the [troubleshooting doc](../../../../docs/architecture/troubleshooting.md#file-is-in-the-way) lists them.
@@ -280,7 +280,7 @@ claude --version
 Bootstrap is complete when:
 - [x] `nix --version` works
 - [x] `darwin-rebuild --version` works
-- [x] `darwin-rebuild build --flake .#m5-mbp` succeeds
+- [x] The [level 2 build](../../../../docs/architecture/command-ladder.md#level-2-build) succeeds (Phase 5 covers the first build, which runs through `nix run`)
 - [x] `claude --version` works (or preferred agent CLI)
 - [x] `~/.config/nvim-lazy` exists (LazyVim config repo)
 
@@ -289,18 +289,7 @@ Bootstrap is complete when:
 1. **Read the agent rules:** `~/Projects/personal/dotfiles/AGENTS.md` states the safety rules and links the document for each topic.
 2. **Follow its command ladder** (`docs/architecture/command-ladder.md`) for ongoing configuration changes.
 
-### Operational Commands
-
-```bash
-# Status check
-nix-ops status --host m5-mbp
-
-# Verification ladder
-nix-verify --host m5-mbp --to 2
-
-# Update flake inputs
-nix-ops update-inputs --host m5-mbp --yes --build
-```
+[Operations](../../../../docs/architecture/operations.md) covers flake input updates and the `nix-ops` commands.
 
 ---
 
@@ -333,7 +322,7 @@ Check that the machine is Apple Silicon (see [Architecture Check](#architecture-
 ### Home Manager collision errors
 If activation stops because a file is in the way, follow ["file is in the way"](../../../../docs/architecture/troubleshooting.md#file-is-in-the-way) in the troubleshooting doc. Home Manager already moves most conflicting files aside by itself.
 
-Then, once the user approves, give them the switch command that failed to run again. It needs interactive `sudo`. On the first switch, that's the `nix run` command from Phase 5's Apply step. After that, it's `sudo darwin-rebuild switch --flake .#m5-mbp`.
+Then, once the user approves, give them the switch command that failed to run again. It needs interactive `sudo`. On the first switch, that's the `nix run` command from Phase 5's Apply step. After that, it's the [level 4 command](../../../../docs/architecture/command-ladder.md#level-4-apply).
 
 ### Neovim validation fails
 

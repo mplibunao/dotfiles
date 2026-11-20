@@ -45,30 +45,22 @@ Commit `64de4d0` landed the `v1.18.21` input, Tier 1 package, and store-managed 
 
 ## 2. Verify, then request activation approval
 
-From the repository root, use the normal safe ladder. The relative paths and `.#m5-mbp` flake reference below assume this exact working directory:
+Work from the live checkout, because the commands here use paths relative to it. First inspect the OpenCode lock node:
 
 ```bash
 cd /Users/mp/Projects/personal/dotfiles
-
 nix flake metadata --json | jq '.locks.nodes.opencode'
-nix flake check --no-build --all-systems
-nixfmt flake.nix home/mp/package-tiers/tier1.nix modules/llm-tools/default.nix
-statix check .
-deadnix .
-darwin-rebuild build --flake .#m5-mbp
-nix path-info -rsSh ./result | grep -i opencode
-sudo darwin-rebuild switch --dry-run --flake .#m5-mbp
 ```
 
-On this host, the dry-run preview also requires root. The operator must run that command in an interactive terminal and satisfy the `sudo` prompt; an agent should provide the command and record its output rather than claim to have completed it. The dry-run does not activate the configuration.
-
-Review formatter changes, the OpenCode lock node, the built closure, and collision checks. Only after these checks, including the operator-run dry-run, pass and the user explicitly approves activation should the operator run:
+Then run the [command ladder](../command-ladder.md) through the build, and inspect the closure it left in `./result`:
 
 ```bash
-sudo darwin-rebuild switch --flake /Users/mp/Projects/personal/dotfiles#m5-mbp
+nix path-info -rsSh ./result | grep -i opencode
 ```
 
-The activation requires interactive `sudo`; an agent must not run it or claim it completed without approval. Authentication starts only after this approved activation exposes the pinned CLI.
+The operator runs the ladder's [level 3 dry-run](../command-ladder.md#level-3-dry-run), because on this host it needs root and an interactive `sudo` prompt. An agent provides the command and records its output rather than claiming to have run it.
+
+Review formatter changes, the OpenCode lock node, the built closure, and collision checks. Only after these checks, including the operator-run dry-run, pass and the user explicitly approves activation should the operator run the [level 4 apply](../command-ladder.md#level-4-apply) command from that checkout. An agent must not run it or claim it completed without approval. Authentication starts only after this approved activation exposes the pinned CLI.
 
 <a id="opencode-executable-verification"></a>
 

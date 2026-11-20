@@ -10,8 +10,7 @@ Procedures for updating flake inputs, applying changes, and rolling back. Every 
 |-----------|---------|
 | Check current state | `darwin-rebuild --list-generations` |
 | Update flake inputs | `nix flake update` |
-| Build without apply | `darwin-rebuild build --flake .#<hostname>` |
-| Apply changes | `sudo darwin-rebuild switch --flake .#<hostname>` |
+| Check, build, or apply a change | [Command ladder](command-ladder.md) |
 | Rollback | `sudo darwin-rebuild switch --rollback` |
 | Rollback to specific | `sudo darwin-rebuild switch --switch-generation N` |
 
@@ -45,21 +44,11 @@ Key things to look for:
 
 ### Step 3: Build and Test
 
-Build the new configuration without applying:
-
-```bash
-darwin-rebuild build --flake .#<hostname>
-```
-
-If build succeeds, the new configuration is in `./result`.
+Run the [command ladder](command-ladder.md) through the build.
 
 ### Step 4: Apply
 
-Apply the new configuration:
-
-```bash
-sudo darwin-rebuild switch --flake .#<hostname>
-```
+Apply only after approval, with the [level 4 command](command-ladder.md#level-4-apply).
 
 ### Step 5: Commit
 
@@ -164,10 +153,7 @@ Similarly, nix-darwin has a `system.stateVersion`:
    nix flake lock --update-input nixpkgs
    ```
 
-3. **Build before switching**
-   ```bash
-   darwin-rebuild build --flake .#<hostname>
-   ```
+3. **Build before switching** with the [command ladder](command-ladder.md)
 
 ---
 

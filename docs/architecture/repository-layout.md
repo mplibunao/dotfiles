@@ -19,7 +19,8 @@ dotfiles/
 ├── tests/                   # shell and Python tests for the scripts and modules
 ├── data/workspaces.toml     # AeroSpace workspace registry
 ├── docs/                    # architecture docs, ADRs, ledgers, investigations
-└── .claude/                 # Claude Code commands and the bootstrap skill
+├── .claude/                 # Claude Code commands and the bootstrap skill
+└── .github/workflows/       # CI: flake evaluation on Linux
 ```
 
 [Overview](overview.md) explains how these layers fit together, and [Docs and records](docs-and-records.md) covers `docs/`.
