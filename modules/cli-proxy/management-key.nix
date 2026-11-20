@@ -18,7 +18,7 @@ rec {
     if [ ! -f ${lib.escapeShellArg secretsFile} ]; then
       echo "cli-proxy: ${secretsFile} is missing." >&2
       echo "  Create it mode 0600 with ${envName}=${placeholder}." >&2
-      echo "  Steps: nix/docs/runbooks/cli-proxy-api.md" >&2
+      echo "  Steps: docs/architecture/runbooks/cli-proxy-api.md" >&2
       exit 1
     fi
     _cliproxy_mode=$(/usr/bin/stat -f '%Lp' ${lib.escapeShellArg secretsFile})

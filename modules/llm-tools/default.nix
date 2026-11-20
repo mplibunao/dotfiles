@@ -27,7 +27,7 @@ in
   #   - codex: npm global → ~/.npm-global/bin/codex - requires Node runtime
   #       npm install -g @openai/codex
   #   - phone-harness: uv-managed Python environment; Nix owns uv only (ADR-024).
-  #       See nix/docs/runbooks/phone-harness.md; no MCP entry or activation hook.
+  #       See docs/architecture/runbooks/phone-harness.md; no MCP entry or activation hook.
   #   - gno: Bun global → $BUN_INSTALL/bin/gno - requires Bun runtime
   #       bun install -g @gmickel/gno
   #   - executor: pinned release package and LaunchAgent in modules/executor,

@@ -7,7 +7,7 @@
 function switch-to-tide -d "Deprecated: Tide not supported under Nix"
     if status is-interactive
         echo "Tide prompt is not supported under Nix. Starship is the canonical prompt."
-        echo "See: nix/README.md and nix/AGENTS.md"
+        echo "See: modules/starship/default.nix and AGENTS.md"
     else
         echo "switch-to-tide: deprecated (exit 2)" >&2
     end

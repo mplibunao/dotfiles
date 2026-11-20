@@ -64,7 +64,7 @@
     executor.enable = true;
 
     # CLIProxyAPI on 127.0.0.1:8317. The usage dashboard listens on 8788;
-    # surfOpenaiGateway keeps 8787. See nix/docs/runbooks/cli-proxy-api.md.
+    # surfOpenaiGateway keeps 8787. See docs/architecture/runbooks/cli-proxy-api.md.
     cliProxyApi.enable = true;
     # The live dashboard runs from its own checkout of main and reads its
     # feature switches, such as soonest-reset routing, from that checkout's

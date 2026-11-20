@@ -52,5 +52,5 @@ Wrapper for the bootstrap skill. Use when setting up a fresh macOS machine with 
 
 - Full skill: `.claude/skills/bootstrap/SKILL.md`
 - Detailed runbook: `.claude/skills/bootstrap/references/bootstrap-runbook.md`
-- Nix quick-start: `nix/README.md`
-- Agent rules: `nix/AGENTS.md`
+- Agent rules and documents by topic: `AGENTS.md`
+- Checks before a switch: `docs/architecture/command-ladder.md`

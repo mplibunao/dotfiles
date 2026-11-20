@@ -5,7 +5,7 @@
 ## Phase 0: Preconditions
 
 ### System Requirements
-- macOS on Apple Silicon (the only host in the flake is `aarch64-darwin`; an Intel Mac would need its own host and packages)
+- macOS on Apple Silicon ([Cross-platform](../../../../docs/architecture/cross-platform.md#current-scope) explains why an Intel Mac isn't supported)
 - Admin access (for sudo)
 - Internet connection
 
@@ -282,9 +282,8 @@ Bootstrap is complete when:
 
 ### Next Steps
 
-1. **Read the quick-start:** `~/Projects/personal/dotfiles/nix/README.md`
-2. **Understand agent rules:** `~/Projects/personal/dotfiles/nix/AGENTS.md`
-3. **Use nix skill** for ongoing configuration changes
+1. **Read the agent rules:** `~/Projects/personal/dotfiles/AGENTS.md` states the safety rules and links the document for each topic.
+2. **Follow its command ladder** (`docs/architecture/command-ladder.md`) for ongoing configuration changes.
 
 ### Operational Commands
 
@@ -325,13 +324,10 @@ source /etc/static/bashrc  # or fish equivalent
 ```
 
 ### Wrong architecture packages
-Check that the machine is Apple Silicon (see [Architecture Check](#architecture-check)) and that `nixpkgs.hostPlatform` in the host config is `aarch64-darwin`. An Intel Mac needs its own host and packages. See [System Requirements](#system-requirements).
+Check that the machine is Apple Silicon (see [Architecture Check](#architecture-check)) and that `nixpkgs.hostPlatform` in the host config is `aarch64-darwin`. See [System Requirements](#system-requirements).
 
 ### Home Manager collision errors
-If HM refuses to overwrite existing files, move the file aside:
-```bash
-mv ~/.config/conflicting-file ~/.config/conflicting-file.backup
-```
+If activation stops because a file is in the way, follow ["file is in the way"](../../../../docs/architecture/troubleshooting.md#file-is-in-the-way) in the troubleshooting doc. Home Manager already moves most conflicting files aside by itself.
 
 Then, once the user approves, give them the switch command that failed to run again. It needs interactive `sudo`. On the first switch, that's the `nix run` command from Phase 5's Apply step. After that, it's `sudo darwin-rebuild switch --flake .#m5-mbp`.
 
@@ -386,26 +382,4 @@ file ~/.local/share/nvim-lazy/lazy/markdown-preview.nvim/app/bin/markdown-previe
 
 ## Creating a New Host Configuration
 
-If this machine's hostname differs from `m5-mbp`:
-
-1. **Create host directory:**
-   ```bash
-   mkdir -p hosts/<new-hostname>
-   ```
-
-2. **Copy and modify configuration:**
-   ```bash
-   cp hosts/m5-mbp/configuration.nix hosts/<new-hostname>/
-   cp hosts/m5-mbp/homebrew.nix hosts/<new-hostname>/
-   cp hosts/m5-mbp/defaults.nix hosts/<new-hostname>/
-   ```
-
-3. **Update flake.nix** to add the new host target
-
-4. **Stage and verify:**
-   ```bash
-   git add hosts/<new-hostname>/
-   nix flake check --no-build
-   ```
-
-See `nix/docs/00-architecture.md` for full host configuration details.
+If this machine's hostname differs from `m5-mbp`, follow [Adding a host](../../../../docs/architecture/hosts.md#adding-a-host) before Phase 5's build.

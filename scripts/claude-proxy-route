@@ -18,7 +18,7 @@
 # itself is never shown.
 #
 # Keep it compatible with bash 3.2 (macOS /bin/bash): CI runs the tests with
-# whatever bash is first on PATH. Runbook: nix/docs/runbooks/cli-proxy-api.md.
+# whatever bash is first on PATH. Runbook: docs/architecture/runbooks/cli-proxy-api.md.
 
 set +x
 set -euo pipefail
