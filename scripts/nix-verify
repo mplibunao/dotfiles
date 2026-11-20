@@ -192,9 +192,17 @@ darwin_rebuild() {
       1)
         if have nixfmt; then
           nix_files=()
-          while IFS= read -r -d '' file; do
-            nix_files+=("$file")
-          done < <(find . -type f -name '*.nix' -print0)
+          if [[ -n "$repo_root" ]]; then
+            # Tracked sources only: the flake root is the repository root,
+            # which can also hold ignored local files nixfmt must not rewrite.
+            while IFS= read -r -d '' file; do
+              [[ -f "$file" ]] && nix_files+=("$file")
+            done < <(git --no-pager -C "$nix_root" ls-files -z -- '*.nix')
+          else
+            while IFS= read -r -d '' file; do
+              nix_files+=("$file")
+            done < <(find . -type f -name '*.nix' -print0)
+          fi
           if (( ${#nix_files[@]} > 0 )); then
             run nixfmt "${nix_files[@]}"
           fi

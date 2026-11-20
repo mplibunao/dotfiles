@@ -118,8 +118,11 @@ check_darwin_rebuild() {
 }
 
 check_flake_build() {
-  # Check if result symlink exists from a previous build
-  [[ -L "$HOME/Projects/personal/dotfiles/result" ]]
+  # darwin-rebuild build leaves result pointing at the system output; a
+  # package built from the repository root would leave a different link.
+  local target
+  target="$(readlink "$HOME/Projects/personal/dotfiles/result")" || return 1
+  [[ "$target" == *-darwin-system-* ]]
 }
 
 check_claude_code() {
