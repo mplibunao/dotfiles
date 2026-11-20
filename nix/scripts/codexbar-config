@@ -1,0 +1,759 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+umask 077
+
+# pgrep patterns are extended regular expressions. Escape the literal bundle suffix
+# while retaining -x so only the exact main executable command line can match.
+readonly APP_PROCESS_PATTERN="/Applications/CodexBar[.]app/Contents/MacOS/CodexBar"
+readonly PRODUCTION_STATE_ROOT="/Users/mp/.local/state/codexbar-config"
+readonly MIN_JQ_MAJOR=1
+readonly MIN_JQ_MINOR=7
+
+operation=""
+config=""
+profile_home=""
+backup_dir=""
+defer_if_running=0
+lock_dir=""
+lock_owned=0
+temp_file=""
+snapshot_file=""
+restore_temp_file=""
+active_backup=""
+replacement_pending=0
+restore_in_progress=0
+deferred_signal=""
+deferred_signal_status=0
+source_identity=""
+source_hash=""
+state_root=""
+
+usage() {
+  cat >&2 <<'EOF'
+Usage:
+  codexbar-config check --config <path> --profile-home <absolute-path>
+  codexbar-config reconcile --config <path> --profile-home <absolute-path> --backup-dir <path> [--defer-if-running]
+  codexbar-config remove-managed-profile --config <path> --profile-home <absolute-path> --backup-dir <path>
+EOF
+}
+
+fail() {
+  printf 'codexbar-config: error: %s\n' "$*" >&2
+  exit 1
+}
+
+warn() {
+  printf 'codexbar-config: warning: %s\n' "$*" >&2
+}
+
+cleanup() {
+  local recorded_pid=""
+
+  if [[ -n "$temp_file" && -f "$temp_file" ]]; then
+    rm -f "$temp_file"
+  fi
+  if [[ -n "$snapshot_file" && -f "$snapshot_file" ]]; then
+    rm -f "$snapshot_file"
+  fi
+  if [[ -n "$restore_temp_file" && -f "$restore_temp_file" ]]; then
+    rm -f "$restore_temp_file"
+  fi
+
+  if ((lock_owned)) && [[ -d "$lock_dir" && ! -L "$lock_dir" ]]; then
+    if [[ -f "$lock_dir/pid" && ! -L "$lock_dir/pid" ]]; then
+      recorded_pid="$(cat "$lock_dir/pid" 2>/dev/null || true)"
+      if [[ "$recorded_pid" == "$$" ]]; then
+        rm -f "$lock_dir/pid"
+        rmdir "$lock_dir" 2>/dev/null || true
+      fi
+    elif [[ ! -e "$lock_dir/pid" && ! -L "$lock_dir/pid" ]]; then
+      # The process owns this mkdir result, so an initialization failure before
+      # the PID record is complete is safe to remove on exit.
+      rmdir "$lock_dir" 2>/dev/null || true
+    fi
+  fi
+}
+
+trap cleanup EXIT
+
+require_command() {
+  command -v "$1" >/dev/null 2>&1 || fail "required command is unavailable: $1"
+}
+
+validate_absolute_path() {
+  local label="$1" value="$2"
+  [[ -n "$value" ]] || fail "$label must not be empty"
+  [[ "$value" == /* ]] || fail "$label must be absolute"
+  [[ "$value" != *$'\n'* && "$value" != *$'\r'* ]] || fail "$label must be a single-line path"
+}
+
+validate_profile_home() {
+  validate_absolute_path "profile home" "$profile_home"
+  [[ "$profile_home" != *'~'* ]] || fail "profile home must not contain a tilde"
+  case "/$profile_home/" in
+    *"/../"*) fail "profile home must not contain a '..' segment" ;;
+  esac
+}
+
+canonicalize_target() {
+  local parent base
+
+  validate_absolute_path "config path" "$config"
+  [[ -e "$config" || -L "$config" ]] || fail "config does not exist; launch CodexBar once so it creates its canonical config"
+  [[ ! -L "$config" ]] || fail "config must not be a symbolic link"
+  [[ -f "$config" ]] || fail "config must be a regular file"
+
+  parent="$(cd "$(dirname "$config")" && pwd -P)" || fail "cannot resolve config parent directory"
+  base="$(basename "$config")"
+  config="$parent/$base"
+}
+
+stat_owner_uid() {
+  local path="$1"
+  if stat --version >/dev/null 2>&1; then
+    stat -c '%u' "$path" 2>/dev/null
+  else
+    stat -f '%u' "$path" 2>/dev/null
+  fi
+}
+
+file_identity() {
+  local path="$1"
+  if stat --version >/dev/null 2>&1; then
+    stat -c '%d:%i:%s:%Y:%Z' "$path" 2>/dev/null
+  else
+    stat -f '%d:%i:%z:%m:%c' "$path" 2>/dev/null
+  fi
+}
+
+file_mode() {
+  local path="$1"
+  if stat --version >/dev/null 2>&1; then
+    stat -c '%a' "$path" 2>/dev/null
+  else
+    stat -f '%Lp' "$path" 2>/dev/null
+  fi
+}
+
+file_hash() {
+  local path="$1"
+  if command -v sha256sum >/dev/null 2>&1; then
+    sha256sum "$path" | awk '{print $1}'
+  elif command -v shasum >/dev/null 2>&1; then
+    shasum -a 256 "$path" | awk '{print $1}'
+  else
+    fail "required SHA-256 utility is unavailable"
+  fi
+}
+
+validate_owner_and_access() {
+  local current_uid owner_uid mode
+  current_uid="$(id -u)"
+  owner_uid="$(stat_owner_uid "$config")" || fail "cannot determine config ownership"
+  [[ "$owner_uid" == "$current_uid" ]] || fail "config must be owned by the invoking user"
+  [[ -r "$config" && -w "$config" ]] || fail "config must be readable and writable by the invoking user"
+  mode="$(file_mode "$config")" || fail "cannot determine config mode"
+  [[ "$mode" == 600 ]] || fail "config mode must be exactly 0600"
+}
+
+validate_jq_version() {
+  local version major minor
+  version="$(jq --version 2>/dev/null || true)"
+  version="${version#jq-}"
+  major="${version%%.*}"
+  minor="${version#*.}"
+  minor="${minor%%[^0-9]*}"
+  [[ "$major" =~ ^[0-9]+$ && "$minor" =~ ^[0-9]+$ ]] || fail "unable to determine jq version"
+  if ((major < MIN_JQ_MAJOR || (major == MIN_JQ_MAJOR && minor < MIN_JQ_MINOR))); then
+    fail "jq 1.7 or newer is required"
+  fi
+}
+
+check_precedence_shadow() {
+  local launchd_config="" launchd_xdg="" candidate=""
+
+  require_command launchctl
+  launchd_config="$(launchctl getenv CODEXBAR_CONFIG 2>/dev/null || true)"
+  [[ -z "$launchd_config" ]] || fail "launchd CODEXBAR_CONFIG shadows the reviewed config target"
+
+  launchd_xdg="$(launchctl getenv XDG_CONFIG_HOME 2>/dev/null || true)"
+  if [[ -n "$launchd_xdg" ]]; then
+    candidate="$launchd_xdg/codexbar/config.json"
+    if [[ "$candidate" != "$config" && ( -e "$candidate" || -L "$candidate" ) ]]; then
+      fail "launchd XDG_CONFIG_HOME exposes a higher-precedence CodexBar config"
+    fi
+  fi
+
+  [[ -n "${HOME:-}" ]] || fail "HOME is unavailable for precedence checks"
+  candidate="$HOME/.config/codexbar/config.json"
+  if [[ "$candidate" != "$config" && ( -e "$candidate" || -L "$candidate" ) ]]; then
+    fail "default XDG location contains a higher-precedence CodexBar config"
+  fi
+}
+
+ensure_private_directory() {
+  local path="$1" label="$2" owner_uid current_uid
+  validate_absolute_path "$label" "$path"
+  if [[ -L "$path" ]]; then
+    fail "$label must not be a symbolic link"
+  fi
+  if [[ ! -e "$path" ]]; then
+    mkdir -p "$path" || fail "cannot create $label"
+  fi
+  [[ -d "$path" && ! -L "$path" ]] || fail "$label must be a directory"
+  current_uid="$(id -u)"
+  owner_uid="$(stat_owner_uid "$path")" || fail "cannot determine $label ownership"
+  [[ "$owner_uid" == "$current_uid" ]] || fail "$label must be owned by the invoking user"
+  chmod 700 "$path" || fail "cannot secure $label"
+}
+
+resolve_state_root() {
+  local script_dir harness test_root
+  if [[ -z "${CODEXBAR_CONFIG_TEST_STATE_ROOT:-}" ]]; then
+    printf '%s\n' "$PRODUCTION_STATE_ROOT"
+    return 0
+  fi
+
+  # Synthetic isolation is deliberately unavailable to a packaged helper. It
+  # requires an explicit mode, the source-tree test harness beside this script,
+  # a non-production config, and an absolute injected root.
+  [[ "${CODEXBAR_CONFIG_TEST_MODE:-}" == synthetic-fixture ]] \
+    || fail "test state injection requires explicit synthetic-fixture mode"
+  script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
+  harness="$script_dir/../tests/codexbar-config-test.sh"
+  [[ -f "$harness" ]] || fail "test state injection is unavailable in packaged runtime"
+  test_root="$CODEXBAR_CONFIG_TEST_STATE_ROOT"
+  validate_absolute_path "test state root" "$test_root"
+  [[ "$config" != "/Users/mp/.config/codexbar/config.json" ]] \
+    || fail "test state injection is forbidden for the production config"
+  printf '%s\n' "$test_root"
+}
+
+pid_is_alive() {
+  local pid="$1"
+  kill -0 "$pid" 2>/dev/null && return 0
+  ps -p "$pid" -o pid= 2>/dev/null | grep -Eq '[0-9]' && return 0
+  return 1
+}
+
+acquire_lock() {
+  local existing_pid="" attempt
+
+  state_root="$(resolve_state_root)"
+  ensure_private_directory "$state_root" "state directory"
+  lock_dir="$state_root/lock"
+
+  for attempt in 1 2; do
+    if mkdir "$lock_dir" 2>/dev/null; then
+      # Mark ownership immediately after the atomic mkdir. EXIT/signal cleanup
+      # can then remove failures at every later initialization step.
+      lock_owned=1
+      chmod 700 "$lock_dir" || fail "cannot secure lock directory"
+      printf '%s\n' "$$" >"$lock_dir/pid" || fail "cannot initialize lock PID record"
+      chmod 600 "$lock_dir/pid" || fail "cannot secure lock PID record"
+      return 0
+    fi
+
+    [[ -d "$lock_dir" && ! -L "$lock_dir" ]] || fail "lock path exists but is not a regular directory"
+    if [[ ! -e "$lock_dir/pid" && ! -L "$lock_dir/pid" ]]; then
+      fail "lock has no PID record and ownership cannot be proven; supervised cleanup is required"
+    fi
+    [[ -f "$lock_dir/pid" && ! -L "$lock_dir/pid" ]] || fail "lock exists without a regular PID record"
+    existing_pid="$(cat "$lock_dir/pid" 2>/dev/null || true)"
+    [[ "$existing_pid" =~ ^[1-9][0-9]*$ ]] || fail "lock contains an invalid PID record"
+    if pid_is_alive "$existing_pid"; then
+      fail "another codexbar-config process holds the lock (pid $existing_pid)"
+    fi
+
+    rm -f "$lock_dir/pid" || fail "cannot remove stale lock PID record"
+    rmdir "$lock_dir" || fail "cannot remove stale lock directory"
+  done
+
+  fail "cannot acquire reconciliation lock"
+}
+
+validate_shape() {
+  local path="$1"
+  jq -e '
+    type == "object"
+    and (.providers | type == "array")
+    and (all(.providers[]; type == "object"))
+    and ([.providers[] | select(.id? == "codex")] | length == 1)
+    and (
+      [.providers[] | select(.id? == "codex")][0]
+      | ((has("codexProfileHomePaths") | not)
+        or ((.codexProfileHomePaths | type) == "array"
+          and all(.codexProfileHomePaths[]; type == "string")))
+    )
+  ' "$path" >/dev/null 2>&1 || fail "config JSON or Codex provider shape is invalid"
+}
+
+managed_path_count() {
+  local path="$1"
+  jq -r --arg managed "$profile_home" '
+    [.providers[]
+      | select(.id? == "codex")
+      | (.codexProfileHomePaths // [])[]
+      | select(. == $managed)]
+    | length
+  ' "$path" 2>/dev/null
+}
+
+validate_with_codexbar() {
+  local path="$1"
+  if ! CODEXBAR_CONFIG="$path" codexbar config validate >/dev/null 2>&1; then
+    return 1
+  fi
+}
+
+extract_version() {
+  local input="$1" version
+  version="$(printf '%s\n' "$input" | grep -Eo '[0-9]+([.][0-9A-Za-z]+)+' | head -n 1 || true)"
+  if [[ -n "$version" ]]; then
+    printf '%s\n' "$version"
+  else
+    printf 'unavailable\n'
+  fi
+}
+
+probe_app_running() {
+  local status
+  command -v pgrep >/dev/null 2>&1 || return 2
+  if pgrep -f -x "$APP_PROCESS_PATTERN" >/dev/null 2>&1; then
+    return 0
+  else
+    status=$?
+  fi
+  [[ $status -eq 1 ]] && return 1
+  return 2
+}
+
+app_is_running_strict() {
+  local status
+  if probe_app_running; then
+    return 0
+  else
+    status=$?
+  fi
+  [[ $status -eq 1 ]] && return 1
+  fail "CodexBar process probe failed"
+}
+
+report_versions_best_effort() {
+  local bundle_raw="" cli_raw="" receipt_raw="" tap_raw="" running="no"
+  local bundle_version cli_version receipt_version tap_version
+
+  if command -v defaults >/dev/null 2>&1 && [[ -f "/Applications/CodexBar.app/Contents/Info.plist" ]]; then
+    bundle_raw="$(defaults read "/Applications/CodexBar.app/Contents/Info" CFBundleShortVersionString 2>/dev/null || true)"
+  fi
+  cli_raw="$(codexbar --version 2>/dev/null || true)"
+  if command -v brew >/dev/null 2>&1; then
+    receipt_raw="$(brew list --versions --cask codexbar 2>/dev/null || true)"
+    tap_raw="$(brew info --json=v2 --cask codexbar 2>/dev/null || true)"
+  fi
+
+  bundle_version="$(extract_version "$bundle_raw")"
+  cli_version="$(extract_version "$cli_raw")"
+  receipt_version="$(extract_version "$receipt_raw")"
+  tap_version="$(printf '%s\n' "$tap_raw" | jq -r '[.casks[]? | select(.token == "codexbar") | .version][0] // empty' 2>/dev/null || true)"
+  tap_version="$(extract_version "$tap_version")"
+  if probe_app_running; then
+    running="yes"
+  else
+    case $? in
+      1) running="no" ;;
+      *) running="unknown" ;;
+    esac
+  fi
+
+  printf 'versions bundle=%s cli=%s receipt=%s tap=%s running=%s\n' \
+    "$bundle_version" "$cli_version" "$receipt_version" "$tap_version" "$running" || true
+  return 0
+}
+
+print_status() {
+  local status="$1"
+  printf 'target=%s operation=%s status=%s\n' "$config" "$operation" "$status"
+}
+
+print_deferred_command() {
+  local arg
+  printf 'supervised-command='
+  for arg in "$0" reconcile --config "$config" --profile-home "$profile_home" --backup-dir "$backup_dir"; do
+    printf '%q ' "$arg"
+  done
+  printf '\n'
+}
+
+verify_snapshot_unchanged() {
+  local context="$1" snapshot_hash snapshot_mode
+  snapshot_hash="$(file_hash "$snapshot_file")" || fail "$context: cannot hash immutable snapshot"
+  snapshot_mode="$(file_mode "$snapshot_file")" || fail "$context: cannot read immutable snapshot mode"
+  [[ "$snapshot_mode" == 600 ]] || fail "$context: immutable snapshot mode changed"
+  [[ "$snapshot_hash" == "$source_hash" ]] || fail "$context: immutable snapshot changed"
+}
+
+verify_live_matches_snapshot() {
+  local context="$1" current_identity current_hash current_mode
+  current_identity="$(file_identity "$config")" || fail "$context: cannot read live identity"
+  current_hash="$(file_hash "$config")" || fail "$context: cannot read live content"
+  current_mode="$(file_mode "$config")" || fail "$context: cannot read live mode"
+  [[ "$current_mode" == 600 ]] || fail "$context: live mode is no longer 0600"
+  if [[ "$current_identity" != "$source_identity" || "$current_hash" != "$source_hash" ]]; then
+    fail "$context: live config changed"
+  fi
+}
+
+committed_state_matches() {
+  local expected_hash="$1" current_hash current_mode
+  current_hash="$(file_hash "$config" 2>/dev/null)" || return 1
+  current_mode="$(file_mode "$config" 2>/dev/null)" || return 1
+  [[ "$current_hash" == "$expected_hash" && "$current_mode" == 600 ]]
+}
+
+finalize_non_write_snapshot() {
+  local context="$1"
+  validate_with_codexbar "$snapshot_file" || return 1
+  report_versions_best_effort
+  verify_snapshot_unchanged "$context"
+  verify_live_matches_snapshot "$context"
+  return 0
+}
+
+capture_snapshot() {
+  local target_dir target_base snapshot_hash
+  source_identity="$(file_identity "$config")" || fail "cannot capture config identity"
+  source_hash="$(file_hash "$config")" || fail "cannot hash config"
+  target_dir="$(dirname "$config")"
+  target_base="$(basename "$config")"
+  snapshot_file="$(mktemp "$target_dir/.$target_base.codexbar-snapshot.XXXXXX")" \
+    || fail "cannot create immutable config snapshot"
+  cp "$config" "$snapshot_file" || fail "cannot capture immutable config snapshot"
+  chmod 600 "$snapshot_file" || fail "cannot secure immutable config snapshot"
+  snapshot_hash="$(file_hash "$snapshot_file")" || fail "cannot hash immutable config snapshot"
+  [[ "$snapshot_hash" == "$source_hash" ]] || fail "config changed while the immutable snapshot was captured"
+  verify_snapshot_unchanged "snapshot capture"
+  verify_live_matches_snapshot "snapshot capture"
+}
+
+create_transformed_file() {
+  local source="$1" target_dir target_base filter
+  target_dir="$(dirname "$config")"
+  target_base="$(basename "$config")"
+  temp_file="$(mktemp "$target_dir/.$target_base.codexbar-config.XXXXXX")" || fail "cannot create temporary config"
+  chmod 600 "$temp_file"
+
+  if [[ "$operation" == "reconcile" ]]; then
+    filter='
+      def reconcile_paths($managed):
+        reduce .[] as $item
+          ({seen: false, output: []};
+            if $item == $managed then
+              if .seen then . else .seen = true | .output += [$item] end
+            else
+              .output += [$item]
+            end)
+        | if .seen then .output else .output + [$managed] end;
+      .providers |= map(
+        if .id? == "codex" then
+          .codexProfileHomePaths = ((.codexProfileHomePaths // []) | reconcile_paths($managed))
+        else . end)
+    '
+  else
+    filter='
+      .providers |= map(
+        if .id? == "codex" then
+          (.codexProfileHomePaths | map(select(. != $managed))) as $remaining
+          | if ($remaining | length) == 0
+            then del(.codexProfileHomePaths)
+            else .codexProfileHomePaths = $remaining
+            end
+        else . end)
+    '
+  fi
+
+  jq --arg managed "$profile_home" "$filter" "$source" >"$temp_file" 2>/dev/null \
+    || fail "failed to construct reconciled JSON"
+  chmod 600 "$temp_file"
+  validate_shape "$temp_file"
+}
+
+install_signal_traps() {
+  trap 'handle_signal HUP 129' HUP
+  trap 'handle_signal INT 130' INT
+  trap 'handle_signal TERM 143' TERM
+}
+
+defer_restore_signal() {
+  deferred_signal="$1"
+  deferred_signal_status="$2"
+}
+
+restore_backup() {
+  local backup="$1" target_dir target_base result=0 pending_signal pending_status
+  local restore_source="" candidate_hash="" candidate_mode="" restored_hash=""
+  ((restore_in_progress == 0)) || return 1
+  restore_in_progress=1
+  deferred_signal=""
+  deferred_signal_status=0
+  trap 'defer_restore_signal HUP 129' HUP
+  trap 'defer_restore_signal INT 130' INT
+  trap 'defer_restore_signal TERM 143' TERM
+
+  # Select a source only after verifying it against the hash captured before any
+  # mutation. Prefer the still-immutable snapshot; the retained backup is a
+  # fallback and is never consumed or replaced by restoration.
+  if [[ -n "$snapshot_file" && -f "$snapshot_file" && ! -L "$snapshot_file" ]]; then
+    candidate_hash="$(file_hash "$snapshot_file" 2>/dev/null || true)"
+    candidate_mode="$(file_mode "$snapshot_file" 2>/dev/null || true)"
+    if [[ "$candidate_hash" == "$source_hash" && "$candidate_mode" == 600 ]]; then
+      restore_source="$snapshot_file"
+    fi
+  fi
+  if [[ -z "$restore_source" && -f "$backup" && ! -L "$backup" ]]; then
+    candidate_hash="$(file_hash "$backup" 2>/dev/null || true)"
+    candidate_mode="$(file_mode "$backup" 2>/dev/null || true)"
+    if [[ "$candidate_hash" == "$source_hash" && "$candidate_mode" == 600 ]]; then
+      restore_source="$backup"
+    fi
+  fi
+  [[ -n "$restore_source" ]] || result=1
+
+  target_dir="$(dirname "$config")"
+  target_base="$(basename "$config")"
+  if ((result == 0)); then
+    restore_temp_file="$(mktemp "$target_dir/.$target_base.codexbar-restore.XXXXXX")" || result=1
+  fi
+  if ((result == 0)); then
+    cp "$restore_source" "$restore_temp_file" || result=1
+  fi
+  if ((result == 0)); then
+    chmod 600 "$restore_temp_file" || result=1
+  fi
+  if ((result == 0)); then
+    candidate_hash="$(file_hash "$restore_temp_file" 2>/dev/null || true)"
+    [[ "$candidate_hash" == "$source_hash" ]] || result=1
+  fi
+  if ((result == 0)); then
+    mv -f "$restore_temp_file" "$config" || result=1
+    if ((result == 0)); then
+      restore_temp_file=""
+    fi
+  fi
+  if ((result == 0)); then
+    restored_hash="$(file_hash "$config" 2>/dev/null || true)"
+    [[ "$restored_hash" == "$source_hash" ]] || result=1
+    [[ "$(file_mode "$config" 2>/dev/null || true)" == 600 ]] || result=1
+  fi
+  if ((result == 0)); then
+    replacement_pending=0
+  fi
+
+  restore_in_progress=0
+  pending_signal="$deferred_signal"
+  pending_status="$deferred_signal_status"
+  deferred_signal=""
+  deferred_signal_status=0
+  install_signal_traps
+  if [[ -n "$pending_signal" ]]; then
+    handle_signal "$pending_signal" "$pending_status"
+  fi
+  return "$result"
+}
+
+handle_signal() {
+  local signal="$1" exit_status="$2"
+  trap - HUP INT TERM
+  if ((replacement_pending)) && [[ -n "$active_backup" ]]; then
+    if restore_backup "$active_backup"; then
+      warn "received $signal after replacement; original restored; backup=$active_backup"
+    else
+      warn "received $signal after replacement and automatic restore failed; backup=$active_backup"
+    fi
+  fi
+  exit "$exit_status"
+}
+
+perform_write() {
+  local timestamp backup target_base installed_hash
+
+  validate_absolute_path "backup directory" "$backup_dir"
+  ensure_private_directory "$backup_dir" "backup directory"
+  verify_live_matches_snapshot "before backup"
+  target_base="$(basename "$config")"
+
+  timestamp="$(date -u '+%Y%m%dT%H%M%SZ')"
+  backup="$(mktemp "$backup_dir/$target_base.$timestamp.bak.XXXXXX")" \
+    || fail "cannot allocate an exclusive backup path"
+  cp "$snapshot_file" "$backup" || fail "cannot create byte-for-byte backup"
+  chmod 600 "$backup" || fail "cannot secure backup"
+  [[ "$(file_hash "$backup")" == "$source_hash" ]] || fail "backup verification failed; backup=$backup"
+
+  create_transformed_file "$snapshot_file"
+  [[ "$(file_hash "$snapshot_file")" == "$source_hash" ]] \
+    || fail "immutable config snapshot changed during transformation; backup=$backup"
+  installed_hash="$(file_hash "$temp_file")" \
+    || fail "cannot hash reconciled config before replacement; backup=$backup"
+
+  # This is the strongest portable pre-commit boundary available to a shell
+  # helper: exact process exclusion followed immediately by live identity/hash
+  # comparison against the verified snapshot. POSIX rename has no compare-and-
+  # swap primitive, so an external actor could still change or start in the few
+  # instructions between this final recheck and rename. The helper deliberately
+  # does not claim to close that residual boundary.
+  if app_is_running_strict; then
+    fail "CodexBar started during reconciliation; replacement was aborted; backup=$backup"
+  fi
+  verify_live_matches_snapshot "immediate pre-commit check"
+
+  active_backup="$backup"
+  # Set before rename so a signal delivered while the child mv is completing is
+  # also handled conservatively by restoring the verified original snapshot.
+  replacement_pending=1
+  if ! mv -f "$temp_file" "$config"; then
+    replacement_pending=0
+    fail "atomic config replacement failed; backup=$backup"
+  fi
+  temp_file=""
+
+  if ! validate_with_codexbar "$config"; then
+    if restore_backup "$backup"; then
+      replacement_pending=0
+      active_backup=""
+      fail "CodexBar CLI rejected the reconciled config; original restored; backup=$backup"
+    fi
+    fail "CodexBar CLI rejected the reconciled config and automatic restore failed; backup=$backup"
+  fi
+
+  # CodexBar does not honor this helper's lock. Treat the replacement as
+  # provisional until the validated bytes and process exclusion both survive a
+  # final recheck. If another writer won, preserve its newer state rather than
+  # rolling the backup over it.
+  if ! committed_state_matches "$installed_hash"; then
+    replacement_pending=0
+    active_backup=""
+    fail "live config changed during CLI validation; final state not claimed; backup=$backup"
+  fi
+  if app_is_running_strict; then
+    replacement_pending=0
+    active_backup=""
+    fail "CodexBar started during CLI validation; final state not claimed; backup=$backup"
+  fi
+  if ! committed_state_matches "$installed_hash"; then
+    replacement_pending=0
+    active_backup=""
+    fail "live config changed during final process check; final state not claimed; backup=$backup"
+  fi
+  replacement_pending=0
+  active_backup=""
+
+  # Commit and mandatory CLI validation have succeeded. Version/process probes
+  # are ancillary from this point onward and must never reverse that success.
+  report_versions_best_effort
+  print_status "changed"
+  printf 'backup=%s\n' "$backup"
+}
+
+install_signal_traps
+
+[[ $# -ge 1 ]] || { usage; exit 2; }
+operation="$1"
+shift
+case "$operation" in
+  check|reconcile|remove-managed-profile) ;;
+  *) usage; fail "unknown operation: $operation" ;;
+esac
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --config)
+      [[ $# -ge 2 && -z "$config" ]] || { usage; fail "--config requires one value"; }
+      config="$2"
+      shift 2
+      ;;
+    --profile-home)
+      [[ $# -ge 2 && -z "$profile_home" ]] || { usage; fail "--profile-home requires one value"; }
+      profile_home="$2"
+      shift 2
+      ;;
+    --backup-dir)
+      [[ $# -ge 2 && -z "$backup_dir" ]] || { usage; fail "--backup-dir requires one value"; }
+      backup_dir="$2"
+      shift 2
+      ;;
+    --defer-if-running)
+      [[ "$operation" == "reconcile" && $defer_if_running -eq 0 ]] \
+        || { usage; fail "--defer-if-running is valid once and only with reconcile"; }
+      defer_if_running=1
+      shift
+      ;;
+    *) usage; fail "unknown argument: $1" ;;
+  esac
+done
+
+[[ -n "$config" ]] || { usage; fail "--config is required"; }
+[[ -n "$profile_home" ]] || { usage; fail "--profile-home is required"; }
+if [[ "$operation" == "check" ]]; then
+  [[ -z "$backup_dir" ]] || { usage; fail "check does not accept --backup-dir"; }
+else
+  [[ -n "$backup_dir" ]] || { usage; fail "--backup-dir is required for mutation operations"; }
+  [[ "$(id -u)" != 0 ]] || fail "mutation operations must not run as root"
+fi
+
+require_command jq
+require_command stat
+require_command codexbar
+validate_jq_version
+validate_profile_home
+canonicalize_target
+validate_owner_and_access
+check_precedence_shadow
+acquire_lock
+# `check` is read-only with respect to the live CodexBar config. It still uses
+# transient private lock and snapshot files, both removed on normal/trapped exit.
+capture_snapshot
+validate_shape "$snapshot_file"
+
+if [[ ! -d "$profile_home" ]]; then
+  warn "profile home does not currently exist: $profile_home"
+fi
+
+count="$(managed_path_count "$snapshot_file")" || fail "cannot inspect managed profile membership"
+[[ "$count" =~ ^[0-9]+$ ]] || fail "managed profile membership count is invalid"
+
+if [[ "$operation" == "check" ]]; then
+  finalize_non_write_snapshot "check validation" || fail "CodexBar CLI rejected the snapshot"
+  if [[ "$count" == 1 ]]; then
+    print_status "unchanged"
+  else
+    print_status "change-required"
+  fi
+  exit 0
+fi
+
+if [[ "$operation" == "reconcile" && "$count" == 1 ]]; then
+  finalize_non_write_snapshot "reconcile no-op validation" || fail "CodexBar CLI rejected the snapshot"
+  print_status "unchanged"
+  exit 0
+fi
+
+if [[ "$operation" == "remove-managed-profile" && "$count" == 0 ]]; then
+  finalize_non_write_snapshot "remove no-op validation" || fail "CodexBar CLI rejected the snapshot"
+  print_status "unchanged"
+  exit 0
+fi
+
+require_command pgrep
+if app_is_running_strict; then
+  if [[ "$operation" == "reconcile" && $defer_if_running -eq 1 ]]; then
+    finalize_non_write_snapshot "deferred reconciliation" || fail "CodexBar CLI rejected the snapshot"
+    warn "CodexBar is running; reconciliation deferred"
+    print_status "deferred"
+    print_deferred_command
+    exit 0
+  fi
+  fail "CodexBar is running; quit it and retry the supervised operation"
+fi
+
+perform_write

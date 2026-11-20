@@ -1,0 +1,281 @@
+#!/usr/bin/env bash
+#
+# nix-ops
+# =======
+# Operational console for common nix tasks.
+#
+# Safe-by-default:
+# - status/verify/generations run immediately
+# - update-inputs requires --yes
+# - rollback/gc require --apply and an interactive confirmation
+# - switch is never executed (prints command only)
+#
+# Usage:
+#   nix-ops <command> [args...]
+
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+usage() {
+  cat <<'EOF'
+Usage: nix-ops <command> [args...]
+
+Commands:
+  status                          Show diagnostics (safe)
+  verify [nix-verify args...]     Run verification ladder (safe)
+  update-inputs [--yes] [--input NAME] [--build]   Update flake.lock (repo mutation)
+  generations                     List nix-darwin generations (safe)
+  rollback [--apply]              Print rollback commands; apply with confirmation
+  gc [--apply]                    Print GC commands; apply with confirmation
+  switch                          Print switch command only (never executed)
+  help                            Show help
+
+Global options:
+  --host HOST                     Hostname for flake target (default: hostname -s)
+  --nix-root PATH                 Override nix flake root directory
+  -h, --help                      Show help
+EOF
+}
+
+have() { command -v "$1" >/dev/null 2>&1; }
+
+run() {
+  local cmd="$1"
+  printf '+ %q' "$cmd"
+  shift
+  for arg in "$@"; do printf ' %q' "$arg"; done
+  printf '\n'
+  "$cmd" "$@"
+}
+
+confirm_or_die() {
+  local prompt="$1"
+  local expected="$2"
+  if [[ ! -t 0 ]]; then
+    echo "Error: refusing to apply in non-interactive mode." >&2
+    exit 2
+  fi
+  echo "$prompt"
+  printf "Type '%s' to continue: " "$expected"
+  read -r got
+  if [[ "$got" != "$expected" ]]; then
+    echo "Aborted." >&2
+    exit 2
+  fi
+}
+
+host="$(hostname -s 2>/dev/null || hostname)"
+nix_root_override=""
+
+global_args=()
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --host)
+      host="${2:-}"
+      shift 2
+      ;;
+    --nix-root)
+      nix_root_override="${2:-}"
+      shift 2
+      ;;
+    -h|--help)
+      usage
+      exit 0
+      ;;
+    *)
+      global_args+=("$1")
+      shift
+      ;;
+  esac
+done
+
+set -- "${global_args[@]}"
+
+cmd="${1:-help}"
+shift || true
+
+nix_root=""
+if [[ -n "$nix_root_override" ]]; then
+  nix_root="$nix_root_override"
+elif [[ -x "$SCRIPT_DIR/nix-locate" ]]; then
+  nix_root="$("$SCRIPT_DIR/nix-locate" --nix-root)"
+else
+  echo "Error: missing nix-locate alongside nix-ops" >&2
+  exit 1
+fi
+
+if [[ ! -d "$nix_root" ]]; then
+  echo "Error: nix root not found: $nix_root" >&2
+  exit 1
+fi
+
+dotfiles_root="$(dirname "$nix_root")"
+
+case "$cmd" in
+  help)
+    usage
+    ;;
+
+  status)
+    echo "nix_root: $nix_root"
+    echo "dotfiles_root: $dotfiles_root"
+    echo "host: $host"
+    echo
+    if have nix; then
+      run nix --version
+    else
+      echo "nix: (not found)"
+    fi
+    if have darwin-rebuild; then
+      echo "darwin-rebuild: (available)"
+    else
+      echo "darwin-rebuild: (not found)"
+    fi
+    echo
+    if have git; then
+      git --no-pager -c color.ui=false -C "$dotfiles_root" status -sb --porcelain=2 2>/dev/null | head -20 || true
+    fi
+    ;;
+
+  verify)
+    exec "$SCRIPT_DIR/nix-verify" --host "$host" --nix-root "$nix_root" "$@"
+    ;;
+
+  update-inputs)
+    yes="false"
+    input=""
+    build_after="false"
+    while [[ $# -gt 0 ]]; do
+      case "$1" in
+        --yes) yes="true"; shift ;;
+        --input) input="${2:-}"; shift 2 ;;
+        --build) build_after="true"; shift ;;
+        -h|--help)
+          echo "Usage: nix-ops update-inputs [--yes] [--input NAME] [--build]"
+          exit 0
+          ;;
+        *)
+          echo "Error: unknown update-inputs arg: $1" >&2
+          exit 2
+          ;;
+      esac
+    done
+
+    if [[ "$yes" != "true" ]]; then
+      echo "Refusing to update flake inputs without --yes."
+      echo "Would run in: $nix_root"
+      if [[ -n "$input" ]]; then
+        echo "  nix flake lock --update-input $input"
+      else
+        echo "  nix flake update"
+      fi
+      exit 2
+    fi
+
+    (
+      cd "$nix_root"
+      if [[ -n "$input" ]]; then
+        run nix flake lock --update-input "$input"
+      else
+        run nix flake update
+      fi
+    )
+
+    if [[ "$build_after" == "true" ]]; then
+      exec "$SCRIPT_DIR/nix-verify" --to 2 --host "$host" --nix-root "$nix_root"
+    fi
+    ;;
+
+  generations)
+    (
+      cd "$nix_root"
+      if have darwin-rebuild; then
+        run darwin-rebuild --list-generations
+      else
+        if ! have nix; then
+          echo "Error: darwin-rebuild not found and nix not available for fallback." >&2
+          exit 1
+        fi
+        run nix run nix-darwin#darwin-rebuild -- --list-generations
+      fi
+    )
+    ;;
+
+  rollback)
+    apply="false"
+    while [[ $# -gt 0 ]]; do
+      case "$1" in
+        --apply) apply="true"; shift ;;
+        -h|--help)
+          echo "Usage: nix-ops rollback [--apply]"
+          exit 0
+          ;;
+        *)
+          echo "Error: unknown rollback arg: $1" >&2
+          exit 2
+          ;;
+      esac
+    done
+
+    echo "Rollback commands:"
+    echo "  sudo darwin-rebuild switch --rollback"
+    echo "  darwin-rebuild --list-generations"
+    echo "  sudo darwin-rebuild switch --switch-generation N"
+
+    if [[ "$apply" != "true" ]]; then
+      exit 0
+    fi
+
+    confirm_or_die "About to rollback nix-darwin generation on this machine." "ROLLBACK"
+    (
+      cd "$nix_root"
+      if have darwin-rebuild; then
+        run sudo darwin-rebuild switch --rollback
+      else
+        run sudo nix run nix-darwin#darwin-rebuild -- switch --rollback
+      fi
+    )
+    ;;
+
+  gc)
+    apply="false"
+    while [[ $# -gt 0 ]]; do
+      case "$1" in
+        --apply) apply="true"; shift ;;
+        -h|--help)
+          echo "Usage: nix-ops gc [--apply]"
+          exit 0
+          ;;
+        *)
+          echo "Error: unknown gc arg: $1" >&2
+          exit 2
+          ;;
+      esac
+    done
+
+    echo "Garbage collection commands:"
+    echo "  nix-collect-garbage -d"
+    echo "  darwin-rebuild --list-generations"
+
+    if [[ "$apply" != "true" ]]; then
+      exit 0
+    fi
+
+    confirm_or_die "About to run nix garbage collection (user scope)." "GC"
+    run nix-collect-garbage -d
+    ;;
+
+  switch)
+    echo "Apply is never automated by nix-ops."
+    echo "If you intend to apply, run this manually:"
+    echo "  sudo darwin-rebuild switch --flake \".#${host}\""
+    exit 3
+    ;;
+
+  *)
+    echo "Error: unknown command: $cmd" >&2
+    usage >&2
+    exit 2
+    ;;
+esac

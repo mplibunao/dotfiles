@@ -1,0 +1,249 @@
+#!/usr/bin/env bash
+#
+# cli-proxy-env-launch
+# ====================
+# Publish Claude Code's CLIProxyAPI route into the GUI login session.
+#
+# The one-shot LaunchAgent com.mp.cli-proxy-env runs this at login, when a
+# Home Manager switch changes its plist, and when claude-proxy-route re-runs
+# it. Apps started afterwards inherit what launchd holds. Running processes
+# keep the environment they started with.
+#
+# The route setting (--route-file) holds exactly `on` or `off`, with an
+# optional final newline. A missing file means on. Any other file, including
+# an empty or unreadable one, is an error and nothing is published, so a
+# corrupt setting never chooses a route.
+#
+#   on   CLIPROXY_CLIENT_KEY is set to the client key, ANTHROPIC_BASE_URL to
+#        --base-url, then ANTHROPIC_AUTH_TOKEN to the client key.
+#   off  ANTHROPIC_AUTH_TOKEN and ANTHROPIC_BASE_URL are unset, and
+#        CLIPROXY_CLIENT_KEY is refreshed, because OpenCode's DeepSeek
+#        provider uses it whichever way Claude goes.
+#
+# No other variable is touched. The client key comes only from CPA_CLIENT_KEY,
+# which the Nix wrapper sets from the secrets file. CLIPROXY_CLIENT_KEY is not
+# read, because the agent inherits the previous publication from launchd.
+#
+# After a successful publication, each running --watch-process app of the
+# current user is checked; `ps -E` can't show another user's environment. An
+# app whose starting environment differs from the three published values
+# started before this publication or from an older parent. What it starts
+# inherits those old values, unless a launcher such as claude-launch replaces
+# them. One macOS notification names every such app,
+# and its text never contains a value. If osascript fails, the apps are named
+# on stderr instead and the exit status doesn't change. osascript reports no
+# delivery, so a banner hidden by notification settings or Focus goes unseen.
+#
+# `launchctl setenv` takes the key as an argument, so it is briefly in that
+# process's argv. launchctl's diagnostics are not guaranteed to leave the value
+# out, so its output is discarded and a failure is reported by operation and
+# variable name only. Do not run this script under `set -x`.
+#
+# Keep it compatible with bash 3.2 (macOS /bin/bash): CI runs the tests with
+# whatever bash is first on PATH.
+
+set +x
+set -euo pipefail
+
+prog="cli-proxy-env-launch"
+
+usage() {
+  cat <<'EOF'
+Usage: cli-proxy-env-launch --route-file FILE --base-url URL
+                            [--watch-process NAME]... [--launchctl PATH]
+
+Publishes or clears Claude Code's proxy variables with launchctl according to
+FILE (on or off; a missing file means on), and publishes CLIPROXY_CLIENT_KEY.
+Reads the client key from CPA_CLIENT_KEY. Prints nothing on success.
+Then shows one notification naming each running --watch-process app (matched
+by process name, as pgrep -x does) that started with different values.
+--launchctl replaces /bin/launchctl, for tests.
+EOF
+}
+
+die() {
+  printf '%s: %s\n' "$prog" "$1" >&2
+  exit 1
+}
+
+usage_error() {
+  printf '%s: %s\n' "$prog" "$1" >&2
+  usage >&2
+  exit 2
+}
+
+# Sets route to on or off, and route_default to 1 when the file is missing.
+# On any other file it sets route_error and returns 1. claude-proxy-route has
+# a copy of this function; keep the two identical. cmp compares bytes, so
+# extra lines, spaces, CRs and NULs are rejected rather than trimmed.
+read_route_setting() {
+  local file="$1" value dir
+  route=""
+  route_default=0
+  route_error=""
+  if [[ ! -e "$file" && ! -L "$file" ]]; then
+    # Missing only when the nearest existing ancestor is a searchable
+    # directory. Otherwise the lookup failed on a permission, and that must
+    # not become the default.
+    dir="$(dirname "$file")"
+    while [[ ! -e "$dir" ]]; do
+      dir="$(dirname "$dir")"
+    done
+    if [[ ! -d "$dir" || ! -x "$dir" ]]; then
+      route_error="${file} cannot be looked up: ${dir} is not a searchable directory"
+      return 1
+    fi
+    route="on"
+    route_default=1
+    return 0
+  fi
+  if [[ ! -f "$file" || ! -r "$file" ]]; then
+    route_error="${file} is not a readable file"
+    return 1
+  fi
+  for value in on off; do
+    if printf '%s' "$value" | cmp -s - "$file" \
+      || printf '%s\n' "$value" | cmp -s - "$file"; then
+      route="$value"
+      return 0
+    fi
+  done
+  route_error="${file} does not contain on or off"
+  return 1
+}
+
+route_file=""
+base_url=""
+launchctl_bin="/bin/launchctl"
+# One process name per line.
+watch_list=""
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --route-file)
+      [[ $# -ge 2 ]] || usage_error "--route-file needs a value."
+      route_file="$2"
+      shift 2
+      ;;
+    --base-url)
+      [[ $# -ge 2 ]] || usage_error "--base-url needs a value."
+      base_url="$2"
+      shift 2
+      ;;
+    --launchctl)
+      [[ $# -ge 2 ]] || usage_error "--launchctl needs a value."
+      launchctl_bin="$2"
+      shift 2
+      ;;
+    --watch-process)
+      [[ $# -ge 2 && -n "$2" ]] || usage_error "--watch-process needs a value."
+      watch_list="${watch_list}${2}"$'\n'
+      shift 2
+      ;;
+    -h | --help)
+      usage
+      exit 0
+      ;;
+    *)
+      usage_error "unknown argument: $1"
+      ;;
+  esac
+done
+
+[[ -n "$route_file" && -n "$base_url" ]] || usage_error "need --route-file and --base-url."
+
+# An unexported copy, so the launchctl children do not inherit the key.
+key="${CPA_CLIENT_KEY:-}"
+unset CPA_CLIENT_KEY
+
+# Runs launchctl OP NAME [VALUE] with its output discarded.
+lc() {
+  local op="$1" name="$2" rc=0
+  "$launchctl_bin" "$@" >/dev/null 2>&1 || rc=$?
+  if [[ $rc -ne 0 ]]; then
+    printf '%s: launchctl %s %s failed (exit %d).\n' "$prog" "$op" "$name" "$rc" >&2
+  fi
+  return "$rc"
+}
+
+# Prints the value of variable $2 in $1, a `ps -E` line: the command, then
+# space-separated NAME=value pairs. Prints nothing when the variable is absent.
+# A value is cut at its first space, which keeps the URL and the hex key whole.
+env_value() {
+  local rest="${1#* "$2"=}"
+  if [[ "$rest" != "$1" ]]; then
+    printf '%s' "${rest%% *}"
+  fi
+}
+
+# Prints the watched process names, comma-separated, that started with a
+# different ANTHROPIC_BASE_URL ($1), ANTHROPIC_AUTH_TOKEN ($2) or client key
+# than this run published. An empty $1 or $2 means the variable is unset.
+stale_processes() {
+  local want_url="$1" want_token="$2" name pid line names=""
+  while IFS= read -r name; do
+    [[ -n "$name" ]] || continue
+    for pid in $(pgrep -u "$EUID" -x "$name" 2>/dev/null || true); do
+      line="$(ps -ww -E -o command= -p "$pid" 2>/dev/null)" || continue
+      if [[ "$(env_value "$line" ANTHROPIC_BASE_URL)" != "$want_url" ||
+        "$(env_value "$line" ANTHROPIC_AUTH_TOKEN)" != "$want_token" ||
+        "$(env_value "$line" CLIPROXY_CLIENT_KEY)" != "$key" ]]; then
+        names="${names:+${names}, }${name}"
+        break
+      fi
+    done
+  done <<<"$watch_list"
+  printf '%s' "$names"
+}
+
+# osascript receives the text as run arguments, so an app name is never parsed
+# as AppleScript.
+notify_stale() {
+  local names
+  names="$(stale_processes "$1" "$2")"
+  [[ -n "$names" ]] || return 0
+  if ! osascript \
+    -e 'on run argv' \
+    -e 'display notification (item 3 of argv) with title (item 1 of argv) subtitle (item 2 of argv)' \
+    -e 'end run' \
+    "Claude proxy route is ${route}" \
+    "Relaunch: ${names}" \
+    "These apps started with different proxy settings from the ones just published. Quit and reopen them so new sessions use the current settings." \
+    >/dev/null 2>&1; then
+    printf '%s: could not show the relaunch notification. Quit and reopen: %s.\n' "$prog" "$names" >&2
+  fi
+}
+
+if ! read_route_setting "$route_file"; then
+  die "${route_error}; nothing was published. Save a valid setting with: claude-proxy-route on (or off)."
+fi
+
+if [[ "$route" == "on" ]]; then
+  if [[ -z "$key" ]]; then
+    die "the route is on, but the client key could not be read from the secrets file; nothing was published."
+  fi
+  # URL before token, so an app that starts between the two calls fails
+  # against the local proxy rather than sending the client key to Anthropic.
+  lc setenv CLIPROXY_CLIENT_KEY "$key" || exit 1
+  lc setenv ANTHROPIC_BASE_URL "$base_url" || exit 1
+  lc setenv ANTHROPIC_AUTH_TOKEN "$key" || exit 1
+  notify_stale "$base_url" "$key"
+  exit 0
+fi
+
+# Both unsets run even if one fails. The token goes first, so an app that
+# starts between the two calls reaches the local proxy rather than sending the
+# client key to Anthropic's API.
+failed=0
+lc unsetenv ANTHROPIC_AUTH_TOKEN || failed=1
+lc unsetenv ANTHROPIC_BASE_URL || failed=1
+if [[ -n "$key" ]]; then
+  lc setenv CLIPROXY_CLIENT_KEY "$key" || failed=1
+else
+  printf "%s: the client key could not be read from the secrets file, so CLIPROXY_CLIENT_KEY was not refreshed for OpenCode's DeepSeek route. The Claude route is cleared, and a key launchd already holds stays.\n" "$prog" >&2
+  failed=1
+fi
+if [[ $failed -eq 0 ]]; then
+  notify_stale "" ""
+fi
+exit "$failed"

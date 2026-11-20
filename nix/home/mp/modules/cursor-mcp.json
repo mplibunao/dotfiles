@@ -1,0 +1,22 @@
+{
+  "mcpServers": {
+    "RepoPrompt": {
+      "args": [
+        "--backend",
+        "app"
+      ],
+      "command": "/Users/mp/RepoPrompt/repoprompt_ce_cli",
+      "env": {}
+    },
+    "executor": {
+      "command": "/etc/profiles/per-user/mp/bin/executor",
+      "args": [
+        "mcp",
+        "--scope",
+        "/Users/mp/.config/executor-gateway/scope",
+        "--elicitation-mode",
+        "browser"
+      ]
+    }
+  }
+}

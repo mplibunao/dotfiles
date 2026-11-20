@@ -1,0 +1,217 @@
+#!/usr/bin/env bash
+#
+# nix-verify
+# ==========
+# Safe verification ladder runner for nix configuration.
+#
+# Defaults to Level 2 (build) and never runs Level 4 (switch/apply).
+#
+# Usage:
+#   nix-verify [--to N | --level N] [--host HOST] [--print-only]
+#              [--no-all-systems] [--allow-untracked] [--nix-root PATH]
+#
+# Levels:
+#   0: nix flake check --no-build
+#   1: nixfmt/statix/deadnix (only if installed)
+#   2: darwin-rebuild build --flake .#HOST
+#   3: darwin-rebuild switch --dry-run --flake .#HOST
+
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+usage() {
+  cat <<'EOF'
+Usage: nix-verify [options]
+
+Options:
+  --to N              Run ladder up to level N (0-3). Default: 2
+  --level N           Run exactly level N (0-3). Conflicts with --to
+  --host HOST         Hostname for flake target (default: hostname -s)
+  --nix-root PATH     Override nix flake root directory
+  --print-only        Print commands without running them
+  --no-all-systems    For level 0, omit --all-systems
+  --allow-untracked   Allow untracked files under nix/ (not recommended)
+  -h, --help          Show help
+
+Notes:
+  - This script never runs 'darwin-rebuild switch' (apply).
+  - For level 3, it runs 'switch --dry-run' (no sudo, no apply).
+EOF
+}
+
+have() { command -v "$1" >/dev/null 2>&1; }
+
+run() {
+  local cmd="$1"
+  if [[ "$print_only" == "true" ]]; then
+    printf '+ %q' "$cmd"
+    shift
+    for arg in "$@"; do printf ' %q' "$arg"; done
+    printf '\n'
+    return 0
+  fi
+  "$cmd" "${@:2}"
+}
+
+host="$(hostname -s 2>/dev/null || hostname)"
+to_level="2"
+to_level_set="false"
+exact_level=""
+print_only="false"
+all_systems="true"
+allow_untracked="false"
+nix_root_override=""
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --to)
+      to_level="${2:-}"
+      to_level_set="true"
+      shift 2
+      ;;
+    --level)
+      exact_level="${2:-}"
+      shift 2
+      ;;
+    --host)
+      host="${2:-}"
+      shift 2
+      ;;
+    --nix-root)
+      nix_root_override="${2:-}"
+      shift 2
+      ;;
+    --print-only)
+      print_only="true"
+      shift
+      ;;
+    --no-all-systems)
+      all_systems="false"
+      shift
+      ;;
+    --allow-untracked)
+      allow_untracked="true"
+      shift
+      ;;
+    -h|--help)
+      usage
+      exit 0
+      ;;
+    *)
+      echo "Error: unknown argument: $1" >&2
+      usage >&2
+      exit 2
+      ;;
+  esac
+done
+
+if [[ -n "$exact_level" && "$to_level_set" == "true" ]]; then
+  echo "Error: use either --to or --level, not both." >&2
+  exit 2
+fi
+
+validate_level() {
+  local label="$1"
+  local value="$2"
+  if [[ ! "$value" =~ ^[0-9]+$ ]]; then
+    echo "Error: $label must be an integer (0-3): got '$value'." >&2
+    exit 2
+  fi
+  if (( value < 0 || value > 3 )); then
+    echo "Error: $label must be in range 0-3 (this script never runs apply)." >&2
+    exit 2
+  fi
+}
+
+if [[ -n "$exact_level" ]]; then
+  validate_level "--level" "$exact_level"
+  to_level="$exact_level"
+else
+  validate_level "--to" "$to_level"
+fi
+
+nix_root=""
+if [[ -n "$nix_root_override" ]]; then
+  nix_root="$nix_root_override"
+elif [[ -x "$SCRIPT_DIR/nix-locate" ]]; then
+  nix_root="$("$SCRIPT_DIR/nix-locate" --nix-root)"
+else
+  echo "Error: missing nix-locate alongside nix-verify" >&2
+  exit 1
+fi
+
+if [[ ! -d "$nix_root" ]]; then
+  echo "Error: nix root not found: $nix_root" >&2
+  exit 1
+fi
+
+repo_root=""
+if have git; then
+  repo_root="$(git --no-pager -c color.ui=false -C "$nix_root" rev-parse --show-toplevel 2>/dev/null || true)"
+fi
+
+if [[ "$allow_untracked" != "true" && -n "$repo_root" ]]; then
+  untracked="$(
+    git --no-pager -c color.ui=false -C "$repo_root" status --porcelain 2>/dev/null \
+      | awk '$1 == "??" {print substr($0,4)}' \
+      | grep -E '^nix/' || true
+  )"
+  if [[ -n "${untracked:-}" ]]; then
+    echo "Error: untracked files detected under nix/; flakes may ignore them." >&2
+    echo "Stage new files first (or pass --allow-untracked):" >&2
+    echo "$untracked" >&2
+    exit 1
+  fi
+fi
+
+darwin_rebuild() {
+  if have darwin-rebuild; then
+    run darwin-rebuild "$@"
+  else
+    if ! have nix; then
+      echo "Error: darwin-rebuild not found and nix not available for fallback." >&2
+      exit 1
+    fi
+    run nix run nix-darwin#darwin-rebuild -- "$@"
+  fi
+}
+
+(
+  cd "$nix_root"
+
+  for ((lvl=0; lvl<=to_level; lvl++)); do
+    case "$lvl" in
+      0)
+        if [[ "$all_systems" == "true" ]]; then
+          run nix flake check --no-build --all-systems
+        else
+          run nix flake check --no-build
+        fi
+        ;;
+      1)
+        if have nixfmt; then
+          nix_files=()
+          while IFS= read -r -d '' file; do
+            nix_files+=("$file")
+          done < <(find . -type f -name '*.nix' -print0)
+          if (( ${#nix_files[@]} > 0 )); then
+            run nixfmt "${nix_files[@]}"
+          fi
+        fi
+        if have statix; then run statix check .; fi
+        if have deadnix; then run deadnix .; fi
+        ;;
+      2)
+        darwin_rebuild build --flake ".#${host}"
+        ;;
+      3)
+        darwin_rebuild switch --dry-run --flake ".#${host}"
+        ;;
+      *)
+        echo "Error: internal: unexpected level: $lvl" >&2
+        exit 2
+        ;;
+    esac
+  done
+)

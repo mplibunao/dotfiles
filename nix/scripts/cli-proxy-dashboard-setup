@@ -1,0 +1,238 @@
+#!/usr/bin/env bash
+#
+# cli-proxy-dashboard-setup
+# =========================
+# Deploy the live usage dashboard: clone or fast-forward its own checkout of
+# main, build it with Node 24's pnpm, restart its LaunchAgent, and print the
+# SHA. The checkout is separate from the one agents work in, so switching
+# branches there never changes what the live dashboard runs.
+#
+# This command does not read or write the management key. `init-secret`
+# creates the secrets file and `init-client-key` appends the client key to it.
+# Neither prints a value. OAuth logins stay manual. See nix/docs/runbooks/cli-proxy-api.md.
+#
+# Do not run this script under `set -x`. A trace would show the generated
+# key while `init-secret` is writing it.
+
+set +x
+set -euo pipefail
+
+ref="main"
+label="com.mp.cli-proxy-dashboard"
+default_url="git@github.com:mplibunao/cli-proxy-dashboard.git"
+
+usage() {
+  cat <<EOF
+Usage: cli-proxy-dashboard-setup [setup] [options]
+       cli-proxy-dashboard-setup init-secret
+       cli-proxy-dashboard-setup init-client-key
+
+setup clones the dashboard over SSH or fast-forwards its checkout to
+origin/main, runs pnpm install and pnpm run build with Node 24's pnpm,
+restarts the ${label} LaunchAgent, and prints the SHA. It refuses a
+checkout with local changes or on a branch other than main. It does not
+touch secrets.
+
+Options:
+  --repo PATH   Checkout directory (default: ~/.local/share/cli-proxy-dashboard/app)
+  --url URL     SSH remote (default: ${default_url})
+  -h, --help    Show help
+
+init-secret creates ~/.config/cli-proxy-api/secrets.env mode 0600 with a
+random CLIPROXY_MANAGEMENT_KEY. It refuses to overwrite an existing file
+and does not print the key.
+
+init-client-key appends a random CLIPROXY_CLIENT_KEY to that file. It keeps
+every other line, does not print the key, and refuses if the line exists.
+EOF
+}
+
+die() {
+  printf 'cli-proxy-dashboard-setup: %s\n' "$1" >&2
+  exit 1
+}
+
+abs_path() {
+  case "$1" in
+    /*) printf '%s\n' "$1" ;;
+    *) printf '%s\n' "${PWD}/$1" ;;
+  esac
+}
+
+file_mode() {
+  local mode
+  if mode="$(stat -c '%a' "$1" 2>/dev/null)"; then
+    printf '%s\n' "$mode"
+  else
+    stat -f '%Lp' "$1"
+  fi
+}
+
+require_clean() {
+  local dirty
+  dirty="$(git status --porcelain)"
+  if [[ -n "$dirty" ]]; then
+    die "$repo has uncommitted changes. Commit or stash them, then run again."
+  fi
+}
+
+setup_checkout() {
+  local node_bin pnpm node sha origin_url branch launchctl
+
+  node_bin="${CLI_PROXY_DASHBOARD_NODE_BIN:-${HOME}/.local/share/mise/installs/node/24/bin}"
+  pnpm="${node_bin}/pnpm"
+  node="${node_bin}/node"
+  [[ -x "$node" ]] || die "Node 24 is missing at ${node}. Install it with mise."
+  [[ -x "$pnpm" ]] || die "pnpm is missing at ${pnpm}. Open a fish shell once so Corepack installs it beside Node 24."
+
+  mkdir -p "$(dirname "$repo")"
+  if [[ ! -e "$repo" ]]; then
+    GIT_TERMINAL_PROMPT=0 git clone --origin origin --branch "$ref" "$url" "$repo" >&2
+  elif [[ ! -d "$repo/.git" ]]; then
+    die "$repo exists and is not a git checkout."
+  fi
+
+  origin_url="$(git -C "$repo" remote get-url origin)"
+  [[ "$origin_url" == "$url" ]] || die "origin is ${origin_url}, expected ${url}."
+
+  cd "$repo"
+  require_clean
+  branch="$(git symbolic-ref --quiet --short HEAD || true)"
+  [[ "$branch" == "$ref" ]] \
+    || die "$repo is on ${branch:-a detached HEAD}, expected ${ref}. The live checkout only follows ${ref}."
+  GIT_TERMINAL_PROMPT=0 git fetch --prune origin "$ref" >&2
+  git rev-parse --verify --quiet "origin/${ref}" >/dev/null \
+    || die "origin has no ref ${ref}."
+  git merge --ff-only "origin/${ref}" >&2
+
+  if ! "$node" -e 'const p=require("./package.json"); if (!p.scripts || !p.scripts.build) process.exit(1)'; then
+    die "package.json has no scripts.build. Refusing to guess a production build."
+  fi
+
+  export PATH="${node_bin}:${PATH}"
+  "$pnpm" install
+  "$pnpm" run build
+
+  # launchd starts the job at login. Before the first switch it is not loaded
+  # yet, and the switch starts it.
+  launchctl="${CLI_PROXY_DASHBOARD_LAUNCHCTL:-/bin/launchctl}"
+  if "$launchctl" print "gui/$(id -u)/${label}" >/dev/null 2>&1; then
+    "$launchctl" kickstart -k "gui/$(id -u)/${label}" >&2
+  else
+    printf 'cli-proxy-dashboard-setup: %s is not loaded, so nothing was restarted.\n' "$label" >&2
+  fi
+
+  sha="$(git rev-parse HEAD)"
+  printf 'cli-proxy-dashboard %s %s\n' "$ref" "$sha"
+}
+
+init_secret() {
+  local dir secrets tmp key mode
+  dir="${HOME}/.config/cli-proxy-api"
+  secrets="${dir}/secrets.env"
+  [[ ! -e "$secrets" ]] || die "refusing to overwrite ${secrets}."
+  command -v openssl >/dev/null 2>&1 || die "openssl is required to generate the management key."
+
+  umask 077
+  mkdir -p "$dir"
+  chmod 0700 "$dir"
+  tmp="$(mktemp "${dir}/secrets.env.XXXXXX")"
+  chmod 0600 "$tmp"
+  key="$(openssl rand -hex 32)"
+  if [[ ! "$key" =~ ^[0-9a-f]{64}$ ]]; then
+    unset key
+    rm -f "$tmp"
+    die "openssl did not return 32 bytes of hex."
+  fi
+  printf 'CLIPROXY_MANAGEMENT_KEY=%s\n' "$key" >"$tmp"
+  unset key
+  if [[ -e "$secrets" ]]; then
+    rm -f "$tmp"
+    die "refusing to overwrite ${secrets}."
+  fi
+  mv -n "$tmp" "$secrets"
+  chmod 0600 "$secrets"
+  mode="$(file_mode "$secrets")"
+  if [[ "$mode" != "600" ]]; then
+    rm -f "$secrets"
+    die "secrets file mode is ${mode}, expected 0600."
+  fi
+  printf 'wrote %s (mode 0600). The key was not printed.\n' "$secrets"
+}
+
+init_client_key() {
+  local secrets tmp key mode
+  secrets="${HOME}/.config/cli-proxy-api/secrets.env"
+  [[ -f "$secrets" ]] || die "missing ${secrets}. Run init-secret first."
+  mode="$(file_mode "$secrets")"
+  [[ "$mode" == "600" ]] || die "secrets file mode is ${mode}, expected 0600."
+  if grep -Eq '^[[:space:]]*(export[[:space:]]+)?CLIPROXY_CLIENT_KEY[[:space:]]*=' "$secrets"; then
+    die "CLIPROXY_CLIENT_KEY is already present in ${secrets}."
+  fi
+  command -v openssl >/dev/null 2>&1 || die "openssl is required to generate the client key."
+
+  umask 077
+  tmp="$(mktemp "$(dirname "$secrets")/secrets.env.XXXXXX")"
+  chmod 0600 "$tmp"
+  key="$(openssl rand -hex 32)"
+  if [[ ! "$key" =~ ^[0-9a-f]{64}$ ]]; then
+    unset key
+    rm -f "$tmp"
+    die "openssl did not return 32 bytes of hex."
+  fi
+  cat "$secrets" >"$tmp"
+  if [[ -s "$tmp" && -n "$(tail -c 1 "$tmp")" ]]; then
+    printf '\n' >>"$tmp"
+  fi
+  printf 'CLIPROXY_CLIENT_KEY=%s\n' "$key" >>"$tmp"
+  unset key
+  mv "$tmp" "$secrets"
+  chmod 0600 "$secrets"
+  printf 'updated %s (mode 0600). The key was not printed.\n' "$secrets"
+}
+
+cmd="setup"
+if [[ "${1:-}" == "init-secret" || "${1:-}" == "init-client-key" || "${1:-}" == "setup" ]]; then
+  cmd="$1"
+  shift
+fi
+
+if [[ "$cmd" == "init-secret" ]]; then
+  [[ $# -eq 0 ]] || die "init-secret takes no arguments."
+  init_secret
+  exit 0
+fi
+
+if [[ "$cmd" == "init-client-key" ]]; then
+  [[ $# -eq 0 ]] || die "init-client-key takes no arguments."
+  init_client_key
+  exit 0
+fi
+
+repo="${HOME}/.local/share/cli-proxy-dashboard/app"
+url="$default_url"
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --repo)
+      [[ $# -ge 2 ]] || die "--repo needs a value."
+      repo="$2"
+      shift 2
+      ;;
+    --url)
+      [[ $# -ge 2 ]] || die "--url needs a value."
+      url="$2"
+      shift 2
+      ;;
+    -h | --help)
+      usage
+      exit 0
+      ;;
+    *)
+      die "unknown argument: $1"
+      ;;
+  esac
+done
+
+repo="$(abs_path "$repo")"
+setup_checkout

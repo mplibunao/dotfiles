@@ -1,0 +1,47 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "model": "deepseek/deepseek-v4-pro",
+  "small_model": "deepseek/deepseek-flash",
+  "provider": {
+    "deepseek": {
+      "options": {
+        "baseURL": "http://127.0.0.1:8317/v1",
+        "apiKey": "{env:CLIPROXY_CLIENT_KEY}"
+      },
+      "models": {
+        "deepseek-v4-pro": {
+          "name": "DeepSeek V4 Pro"
+        },
+        "deepseek-flash": {
+          "name": "DeepSeek Flash"
+        }
+      }
+    }
+  },
+  // Turn off OpenCode's built-in execute tool. Its code calls tools.search(...)
+  // on OpenCode's own tool list, the same call Executor's execute tool makes on
+  // Executor's integrations, and models ran Executor's searches in OpenCode's
+  // tool, where they found nothing.
+  "permission": {
+    "execute": "deny"
+  },
+  "mcp": {
+    "executor": {
+      "type": "local",
+      "command": [
+        "/etc/profiles/per-user/mp/bin/executor",
+        "mcp",
+        "--scope",
+        "/Users/mp/.config/executor-gateway/scope",
+        "--elicitation-mode",
+        "browser",
+        "--no-artifacts"
+      ],
+      "enabled": true,
+      "timeout": 600000,
+      // List Executor's tools to the model directly, such as executor_execute,
+      // instead of only inside OpenCode's execute tool.
+      "codemode": false
+    }
+  }
+}

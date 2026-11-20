@@ -1,0 +1,10 @@
+# Locally-managed tunnel config. See README.md for bootstrap + recovery.
+# To swap tunnel identity: `cloudflared tunnel delete demo` then bootstrap again;
+# update both `tunnel:` and `credentials-file:` to the new UUID.
+tunnel: 0e4d9362-c43f-4a5a-b07f-2af8d7413266
+credentials-file: /Users/mp/.cloudflared/0e4d9362-c43f-4a5a-b07f-2af8d7413266.json
+
+ingress:
+  - hostname: demo.mplibunao.com
+    service: http://localhost:42069
+  - service: http_status:404
