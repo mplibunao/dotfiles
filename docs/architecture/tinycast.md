@@ -8,7 +8,7 @@ together. The package preserves the upstream code signature.
 
 ## Installation and startup
 
-Follow the [Nix verification and activation procedure](../AGENTS.md#command-ladder).
+Follow the [Nix verification and activation procedure](command-ladder.md).
 Home Manager installs the app at `~/Applications/Home Manager Apps/Tinycast.app`.
 
 After activation, open that app and enable **Launch at Login** in TinyCast settings.
@@ -29,18 +29,18 @@ with `~/.config/tinycast/settings.json`. Home Manager links that file to
 [`settings.json`](../../modules/tinycast/settings.json) in this checkout.
 TinyCast can write through the link, so changes made in the app appear in Git.
 The [module](../../modules/tinycast/default.nix) follows the decision for
-app-written configuration in [ADR-019](decisions/019-store-managed-file-mappings-by-default.md).
+app-written configuration in [ADR-019](../decisions/019-store-managed-file-mappings-by-default.md).
 
 For an existing local settings file, review it and copy the preferences to the
 repo file before linking. Quit TinyCast, then run this from the dotfiles root:
 
 ```sh
-go run nix/scripts/tinycast-link-settings.go
+go run scripts/tinycast-link-settings.go
 ```
 
 The script creates the link only when the local and repo files match. It keeps
 a backup beside the local file. Follow the
-[Nix verification and activation procedure](../AGENTS.md#command-ladder)
+[Nix verification and activation procedure](command-ladder.md)
 so Home Manager owns the mapping. Reopen TinyCast after linking. On a fresh
 machine, activate the mapping first, then enable Settings File and choose
 **Import** when prompted. This order follows the
@@ -49,11 +49,11 @@ machine, activate the mapping first, then enable Settings File and choose
 After activation, check the link from the dotfiles root:
 
 ```sh
-go run nix/scripts/tinycast-link-settings.go --check
+go run scripts/tinycast-link-settings.go --check
 ```
 
 Change one preference in TinyCast and check
-`git diff -- nix/home/mp/modules/tinycast/settings.json`. Restore the preference
+`git diff -- modules/tinycast/settings.json`. Restore the preference
 in TinyCast, then repeat the link check. This confirms the app writes to the repo file
 without replacing the link.
 

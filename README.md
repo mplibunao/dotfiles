@@ -42,7 +42,7 @@ dotfiles/
 ├── scripts/                # Operational scripts (nix-verify, nix-ops, ...)
 ├── tests/                  # Tests for the scripts and modules
 ├── data/                   # Data shared by modules (AeroSpace workspace registry)
-├── nix/                    # Nix documentation and agent instructions
+├── docs/                   # Architecture docs, decisions, ledgers, investigations
 │
 ├── .claude/                # Claude Code commands and the bootstrap skill
 │
@@ -53,10 +53,10 @@ dotfiles/
 
 | Topic | Location |
 |-------|----------|
-| Nix Quick Start | [`nix/README.md`](nix/README.md) |
-| Agent Instructions | [`nix/AGENTS.md`](nix/AGENTS.md) |
-| Architecture | [`nix/docs/00-architecture.md`](nix/docs/00-architecture.md) |
-| Migration Phases | [`nix/docs/01-migration-phases.md`](nix/docs/01-migration-phases.md) |
+| Agent Instructions | [`AGENTS.md`](AGENTS.md) |
+| Architecture Docs | [`docs/architecture/index.md`](docs/architecture/index.md) |
+| Checking and Applying a Change | [`docs/architecture/command-ladder.md`](docs/architecture/command-ladder.md) |
+| Decisions | [`docs/decisions/README.md`](docs/decisions/README.md) |
 | Bootstrap Guide | [`.claude/skills/bootstrap/SKILL.md`](.claude/skills/bootstrap/SKILL.md) |
 
 ## For Forkers

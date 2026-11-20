@@ -6,12 +6,12 @@ Where each kind of document goes, and which ones are committed. Current docs des
 
 | Kind | Home | Edited after it's merged |
 |---|---|---|
-| Plan | `docs/plans/<topic>-<YYYY-MM-DD>.md` | Never committed; deleted when the work is done |
+| Plan | `docs/plans/<topic>-<YYYY-MM-DD>.md` | Never committed; [Plans](#plans) says when to delete one |
 | Run ledger | `docs/ledgers/<YYYY-MM-DD>[-issue-<number>]-<topic>.md`, one per orchestrated run | Only to finish the run that wrote it |
 | Retrospective ledger | `docs/ledgers/<YYYY-MM-DD>-<topic>-retrospective.md` | No |
-| Architecture decision record (ADR) | `nix/docs/decisions/NNN-<slug>.md` | No; a later ADR supersedes it |
+| Architecture decision record (ADR) | `docs/decisions/NNN-<slug>.md` | No; a later ADR supersedes it |
 | Investigation | `docs/investigations/<YYYY-MM-DD>-<topic>.md` | No |
-| Current docs | `docs/architecture/` and `nix/docs/` | Yes, in place |
+| Current docs | `docs/architecture/`, and the root `AGENTS.md`, `README.md`, `CODING_STANDARDS.md`, and `GLOSSARY.md` | Yes, in place |
 | Open work | Local plans, or GitHub issues on this repository | |
 
 ## Plans
@@ -26,7 +26,7 @@ Delete a plan only after I've said the work is done, and only once its decisions
 
 An orchestrated run writes one ledger and commits it in the run's pull request. The template for its contents (the heading, work-item table, outcomes, per-item fields, and parked decisions) is "The run ledger" section of the `rp-orchestrate-loop` skill in my private claude-toolkit repository, at `.claude/skills/rp-orchestrate-loop/SKILL.md`. Write the ledger from that template.
 
-The date in the file name is the day the run started. Add an issue number only for an issue on this repository. Session IDs, transcripts, and raw tool output stay out of the ledger.
+The date in the file name is the day the run started. Add an issue number only for an issue on this repository. In the work-item table's Agent session column, name each agent by its role and session name, such as `pair · Orchestrate 1/5`. Session IDs, transcripts, and raw tool output stay out of the ledger.
 
 ## Retrospective ledgers
 
@@ -38,7 +38,7 @@ The retrospectives dated 2026-11-20 were rebuilt from `mplibunao/dotfiles-privat
 
 ## ADRs
 
-A decision gets an ADR when it is hard to reverse, would surprise someone without the background, and involved a real trade-off. Other decisions stay in the ledger of the run that made them. ADRs are numbered, start from `nix/docs/decisions/template.md`, and are listed in [the decisions index](../../nix/docs/decisions/README.md). To replace a decision, write a new ADR and mark the old one superseded.
+A decision gets an ADR when it is hard to reverse, would surprise someone without the background, and involved a real trade-off. Other decisions stay in the ledger of the run that made them. ADRs are numbered, start from `docs/decisions/template.md`, and are listed in [the decisions index](../decisions/README.md). To replace a decision, write a new ADR and mark the old one superseded, as the index describes.
 
 ## Investigations
 

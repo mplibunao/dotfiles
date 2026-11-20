@@ -55,11 +55,9 @@ This configuration is structured to support multiple platforms while keeping mac
 |----------|---------|----------|
 | `home/mp/common.nix` | Shell, git, editor, CLI tools | All |
 | `home/mp/darwin.nix` | macOS paths, behaviors | Darwin only |
-| `home/mp/linux.nix` | Linux paths, systemd services | Linux only |
-| `hosts/<hostname>/` | Machine-specific settings | Per-machine |
-| `modules/home/*.nix` | Reusable home modules | All |
-| `modules/darwin/*.nix` | nix-darwin modules | Darwin only |
-| `modules/nixos/*.nix` | NixOS modules | NixOS only |
+| `home/mp/linux.nix` (not written yet) | Linux paths, systemd services | Linux only |
+| `hosts/<hostname>/` | Machine-specific settings, including nix-darwin modules | Per-machine |
+| `modules/<tool>/` | Home Manager modules, one per tool | All, unless the tool is macOS-only |
 
 ---
 
@@ -114,7 +112,7 @@ This configuration is structured to support multiple platforms while keeping mac
 {
   imports = [
     ./common.nix
-    ../../modules/home/kitty.nix
+    ../../modules/kitty
   ];
 
   # macOS-specific packages
@@ -206,8 +204,8 @@ in
   imports = [
     ./common.nix
   ] ++ lib.optionals pkgs.stdenv.isDarwin [
-    ../../modules/darwin/aerospace.nix
-    ../../modules/darwin/karabiner.nix
+    ../../modules/aerospace
+    ../../modules/karabiner
   ];
 }
 ```
@@ -295,15 +293,15 @@ home-manager switch --flake .#mp@linux-host
 
 ```bash
 # Check all outputs evaluate
-nix flake check ./nix --no-build --all-systems
+nix flake check . --no-build --all-systems
 
 # Evaluate the Darwin system without building it
-nix eval --raw ./nix#darwinConfigurations.m5-mbp.system.drvPath
+nix eval --raw .#darwinConfigurations.m5-mbp.system.drvPath
 ```
 
 ### Continuous Integration
 
-[`.github/workflows/nix-check.yml`](../../.github/workflows/nix-check.yml) defines the CI job. Linux CI runs the shell checks and evaluates the Darwin system with import from derivation disabled, so evaluation never needs a macOS builder. CI doesn't build or activate macOS. Build it on the Mac with `nix/scripts/nix-verify`.
+[`.github/workflows/nix-check.yml`](../../.github/workflows/nix-check.yml) defines the CI job. Linux CI runs the shell checks and evaluates the Darwin system with import from derivation disabled, so evaluation never needs a macOS builder. CI doesn't build or activate macOS. Build it on the Mac with `nix-verify` ([command ladder](command-ladder.md)).
 
 ---
 

@@ -33,13 +33,13 @@ Activation refuses to switch until the secret file exists and the dashboard clon
 The management key and the client key are not in git and not in the Nix store. There is no sops or agenix setup in this repo. `init-secret` creates `~/.config/cli-proxy-api/secrets.env` mode `0600` with a random `CLIPROXY_MANAGEMENT_KEY` only. It doesn't print the value, and it refuses to overwrite an existing file. OAuth logins stay manual.
 
 ```fish
-~/Projects/personal/dotfiles/nix/scripts/cli-proxy-dashboard-setup init-secret
+~/Projects/personal/dotfiles/scripts/cli-proxy-dashboard-setup init-secret
 ```
 
 `init-client-key` then adds `CLIPROXY_CLIENT_KEY`. It appends one line and leaves the management key in place. It refuses when the client line is already there, and it does not print the value. To rotate, delete the `CLIPROXY_CLIENT_KEY` line without printing the file, then follow [Apply a new client key](#apply-a-new-client-key).
 
 ```fish
-~/Projects/personal/dotfiles/nix/scripts/cli-proxy-dashboard-setup init-client-key
+~/Projects/personal/dotfiles/scripts/cli-proxy-dashboard-setup init-client-key
 ```
 
 v8.0.53 accepts client keys only as `access.api-keys` (the old top-level `api-keys` list is that same field; `MANAGEMENT_PASSWORD` is only the management key), so the launch wrapper copies the store config to a mode-0600 runtime file and appends the client key there. The store symlink `~/.config/cli-proxy-api/config.yaml` stays free of keys. The runtime file is `~/.local/state/cli-proxy-api/runtime-config.yaml`, rebuilt on every start, so a management-API edit of it does not survive a restart. OAuth credentials live only under `~/.cli-proxy-api`.
@@ -48,12 +48,12 @@ v8.0.53 accepts client keys only as `access.api-keys` (the old top-level `api-ke
 
 The live dashboard runs from its own clone, `~/.local/share/cli-proxy-dashboard/app`, which only follows `main`. Work on the dashboard happens in a different checkout, such as `~/Projects/personal/cli-proxy-dashboard`, so switching branches there never changes what the live dashboard runs. The live copy is a separate git clone, which worktree cleanup leaves alone.
 
-`nix/scripts/cli-proxy-dashboard-setup` deploys `main` to that clone. It clones over SSH on the first run, and after that fast-forwards to `origin/main`. Then it runs `pnpm install` and `pnpm run build` with Node 24's pnpm, restarts the dashboard LaunchAgent if it is loaded, and prints the SHA. It refuses a clone with local changes or on a branch other than `main`. It does not touch secrets. The path below works before the `~/.local/bin` shim exists. After a switch, `cli-proxy-dashboard-setup` is on `PATH`.
+`scripts/cli-proxy-dashboard-setup` deploys `main` to that clone. It clones over SSH on the first run, and after that fast-forwards to `origin/main`. Then it runs `pnpm install` and `pnpm run build` with Node 24's pnpm, restarts the dashboard LaunchAgent if it is loaded, and prints the SHA. It refuses a clone with local changes or on a branch other than `main`. It does not touch secrets. The path below works before the `~/.local/bin` shim exists. After a switch, `cli-proxy-dashboard-setup` is on `PATH`.
 
 Open a fish shell once so Corepack installs `pnpm` beside mise Node 24 if it is not there yet, then:
 
 ```fish
-~/Projects/personal/dotfiles/nix/scripts/cli-proxy-dashboard-setup
+~/Projects/personal/dotfiles/scripts/cli-proxy-dashboard-setup
 ```
 
 Nix does not pin a dashboard commit. Rerun the command to deploy a newer `main`. There is no flake input to bump.
@@ -72,7 +72,7 @@ lsof -a -p (pgrep -f 'src/server/index.ts') -d cwd -Fn | grep '^n'
 ## Switch
 
 ```fish
-cd ~/Projects/personal/dotfiles/nix
+cd ~/Projects/personal/dotfiles
 sudo darwin-rebuild switch --flake .#m5-mbp
 ```
 
@@ -133,7 +133,7 @@ Claude Code uses the proxy by default wherever it starts: RepoPrompt CE, T3 Code
 | `ANTHROPIC_AUTH_TOKEN` | The client key | Unset |
 | `CLIPROXY_CLIENT_KEY` | The client key | The client key, still published for OpenCode's DeepSeek route |
 
-It doesn't touch `CLI_PROXY`, `OPENAI_BASE_URL`, Codex settings, `ANTHROPIC_API_KEY` or `CLAUDE_CODE_OAUTH_TOKEN`. The key is briefly in `launchctl setenv` arguments, and `launchctl print` of the agent shows it in the inherited environment, so don't share that output. The agent writes its messages to `~/.local/state/cli-proxy-api/cli-proxy-env.err.log`, and they never contain a key. Its code is `nix/scripts/cli-proxy-env-launch`.
+It doesn't touch `CLI_PROXY`, `OPENAI_BASE_URL`, Codex settings, `ANTHROPIC_API_KEY` or `CLAUDE_CODE_OAUTH_TOKEN`. The key is briefly in `launchctl setenv` arguments, and `launchctl print` of the agent shows it in the inherited environment, so don't share that output. The agent writes its messages to `~/.local/state/cli-proxy-api/cli-proxy-env.err.log`, and they never contain a key. Its code is `scripts/cli-proxy-env-launch`.
 
 If the route setting is malformed, the agent publishes nothing and exits 1. With the route on and no readable key, it also publishes nothing. With the route off and no readable key, it still unsets both Anthropic variables, leaves any key that launchd already holds, and exits 1.
 
@@ -200,7 +200,7 @@ A running process keeps the environment it started with. After `claude-proxy-rou
 
 Open apps from a fresh parent: the Dock, Spotlight or a newly opened terminal app. When unsure what an app inherited, log out and back in, then run `claude-proxy-route status`.
 
-An app that macOS reopens at login can start before the env agent runs. For RepoPrompt CE, its Debug build (process `RepoPromptDebug`) and kitty, the agent reports this itself. After every publication, it compares the starting environment of each copy you run with the three values it just published. A macOS notification titled "Claude proxy route is on" (or "off") then names the apps to quit and reopen, such as "Relaunch: RepoPrompt, kitty". When nothing differs, no notification appears. If `osascript` reports an error, the agent's error log names the apps instead. Notification settings or Focus can hide the banner without an error, so check Notification Center when an app behaves as if it missed the route. The watched process names are `watchedProcesses` in `nix/home/mp/modules/cli-proxy-api.nix`. T3 Code isn't watched, because `claude-launch` reads the route setting at every session and stops with an error when it can't follow it.
+An app that macOS reopens at login can start before the env agent runs. For RepoPrompt CE, its Debug build (process `RepoPromptDebug`) and kitty, the agent reports this itself. After every publication, it compares the starting environment of each copy you run with the three values it just published. A macOS notification titled "Claude proxy route is on" (or "off") then names the apps to quit and reopen, such as "Relaunch: RepoPrompt, kitty". When nothing differs, no notification appears. If `osascript` reports an error, the agent's error log names the apps instead. Notification settings or Focus can hide the banner without an error, so check Notification Center when an app behaves as if it missed the route. The watched process names are `watchedProcesses` in `modules/cli-proxy/api.nix`. T3 Code isn't watched, because `claude-launch` reads the route setting at every session and stops with an error when it can't follow it.
 
 ### If the env agent failed at login
 
@@ -228,7 +228,7 @@ ps -E -o command= -p <pid> | tr ' ' '\n' | grep -E '^ANTHROPIC_BASE_URL='
 Activation checks that the secrets file is mode `0600` and that `CLIPROXY_CLIENT_KEY` is present, not empty and not the placeholder. It doesn't check the format. The proxy checks for 64 hex characters when it starts, and exits on a malformed key. The proxy and the env agent read the key when they run, so a new or rotated key doesn't need a switch:
 
 ```fish
-~/Projects/personal/dotfiles/nix/scripts/cli-proxy-dashboard-setup init-client-key
+~/Projects/personal/dotfiles/scripts/cli-proxy-dashboard-setup init-client-key
 launchctl bootout gui/(id -u)/com.mp.cli-proxy-api
 launchctl bootstrap gui/(id -u) ~/Library/LaunchAgents/com.mp.cli-proxy-api.plist
 claude-proxy-route apply
@@ -286,7 +286,7 @@ Follow-up requests in one Claude Code or Codex session stay on the OAuth account
 
 The generated config also sets the Claude Code fingerprint the proxy sends upstream, in `upstream.claude.header-defaults`: a user-agent with the Claude Code version, plus the package and runtime versions. Anthropic checks that version against each model's minimum. v8.0.53's built-in fingerprint is Claude Code 2.1.280, so without the override every proxied request reports 2.1.280, and a newer model fails with `API Error: 400 Claude Code 2.1.280 does not support this model`, even when the installed Claude Code is newer. The proxy passes a client's own fingerprint through only when all three values equal the configured ones, and sends the configured values for every other client.
 
-When a model needs a newer Claude Code than the configured version, update Claude Code, measure what it sends, and copy the three values into `configText` in `nix/home/mp/modules/cli-proxy-api.nix`. To measure, run a local listener that prints the request headers, and point a direct Claude Code at it with a placeholder key:
+When a model needs a newer Claude Code than the configured version, update Claude Code, measure what it sends, and copy the three values into `configText` in `modules/cli-proxy/api.nix`. To measure, run a local listener that prints the request headers, and point a direct Claude Code at it with a placeholder key:
 
 ```bash
 python3 -I -c '
@@ -308,4 +308,4 @@ The line that starts with `['claude-cli/` has the three values. `claude -p` send
 
 ## Upgrade CLIProxyAPI
 
-Change `version` and the two archive hashes in `nix/packages/cli-proxy-api/default.nix`. The hashes are the upstream `checksums.txt` entries for `darwin_aarch64` and `linux_amd64`, in SRI form. Build `packages.aarch64-darwin.cli-proxy-api` on the Mac, switch, and restart the LaunchAgent. OAuth files in `~/.cli-proxy-api` stay where they are.
+Change `version` and the two archive hashes in `packages/cli-proxy-api/default.nix`. The hashes are the upstream `checksums.txt` entries for `darwin_aarch64` and `linux_amd64`, in SRI form. Build `packages.aarch64-darwin.cli-proxy-api` on the Mac, switch, and restart the LaunchAgent. OAuth files in `~/.cli-proxy-api` stay where they are.

@@ -1,8 +1,6 @@
 # Storage Management
 
-> Managing Nix store size and preventing closure bloat.
-
-This document explains how to monitor and control disk usage with Nix, particularly important given the 1TB disk constraint.
+How to monitor and control the Nix store's disk use on a 1 TB disk, and how to keep the closure from growing. Deleting generations removes rollback targets, so treat cleanup as its own decision.
 
 ---
 
@@ -107,24 +105,16 @@ Only import tiers you actually need:
 # home/mp/darwin.nix
 {
   imports = [
-    ./packages/tier1.nix
-    # ./packages/tier2.nix  # Comment out until needed
-    # ./packages/tier3.nix  # Add later
+    ./package-tiers/tier1.nix
+    # ./package-tiers/tier2.nix  # Comment out until needed
   ];
 }
 ```
 
-### 2. Prefer Stable Nixpkgs
+### 2. Know the Cost of Unstable Nixpkgs
 
-Use Darwin stable branches for better binary cache coverage:
-
-```nix
-# flake.nix
-inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-24.11-darwin";
-```
-
-Unstable can mean:
-- More source builds (larger store, more time)
+The flake follows `nixpkgs-unstable` ([ADR-008](../decisions/008-nixpkgs-unstable-nix-darwin-master.md)). Compared with a stable branch, that means:
+- More source builds when the binary cache hasn't caught up (larger store, more time)
 - Frequent changes (more generations)
 
 ### 3. Check Package Size Before Adding
@@ -193,46 +183,7 @@ Choose one source per tool category.
 
 ## Scripts
 
-### scripts/gc
-
-```bash
-#!/usr/bin/env bash
-set -euo pipefail
-
-echo "Current store size:"
-du -sh /nix/store
-
-echo ""
-echo "Current generations:"
-darwin-rebuild --list-generations
-
-echo ""
-read -p "Delete generations older than 30 days? [y/N] " confirm
-if [[ "$confirm" =~ ^[Yy]$ ]]; then
-    nix-collect-garbage --delete-older-than 30d
-    echo ""
-    echo "Store size after GC:"
-    du -sh /nix/store
-fi
-```
-
-### scripts/store-size
-
-```bash
-#!/usr/bin/env bash
-set -euo pipefail
-
-echo "=== Nix Store Status ==="
-echo ""
-echo "Store size: $(du -sh /nix/store | cut -f1)"
-echo "Store paths: $(ls /nix/store | wc -l)"
-echo ""
-echo "Current system closure:"
-nix path-info -Sh /run/current-system
-echo ""
-echo "Generations:"
-darwin-rebuild --list-generations | tail -5
-```
+`nix-ops gc` prints the garbage-collection commands, and `nix-ops gc --apply` runs them after asking. [Operations](operations.md#operational-scripts) lists the other `nix-ops` commands.
 
 ---
 

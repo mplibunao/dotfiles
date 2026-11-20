@@ -1,77 +1,70 @@
 # Dotfiles Mapping
 
-> How existing dotfiles map to Home Manager configuration.
-
-This document explains the strategy for migrating dotfiles from the legacy symlink-based approach to declarative Home Manager management.
+How configuration files reach the home directory through Home Manager, and which files stay outside it. [`CODING_STANDARDS.md`](../../CODING_STANDARDS.md#home-manager-modules-and-file-mappings) says which mechanism to choose.
 
 ---
 
-## Mapping Strategy
+## Mechanisms
 
-### Priority Order
+Home Manager writes a configuration file in one of three ways:
 
-1. **Use Home Manager program modules** when available
-2. **Use `xdg.configFile`** for `~/.config/*` files
-3. **Use `home.file`** for other home directory files
-4. **Keep manual** for files that change frequently or need local edits
+- A **program module** (`programs.<name>`) generates the file from typed options. It gives type-checked settings, sensible defaults, integration with other modules, and documentation through `man home-configuration.nix`.
+- **`xdg.configFile`** maps a file under `~/.config/`.
+- **`home.file`** maps any other file under the home directory.
 
-> **Mutable vs store-managed:** the mappings above default to store-managed (sources copied into the Nix store at build time). For cases where edit→effect feedback matters more than rebuild-time immutability — operational scripts, shell helpers iterated frequently, app-rewritten configs — use `config.lib.file.mkOutOfStoreSymlink` instead. See [decisions/019-store-managed-file-mappings-by-default.md](decisions/019-store-managed-file-mappings-by-default.md) for the criteria and decision matrix.
-
-### Why Prefer Program Modules?
-
-Home Manager program modules provide:
-- Type-checked configuration
-- Default values and sensible defaults
-- Integration with other modules
-- Automatic dependency management
-- Documentation via `man home-configuration.nix`
+By default a mapped file is copied into the Nix store at build time, and the home-directory path is a read-only link to that copy. `config.lib.file.mkOutOfStoreSymlink` instead links the path straight to this checkout, so an edit takes effect without a rebuild. [ADR-019](../decisions/019-store-managed-file-mappings-by-default.md) sets the criteria for that exception.
 
 ---
 
 ## Dotfile Locations
 
-### Files Managed by HM Program Modules
+### Files Managed by Program Modules
 
-| Dotfile | HM Module | Example |
-|---------|-----------|---------|
-| `~/.gitconfig` | `programs.git` | `programs.git.userName = "MP";` |
-| `~/.config/fish/*` | `programs.fish` | `programs.fish.shellAbbrs = {...};` |
-| `~/.config/starship.toml` | `programs.starship` | `programs.starship.settings = {...};` |
-| `~/.ssh/config` | `programs.ssh` | `programs.ssh.matchBlocks = {...};` |
-| `~/.config/bat/*` | `programs.bat` | `programs.bat.config = {...};` |
-| `~/.config/lazygit/*` | `programs.lazygit` | `programs.lazygit.settings = {...};` |
+| Dotfile | Module | File |
+|---------|--------|------|
+| `~/.config/git/config` | `programs.git`, `programs.delta` | `modules/git/default.nix` |
+| `~/.config/fish/*` | `programs.fish` | `modules/fish/default.nix` |
+| `~/.config/starship.toml` | `programs.starship`, reading `starship.toml` beside the module | `modules/starship/default.nix` |
+| `~/.ssh/config` | `programs.ssh` | `modules/ssh/default.nix` |
+| `~/.config/bat/*` | `programs.bat` | `modules/bat/default.nix` |
+| `~/.config/kitty/kitty.conf` | `programs.kitty` | `modules/kitty/default.nix` ([Kitty](kitty.md)) |
+| `~/.config/aerospace/aerospace.toml` | `programs.aerospace`, reading `aerospace.toml` beside the module | `modules/aerospace/default.nix` ([AeroSpace](aerospace.md)) |
 
-### Files Managed via xdg.configFile
+### Files Managed via xdg.configFile and home.file
 
-| Dotfile | Source Location | HM Mapping |
-|---------|-----------------|------------|
-| `~/.config/kitty/kitty.conf` | `modules/home/kitty/kitty.conf` | `xdg.configFile."kitty/kitty.conf".source` |
-| `~/.config/kitty/current-theme.conf` | `modules/home/kitty/themes/...` | `xdg.configFile."kitty/current-theme.conf".source` |
-| `~/.aerospace.toml` | `modules/darwin/aerospace/aerospace.toml` | `home.file.".aerospace.toml".source` |
-| `~/.config/opencode/opencode.jsonc` | `modules/opencode.jsonc`; activated 2026-10-28 | `xdg.configFile."opencode/opencode.jsonc".source` (active) |
+| Dotfile | Source | Mapping |
+|---------|--------|---------|
+| `~/.config/opencode/opencode.jsonc` | `modules/llm-tools/opencode.jsonc` | `xdg.configFile` in `modules/llm-tools/default.nix` |
+| `~/.cursor/mcp.json` | `modules/llm-tools/cursor-mcp.json` | `home.file` in `modules/llm-tools/default.nix` |
+| `~/.local/bin/opencode` | Pinned upstream package in `/nix/store` | `home.file` in `modules/llm-tools/default.nix` |
+| `~/Library/LaunchAgents/com.mp.executor.plist` | Generated in `modules/executor/default.nix` | `home.file` in the same module |
 
-### Files Managed via home.file
-
-| Dotfile | Source Location | HM Mapping |
-|---------|-----------------|------------|
-| `~/.aerospace.toml` | `modules/darwin/aerospace.toml` | `home.file.".aerospace.toml".source` |
-| `~/.hushlogin` | - | `home.file.".hushlogin".text = "";` |
-| `~/.local/bin/opencode` | Pinned upstream package in `/nix/store` | `home.file.".local/bin/opencode".source` in `modules/llm-tools.nix` |
-| `~/Library/LaunchAgents/com.mp.executor.plist` | Generated in `modules/executor.nix` | `home.file."Library/LaunchAgents/com.mp.executor.plist".source` |
-| `~/.cursor/mcp.json` | `home/mp/modules/cursor-mcp.json` | `home.file.".cursor/mcp.json".source` in `modules/llm-tools.nix` (active) |
-
-Home Manager store-manages only `~/.config/opencode/opencode.jsonc` through `xdg.configFile`; its local authentication file and configuration directory remain outside Home Manager ownership. Cursor's exact-file mapping preserves the existing direct RepoPrompt entry and adds Executor. See [ADR-023](decisions/023-opencode-cursor-client-config-ownership.md) for the ownership boundary and activation sequence.
+Home Manager store-manages only `~/.config/opencode/opencode.jsonc` through `xdg.configFile`; its local authentication file and configuration directory remain outside Home Manager ownership. Cursor's exact-file mapping preserves the existing direct RepoPrompt entry and adds Executor. See [ADR-023](../decisions/023-opencode-cursor-client-config-ownership.md) for the ownership boundary and activation sequence.
 
 The OpenCode executable entry is a store-managed link to the same immutable executable installed by Tier 1. It is a RepoPrompt GUI discovery bridge, not a wrapper or second package. Unlike ADR-012's `mkOutOfStoreSymlink` shims for frequently edited repository scripts, this mapping follows ADR-019's store-managed default. Activation requires one intended executable, no higher-priority competitor, and no `force = true` collision bypass; follow the canonical [prerequisite and collision procedure](runbooks/opencode-repoprompt.md#opencode-prerequisites-collisions).
+
+### Files Linked out of the Store
+
+These paths point into this checkout through `mkOutOfStoreSymlink`, so editing the repository file changes the live one:
+
+| Path | Repository file | Module |
+|------|-----------------|--------|
+| `~/.config/karabiner` | `modules/karabiner/config/` | `modules/karabiner/default.nix` |
+| `~/.config/fish/functions` | `modules/fish/functions/` ([Fish](fish.md)) | `modules/fish/default.nix` |
+| `~/.config/tinycast/settings.json` | `modules/tinycast/settings.json` ([TinyCast](tinycast.md)) | `modules/tinycast/default.nix` |
+| `~/.cloudflared/config.yml` | `modules/cloudflared/config.yml` | `modules/cloudflared/default.nix` |
+| `~/.local/bin/nix-ops`, `nix-verify`, `nix-locate`, `claude-proxy-route`, `cli-proxy-dashboard-setup` | `scripts/` | `modules/nix-ops-tools/default.nix` |
 
 ---
 
 ## Program Module Examples
 
+These show how each option is written. The current configuration is in the modules named in the tables above.
+
 ### Git
 
 ```nix
-# modules/home/git.nix
+# modules/git/default.nix
 { config, pkgs, ... }:
 {
   programs.git = {
@@ -110,7 +103,7 @@ The OpenCode executable entry is a store-managed link to the same immutable exec
 ### Fish
 
 ```nix
-# modules/home/fish.nix
+# modules/fish/default.nix
 { config, pkgs, ... }:
 {
   programs.fish = {
@@ -158,7 +151,7 @@ The OpenCode executable entry is a store-managed link to the same immutable exec
 ### Starship
 
 ```nix
-# modules/home/starship.nix
+# modules/starship/default.nix
 { config, ... }:
 {
   programs.starship = {
@@ -193,209 +186,47 @@ The OpenCode executable entry is a store-managed link to the same immutable exec
 
 ---
 
-## File Mapping Examples
+## File Mapping Example
 
-### Kitty Configuration
+For an app with no Home Manager module, map its file from the module folder or write it inline:
 
 ```nix
-# modules/home/kitty.nix
+# modules/myapp/default.nix
 { config, ... }:
 {
-  # Option 1: Source from file
-  xdg.configFile."kitty/kitty.conf".source = ./kitty/kitty.conf;
-  xdg.configFile."kitty/current-theme.conf".source = ./kitty/themes/catppuccin-mocha.conf;
+  # Option 1: source from a file beside the module
+  xdg.configFile."myapp/config".source = ./config;
 
-  # Option 2: Inline text
-  xdg.configFile."kitty/kitty.conf".text = ''
-    font_family Fira Code Retina
-    font_size 12.0
-    shell /run/current-system/sw/bin/fish
-    editor nvim
-
-    allow_remote_control yes
-    macos_option_as_alt yes
-    copy_on_select true
-
-    include current-theme.conf
-  '';
-}
-```
-
-### AeroSpace Configuration
-
-```nix
-# modules/darwin/aerospace.nix
-{ config, ... }:
-{
-  home.file.".aerospace.toml".source = ./aerospace/aerospace.toml;
-}
-```
-
-Or with inline TOML:
-
-```nix
-{ config, ... }:
-{
-  home.file.".aerospace.toml".text = ''
-    start-at-login = true
-    enable-normalization-flatten-containers = true
-
-    [gaps]
-    inner.horizontal = 5
-    inner.vertical = 5
-
-    [mode.main.binding]
-    alt-h = 'focus left'
-    alt-j = 'focus down'
-    alt-k = 'focus up'
-    alt-l = 'focus right'
-  '';
-}
-```
-
----
-
-## Migration Workflow
-
-### Step 1: Identify the Dotfile
-
-```bash
-# What config file am I migrating?
-cat ~/.config/fish/config.fish
-```
-
-### Step 2: Check for HM Module
-
-```bash
-# Search options
-man home-configuration.nix | grep -i fish
-# Or check online: https://home-manager-options.extranix.com/
-```
-
-### Step 3: Create the Module
-
-If HM module exists:
-```nix
-# modules/home/fish.nix
-{ ... }:
-{
-  programs.fish = {
-    enable = true;
-    # Translate config to options
-  };
-}
-```
-
-If no HM module:
-```nix
-# modules/home/myapp.nix
-{ ... }:
-{
-  xdg.configFile."myapp/config".source = ./myapp/config;
-  # Or
+  # Option 2: inline text
   xdg.configFile."myapp/config".text = ''
     setting = value
   '';
+
+  # A file outside ~/.config
+  home.file.".myapprc".source = ./myapprc;
 }
-```
-
-### Step 4: Import in Home Config
-
-```nix
-# home/mp/darwin.nix
-{ ... }:
-{
-  imports = [
-    ../../modules/home/fish.nix
-    ../../modules/home/git.nix
-    ../../modules/home/kitty.nix
-  ];
-}
-```
-
-### Step 5: Handle Collisions
-
-If existing file blocks activation:
-```bash
-# Move the old file
-mv ~/.config/fish/config.fish ~/.config/fish/config.fish.backup
-
-# Rebuild
-# NOTE: This is a live-system apply (`switch`) and requires explicit approval.
-sudo darwin-rebuild switch --flake .#<hostname>
-
-# Compare and delete backup if satisfied
-diff ~/.config/fish/config.fish ~/.config/fish/config.fish.backup
-rm ~/.config/fish/config.fish.backup
 ```
 
 ---
 
-## Collision Handling
+## Adding a Mapping
 
-Home Manager refuses to overwrite files it doesn't manage.
+1. **Find the file.** Check which configuration file the app reads, for example `~/.config/myapp/config`.
+2. **Check for a Home Manager module.** Search the options with `man home-configuration.nix | grep -i myapp`, or at https://home-manager-options.extranix.com/.
+3. **Write the module** in `modules/myapp/default.nix`, using `programs.myapp` when a module exists and a file mapping otherwise.
+4. **Import it** in `home/mp/darwin.nix`:
 
-### Error Message
-
-```
-Existing file '/home/mp/.config/git/config' is in the way
-Please move the above files and try again
-```
-
-### Resolution
-
-1. **Backup the existing file**
-   ```bash
-   mv ~/.config/git/config ~/.config/git/config.backup
+   ```nix
+   imports = [
+     ../../modules/myapp
+   ];
    ```
 
-2. **Rebuild**
-   ```bash
-   # NOTE: This is a live-system apply (`switch`) and requires explicit approval.
-   sudo darwin-rebuild switch --flake .#<hostname>
-   ```
+5. **Stage and build** it with the [command ladder](command-ladder.md).
 
-3. **Compare HM-generated with backup**
-   ```bash
-   diff ~/.config/git/config ~/.config/git/config.backup
-   ```
+If activation stops because a file is already in the way, follow [Activation Errors](troubleshooting.md#file-is-in-the-way) in Troubleshooting.
 
-4. **Merge any missing settings** into HM config if needed
-
-5. **Delete backup**
-   ```bash
-   rm ~/.config/git/config.backup
-   ```
-
-### Prevention
-
-On a fresh machine:
-- Don't manually create configs for things HM will manage
-- Let HM generate everything first
-- Only add local overrides via HM options
-
----
-
-## Source File Organization
-
-```
-nix/modules/home/
-├── fish.nix              # Uses programs.fish
-├── git.nix               # Uses programs.git
-├── starship.nix          # Uses programs.starship
-├── kitty.nix             # Uses xdg.configFile
-├── kitty/
-│   ├── kitty.conf        # Source file
-│   └── themes/
-│       └── catppuccin-mocha.conf
-└── neovim.nix            # Minimal, actual config in separate repo
-
-nix/modules/darwin/
-├── aerospace.nix         # Uses home.file
-├── aerospace/
-│   └── aerospace.toml    # Source file
-└── karabiner.nix         # Uses xdg.configFile
-```
+On a fresh machine, don't create configuration files by hand for things Home Manager will manage. Let it generate them first, and add local overrides through Home Manager options.
 
 ---
 
@@ -413,7 +244,7 @@ Some files should remain manual:
 | `~/.config/opencode` directory and project `opencode.json`/`.jsonc`/`.opencode` | App-owned and project configuration; only the global `opencode.jsonc` file has exact-file Home Manager ownership under ADR-023 |
 | `~/.executor` | Executor-owned database and service access key; created by the service |
 | `~/.local/share/executor` | Executor-owned upstream OAuth token store; back up and restore together with `~/.executor` |
-| `~/.config/executor-gateway/scope`, `~/.local/state/executor` | Executor workspace and service logs; `modules/executor.nix` only creates the folders (mode 0700) |
+| `~/.config/executor-gateway/scope`, `~/.local/state/executor` | Executor workspace and service logs; `modules/executor/default.nix` only creates the folders (mode 0700) |
 | IDE project settings | Local preferences |
 
 RepoPrompt normal OpenCode launches use a process-ephemeral MCP overlay. Keep `mcp.RepoPromptCE` out of persistent configuration and keep OpenCode credentials outside Home Manager. The exact-file mapping retains non-secret model defaults while per-session choices remain operator-owned. Follow the canonical [ephemeral-MCP and persistent-entry cleanup procedure](runbooks/opencode-repoprompt.md#opencode-ephemeral-mcp).
@@ -427,4 +258,5 @@ RepoPrompt normal OpenCode launches use a process-ephemeral MCP overlay. Keep `m
 | Has HM module | `programs.<name>` | `programs.git.enable = true;` |
 | `~/.config/*` | `xdg.configFile` | `xdg.configFile."app/config".source = ./config;` |
 | `~/*` | `home.file` | `home.file.".somerc".source = ./somerc;` |
-| Inline text | `.text` | `home.file.".hushlogin".text = "";` |
+| Inline text | `.text` | `home.file.".somerc".text = "";` |
+| Live link to this checkout | `config.lib.file.mkOutOfStoreSymlink` | ADR-019 exceptions only |

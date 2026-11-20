@@ -1,8 +1,6 @@
 # Operations: Update and Rollback
 
-> Procedures for updating dependencies, applying changes, and rolling back.
-
-This document covers the day-to-day operations of maintaining the Nix configuration.
+Procedures for updating flake inputs, applying changes, and rolling back. Every `darwin-rebuild switch` below, including a rollback, changes the live system and needs my approval ([`AGENTS.md`](../../AGENTS.md)). The [command ladder](command-ladder.md) covers the checks before it.
 
 ---
 
@@ -26,7 +24,7 @@ This document covers the day-to-day operations of maintaining the Nix configurat
 Update all flake inputs (nixpkgs, home-manager, nix-darwin):
 
 ```bash
-cd ~/Projects/personal/dotfiles/nix
+cd ~/Projects/personal/dotfiles
 nix flake update
 ```
 
@@ -209,7 +207,7 @@ nix flake update
 
 OpenCode's upstream flake URL names a specific version tag for RepoPrompt ACP compatibility. The configured tag does not select a later release until edited, but Git tags can move, so every lock update still requires review of the revision and `narHash`. An intentional OpenCode release change must edit the tag and update only the `opencode` input; activation remains approval-gated. After either an OpenCode tag change or a RepoPrompt CE cask upgrade, revalidate both RepoPrompt UI discovery and direct MCP execution, treating new failures as a version-pairing issue first.
 
-Follow the canonical [OpenCode upgrade procedure](runbooks/opencode-repoprompt.md#opencode-upgrade). The source and rollback decision remains recorded in [ADR-021](decisions/021-opencode-upstream-flake-for-repoprompt-acp.md).
+Follow the canonical [OpenCode upgrade procedure](runbooks/opencode-repoprompt.md#opencode-upgrade). The source and rollback decision remains recorded in [ADR-021](../decisions/021-opencode-upstream-flake-for-repoprompt-acp.md).
 
 ### OpenCode rollback limits
 
@@ -273,64 +271,19 @@ error: builder for '/nix/store/...' failed
 
 ---
 
-## Scripts
+## Operational Scripts
 
-Create helper scripts in `nix/scripts/`:
+`scripts/nix-verify` and `scripts/nix-ops` wrap these procedures. Home Manager links both into `~/.local/bin`. Pass `--host m5-mbp` to either one ([command ladder](command-ladder.md)).
 
-### scripts/update
-
-```bash
-#!/usr/bin/env bash
-set -euo pipefail
-
-cd "$(dirname "$0")/.."
-
-echo "Updating flake inputs..."
-nix flake update
-
-echo "Building configuration..."
-darwin-rebuild build --flake .#"$(hostname -s)"
-
-echo ""
-echo "Build successful! Review changes with:"
-echo "  git diff flake.lock"
-echo ""
-echo "Apply with:"
-echo "  sudo darwin-rebuild switch --flake .#$(hostname -s)"
-```
-
-### scripts/switch
-
-```bash
-#!/usr/bin/env bash
-set -euo pipefail
-
-cd "$(dirname "$0")/.."
-
-echo "Applying configuration..."
-sudo darwin-rebuild switch --flake .#"$(hostname -s)"
-
-echo ""
-echo "Switch complete. Current generation:"
-darwin-rebuild --list-generations | tail -1
-```
-
-### scripts/rollback
-
-```bash
-#!/usr/bin/env bash
-set -euo pipefail
-
-echo "Available generations:"
-darwin-rebuild --list-generations
-
-echo ""
-read -p "Roll back to previous generation? [y/N] " confirm
-if [[ "$confirm" =~ ^[Yy]$ ]]; then
-    sudo darwin-rebuild switch --rollback
-    echo "Rollback complete."
-fi
-```
+| Command | What it does |
+|---------|--------------|
+| `nix-verify` | Runs the [command ladder](command-ladder.md) up to the build; `--to 3` adds the dry-run |
+| `nix-ops status` | Shows diagnostics |
+| `nix-ops update-inputs --yes` | Updates `flake.lock`; `--input NAME` updates one input and `--build` builds afterwards |
+| `nix-ops generations` | Lists nix-darwin generations |
+| `nix-ops rollback` | Prints the rollback commands; `--apply` runs them after asking |
+| `nix-ops gc` | Prints the garbage-collection commands; `--apply` runs them after asking ([Storage](storage.md)) |
+| `nix-ops switch` | Prints the switch command without running it |
 
 ---
 

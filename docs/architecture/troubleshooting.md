@@ -1,6 +1,6 @@
 # Troubleshooting
 
-> Common issues and how to resolve them.
+Common issues and how to resolve them. A fix that ends in `darwin-rebuild switch` still needs my approval, as [`AGENTS.md`](../../AGENTS.md) says.
 
 ---
 
@@ -152,7 +152,7 @@ Common causes:
 error: Package 'foo' is not available on the requested hostPlatform
 ```
 
-**Cause:** Package only supports Linux or Intel Mac.
+**Cause:** Package only supports Linux or Intel Mac, or the host's `nixpkgs.hostPlatform` doesn't match the machine ([Hosts](hosts.md#adding-a-host)).
 
 **Solution:**
 - Find alternative package
@@ -165,26 +165,23 @@ error: Package 'foo' is not available on the requested hostPlatform
 
 ### "file is in the way"
 
-**Error:**
+`hosts/m5-mbp/configuration.nix` sets `home-manager.backupFileExtension = "backup"`. When a regular file sits where Home Manager wants to put its own, activation moves it to `<file>.backup` and prints a warning:
+
 ```
-Existing file '/home/mp/.config/git/config' is in the way
-Please move the above files and try again
+Existing file '/Users/mp/.config/git/config' is in the way of '/nix/store/...', will be moved to '/Users/mp/.config/git/config.backup'
 ```
 
-**Cause:** Home Manager won't overwrite files it didn't create.
+Activation stops only in two cases:
 
-**Solution:**
-```bash
-# Move the existing file
-mv ~/.config/git/config ~/.config/git/config.backup
+- **The backup name is taken.** `Existing file '<file>.backup' would be clobbered by backing up '<file>'` means an earlier activation already left a backup there. Compare it with the current file, keep anything from it you still need, then move it to a name nothing uses:
 
-# Retry
-darwin-rebuild switch --flake .#<hostname>
+  ```bash
+  mv -n ~/.config/git/config.backup ~/.config/git/config.backup-$(date +%Y%m%d-%H%M%S)
+  ```
 
-# Compare and delete backup
-diff ~/.config/git/config ~/.config/git/config.backup
-rm ~/.config/git/config.backup
-```
+- **The file is a symlink Home Manager doesn't own.** `Existing file '<file>' would be clobbered` means Home Manager won't move a link. Check where it points with `readlink`, then move the link aside the same way, under a name that doesn't exist yet.
+
+Then run the switch again. Once it succeeds, compare Home Manager's file with the backup, carry any missing settings into the module, and delete the backup. Don't set `force = true` on the mapping to get past a collision.
 
 ### "permission denied"
 
@@ -232,12 +229,12 @@ fi
 **Solution:**
 ```bash
 # Bootstrap nix-darwin
-nix run nix-darwin#darwin-rebuild -- switch --flake .#<hostname>
+sudo nix run nix-darwin#darwin-rebuild -- switch --flake .#<hostname>
 ```
 
 ### Environment variables not set
 
-**Cause:** Home Manager session vars not sourced.
+**Cause:** Home Manager session vars not sourced. `programs.fish` sources them for Fish, so this affects other shells.
 
 **Solution:** Add to shell config:
 ```bash
@@ -406,7 +403,7 @@ which nix darwin-rebuild
 
 ```bash
 # Use nix directly
-nix run nix-darwin#darwin-rebuild -- switch --flake .#<hostname>
+sudo nix run nix-darwin#darwin-rebuild -- switch --flake .#<hostname>
 ```
 
 ### If Nix Broken
@@ -431,9 +428,9 @@ These are actual issues hit during this migration, for reference.
 
 **Symptom:** Only ~16 abbreviations available instead of 80+.
 
-**Root Cause:** Partial migration - only a subset of abbreviations were ported from `setup-abbreviations.fish` to `fish.nix shellAbbrs`.
+**Root Cause:** Partial migration - only a subset of abbreviations were ported from `setup-abbreviations.fish` to `shellAbbrs` in `modules/fish/default.nix`.
 
-**Solution:** Port remaining abbreviations to `programs.fish.shellAbbrs` in fish.nix.
+**Solution:** Port remaining abbreviations to `programs.fish.shellAbbrs` in `modules/fish/default.nix`.
 
 **Lesson:** When migrating shell config, verify all abbreviations/aliases are ported, not just a sample.
 
@@ -443,7 +440,7 @@ These are actual issues hit during this migration, for reference.
 
 **Root Cause:** `conf.d/30-auto-ls.fish` was not ported to Nix. The `__auto_ls` function and `--on-variable PWD` hook were missing.
 
-**Solution:** Add to `interactiveShellInit` in fish.nix:
+**Solution:** Add to `interactiveShellInit` in `modules/fish/default.nix`:
 ```nix
 interactiveShellInit = '''
   function __auto_ls --on-variable PWD
@@ -460,13 +457,13 @@ interactiveShellInit = '''
 
 **Symptom:** Only one module's shell init runs; others silently ignored.
 
-**Root Cause:** Multiple modules (fish.nix, node.nix) set `programs.fish.interactiveShellInit` without ordering. Last writer wins.
+**Root Cause:** Multiple modules (`modules/fish/default.nix` and `modules/node/default.nix`) set `programs.fish.interactiveShellInit` without ordering. Last writer wins.
 
 **Solution:** Use `lib.mkAfter` in non-primary modules:
 ```nix
-# In node.nix
+# In modules/node/default.nix
 programs.fish.interactiveShellInit = lib.mkAfter '''
-  # pnpm completion helpers - run after fish.nix init (mise activate)
+  # pnpm completion helpers - run after the modules/fish init (mise activate)
   function __mp_refresh_pnpm_completion; ...; end
 ''';
 ```
@@ -488,7 +485,7 @@ system_profiler SPFontsDataType | grep -i fira
 kitty +list-fonts | grep -i fira
 ```
 
-**Solution:** Use exact font name in kitty.nix:
+**Solution:** Use exact font name in `modules/kitty/default.nix`:
 ```nix
 font = {
   name = "FiraCode Nerd Font Mono";  # Not "FiraCode Nerd Font"

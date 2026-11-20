@@ -1,196 +1,127 @@
-# AeroSpace Cheatsheet
+# AeroSpace
 
-> Quick reference for MP's AeroSpace config. Dvorak layout, Option (alt) as primary modifier.
->
-> **Key Semantics**: Bindings use Dvorak character names (mnemonic). Navigation uses vim-style hjkl (character-based).
+AeroSpace is the tiling window manager ([ADR-006](../decisions/006-aerospace-instead-of-yabai.md)). Home Manager installs its configuration and runs it as a LaunchAgent.
 
----
+## Configuration files
 
-## Core Navigation
+| What | File |
+|---|---|
+| Bindings, key mapping, gaps, layout, normalization, startup commands | [`modules/aerospace/aerospace.toml`](../../modules/aerospace/aerospace.toml), the canonical authored config ([ADR-014](../decisions/014-aerospace-toml-as-canonical-authored-config.md)) |
+| Float rules, app-to-workspace rules, `PATH` and environment | [`modules/aerospace/default.nix`](../../modules/aerospace/default.nix), which also asserts that the TOML leaves those keys alone |
+| Workspace names | [`data/workspaces.toml`](../../data/workspaces.toml) |
+| Generated result | `~/.config/aerospace/aerospace.toml` |
 
-| Binding | Action |
-|---------|--------|
-| `alt + h` | Focus left |
-| `alt + j` | Focus down |
-| `alt + k` | Focus up |
-| `alt + l` | Focus right |
+The `[mode.main.binding]` and `[mode.service.binding]` tables in `aerospace.toml` list every binding. Option (`alt`) is the main modifier, and `alt-shift-semicolon` enters service mode. [Keybindings](keybindings.md) explains how AeroSpace names keys under Dvorak.
 
-## Move Windows
+## Workspaces and app placement
 
-| Binding | Action |
-|---------|--------|
-| `alt + shift + h` | Move left |
-| `alt + shift + j` | Move down |
-| `alt + shift + k` | Move up |
-| `alt + shift + l` | Move right |
+`data/workspaces.toml` names each workspace, and `default.nix` turns its app list into rules that move each app's windows to its workspace. Those rules run only while AeroSpace starts, so a window opened later stays on the current workspace. Workspaces `X` and `I` have no assignment rules, for mixed layouts and for scratch work on the built-in display.
 
-## Workspaces (Numeric)
+The utilities in `floatApps` in `default.nix` (System Settings, Finder, 1Password, and others) always float. To add one, find its bundle ID:
 
-| Binding | Action |
-|---------|--------|
-| `alt + 1-9` | Switch to workspace |
-| `alt + shift + 1-9` | Move window to workspace |
-| `alt + tab` | Toggle last workspace |
-| `alt + shift + tab` | Move workspace to next monitor |
-
-## Workspaces (Lettered)
-
-| Binding | Workspace | Mnemonic |
-|---------|-----------|----------|
-| `alt + shift + b` | B | **B**rowser |
-| `alt + shift + t` | T | **T**erminal |
-| `alt + shift + c` | C | **C**hat |
-| `alt + shift + m` | M | **M**usic |
-
-| Binding | Action |
-|---------|--------|
-| `alt + ctrl + b/t/c/m` | Send window to B/T/C/M |
-
-## Window Management
-
-| Binding | Action |
-|---------|--------|
-| `alt + f` | Toggle fullscreen |
-| `alt + =` | Balance window sizes |
-| `alt + shift + -` | Resize smaller |
-| `alt + shift + =` | Resize larger |
-| `alt + \` | Toggle tiles ↔ accordion |
-| `alt + ,` | Toggle accordion layout |
-
-## Service Mode
-
-Enter with `alt + shift + ;`, then:
-
-| Key | Action |
-|-----|--------|
-| `h/j/k/l` | Join with adjacent window (vim-style) |
-| `r` | Reset/flatten layout |
-| `f` | Toggle floating ↔ tiling |
-| `backspace` | Close all windows but current |
-| `esc` | Reload config & exit |
-
----
-
-## App Assignments (Startup Only)
-
-Apps are auto-assigned to workspaces **at startup only**. New windows during a session stay on current workspace.
-
-| App | Workspace |
-|-----|-----------|
-| Chrome, Arc, Firefox | B (Browser) |
-| Kitty, WezTerm | T (Terminal) |
-| Slack, Teams, Zoom | C (Chat) |
-| Spotify, Apple Music | M (Music) |
-
-Use workspace X for mixed layouts (no auto-assignment).
-
----
-
-## Differences from Default AeroSpace
-
-| Default | Ours | Why |
-|---------|------|-----|
-| `alt + h/j/k/l` nav | `alt + h/j/k/l` | Same (vim-style) |
-| `alt + /` | `alt + \` | Kitty uses `alt+/` for vsplit |
-| `alt + -` | `alt + shift + -` | Kitty uses `alt+-` for hsplit |
-| `alt + =` resize | `alt + =` balance | Repurposed; resize moved to shift variant |
-| No lettered workspaces | B/T/C/M | Mnemonic workspace access |
-| `alt + f` workspace F | `alt + f` fullscreen | More useful |
-| Service: `alt+shift+hjkl` | Plain `h/j/k/l` | Vim-style, avoid duplicate bindings |
-
----
-
-## Auto-Floating Apps
-
-These apps float by default (from `aerospace.nix`):
-
-- System Settings, Finder, Disk Utility
-- Activity Monitor, Console, Keychain Access
-- Preview, Calculator
-- Karabiner-Elements, Karabiner-EventViewer
-- 1Password, Keka, Archive Utility
-
----
-
-## Mission Control Note
-
-AeroSpace emulates workspaces by moving windows off-screen, which makes Mission Control (Ctrl+↑) show tiny previews. We fix this via `system.defaults.dock.expose-group-apps = true` in `nix/hosts/m5-mbp/defaults.nix`.
-
----
-
-## Useful Commands (CLI)
-
-```bash
-# List windows
-aerospace list-windows --all
-
-# List workspaces
-aerospace list-workspaces --all
-
-# Reload config
-aerospace reload-config
-
-# Check what app ID is (for float rules)
+```sh
 mdls -name kMDItemCFBundleIdentifier -r /Applications/App.app
 ```
 
----
+AeroSpace emulates workspaces by moving windows off screen, which makes Mission Control show tiny previews. `system.defaults.dock.expose-group-apps = true` in `hosts/m5-mbp/defaults.nix` groups them by app instead.
 
-## Lifecycle / Gaming Mode (launchd)
+## Useful commands
 
-> **Important**: Stop = quit process. Do NOT use `launchctl bootout` for gaming mode.
-> **Note**: Do NOT run these commands with `sudo` - that targets the wrong domain.
+```sh
+aerospace list-windows --all
+aerospace list-workspaces --all
+aerospace reload-config
+```
 
-### Stop for Gaming
-```bash
+## Stopping for games and starting again
+
+Stopping means quitting the process. Don't use `launchctl bootout` for this, and don't run these commands with `sudo`, which targets the wrong launchd domain. [ADR-017](../decisions/017-aerospace-keepalive-false-for-gaming-mode.md) explains why the LaunchAgent doesn't restart AeroSpace after a quit.
+
+```sh
+# Stop
 osascript -e 'tell application "AeroSpace" to quit' || true
 pkill -x borders 2>/dev/null || true
-```
-> If you quit via UI (Cmd+Q), run `pkill -x borders` separately.
 
-### Stop (force, if wedged)
-```bash
+# Stop when AeroSpace doesn't respond
 killall -x "AeroSpace" 2>/dev/null || true
 pkill -x borders 2>/dev/null || true
-```
 
-### Restart (idempotent)
-```bash
+# Start again (safe to repeat)
 pkill -x borders 2>/dev/null || true; launchctl kickstart -k gui/$(id -u)/org.nix-community.home.aerospace
-```
 
-### Status
-```bash
+# Status
 launchctl print gui/$(id -u)/org.nix-community.home.aerospace
 ```
 
-### If Kickstart Fails
-Check in order:
-1. System Settings → General → Login Items → "Allow in the Background" (ensure AeroSpace/Home Manager is enabled)
-2. Run `darwin-rebuild switch` (preferred - restores agent properly)
-3. Manual repair (verify plist exists first):
-   ```bash
+Quitting from the menu with Cmd+Q leaves the JankyBorders process running, so run `pkill -x borders` afterwards.
+
+If `kickstart` fails, check these in order:
+
+1. System Settings → General → Login Items → Allow in the Background: AeroSpace and Home Manager are enabled.
+2. Run `darwin-rebuild switch`, which loads the agent again. It needs my approval.
+3. Load the agent by hand, after checking that the plist exists:
+
+   ```sh
    ls ~/Library/LaunchAgents/*aerospace* && \
    launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/org.nix-community.home.aerospace.plist
    ```
 
-### Discover Service Label
-If commands fail with unknown label:
-```bash
+If a command reports an unknown label, find the current one:
+
+```sh
 launchctl list | grep -i aerospace
 ls ~/Library/LaunchAgents | grep -i aerospace
 ```
 
----
+## If AeroSpace breaks after a switch
 
-## Config Location
+1. Reload the configuration with `aerospace reload-config`.
+2. If that doesn't fix it, roll back the generation: `sudo darwin-rebuild switch --rollback`. A rollback is a switch, so it needs my approval. [Operations](operations.md#rollback-workflow) lists the generations to choose from.
 
-- **TOML source (canonical)**: `nix/home/mp/modules/aerospace/aerospace.toml`
-- **Nix overlays (float rules, PATH)**: `nix/home/mp/modules/aerospace/default.nix`
-- **Workspace registry**: `nix/data/workspaces.toml`
-- **Generated**: `~/.config/aerospace/aerospace.toml`
+## Layout manager
 
-## Docs
+The `aerospace-layout` Fish function saves and restores which workspace each app's windows are on. It's defined in [`modules/fish/functions/a_mp/aerospace-layout.fish`](../../modules/fish/functions/a_mp/aerospace-layout.fish) and stores layouts as JSON in `~/.config/aerospace-layouts/`.
 
-- Official guide: https://nikitabobko.github.io/AeroSpace/guide
-- Local: `/Users/mp/references/window-manager/AeroSpace/docs/`
+| Command | What it does |
+|---|---|
+| `save <name>` | Save the current arrangement; an existing layout with that name is overwritten |
+| `restore <name>` | Restore a saved layout |
+| `restore <name> --dry-run` | Show what a restore would move, without moving anything |
+| `restore <name> --launch` | Start missing apps during the restore |
+| `list` | List saved layouts |
+| `show <name>` | Show a layout's details |
+| `delete <name>` | Remove a layout |
+| `help` | Show usage |
+
+Layout names use lowercase letters, numbers, hyphens, and underscores, up to 32 characters, such as `coding` or `deep-work`.
+
+A layout file looks like this:
+
+```json
+{
+  "schema_version": 1,
+  "name": "coding",
+  "created_at": "2025-01-15T10:00:00Z",
+  "scope": "focused-monitor",
+  "focused_workspace": "1",
+  "windows": [
+    {
+      "app_bundle_id": "net.kovidgoyal.kitty",
+      "workspace": "1",
+      "count": 1,
+      "window_titles": ["dev session"]
+    }
+  ]
+}
+```
+
+A restore checks that every workspace in the layout exists, then finds which apps are running and starts missing ones with `--launch`. It matches windows by exact title, then by case-insensitive substring, then takes any window of that app in a fixed order. It skips windows already on the right workspace and finally focuses the saved workspace.
+
+It needs Fish 3.4.0 or later (for `string escape --style=regex`), `jq`, and a running AeroSpace. It works only on the focused monitor, and it saves workspace membership, not the tiling tree or splits. Window titles change, so matching by title is a hint rather than a guarantee.
+
+When a restore reports that a workspace in the layout doesn't exist, add that workspace or save the layout again with the current workspaces. When it reports that an app isn't running, rerun it with `--launch`.
+
+## References
+
+- [AeroSpace guide](https://nikitabobko.github.io/AeroSpace/guide)
+- A local copy of the AeroSpace docs at `~/references/window-manager/AeroSpace/docs/`

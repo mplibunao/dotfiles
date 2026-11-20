@@ -8,7 +8,7 @@ See [ADR-021](../../decisions/021-opencode-upstream-flake-for-repoprompt-acp.md)
 
 - Do not run `darwin-rebuild switch` without explicit user approval.
 - Do not put API keys, OAuth records, provider/model defaults, or OpenCode auth/config paths in Nix or Git.
-- Do not add a login wrapper, external OpenCode plugins, a daemon, or a persistent RepoPrompt MCP entry for normal use. This runbook is the intentional exception to `nix/AGENTS.md` Rule 4 for interactive provider selection, browser OAuth, and secret entry: those operator-driven steps cannot be safely scripted, and the upstream CLI is the operational mechanism.
+- Do not add a login wrapper, external OpenCode plugins, a daemon, or a persistent RepoPrompt MCP entry for normal use. This runbook is the intentional exception to the [non-declarative steps rule](../../../CODING_STANDARDS.md#non-declarative-steps) for interactive provider selection, browser OAuth, and secret entry: those operator-driven steps cannot be safely scripted, and the upstream CLI is the operational mechanism.
 - Run initial checks in a disposable, non-sensitive repository with a read-only task. Do not select full-access mode.
 - Current promotions, prices, quotas, retention, and privacy terms are external state; verify them before using proprietary or sensitive code.
 
@@ -45,14 +45,14 @@ Commit `64de4d0` landed the `v1.18.21` input, Tier 1 package, and store-managed 
 
 ## 2. Verify, then request activation approval
 
-From the repository's `nix/` directory, use the normal safe ladder. The relative paths and `.#m5-mbp` flake reference below assume this exact working directory:
+From the repository root, use the normal safe ladder. The relative paths and `.#m5-mbp` flake reference below assume this exact working directory:
 
 ```bash
-cd /Users/mp/Projects/personal/dotfiles/nix
+cd /Users/mp/Projects/personal/dotfiles
 
 nix flake metadata --json | jq '.locks.nodes.opencode'
 nix flake check --no-build --all-systems
-nixfmt flake.nix home/mp/packages/tier1.nix home/mp/modules/llm-tools.nix
+nixfmt flake.nix home/mp/package-tiers/tier1.nix modules/llm-tools/default.nix
 statix check .
 deadnix .
 darwin-rebuild build --flake .#m5-mbp
@@ -65,7 +65,7 @@ On this host, the dry-run preview also requires root. The operator must run that
 Review formatter changes, the OpenCode lock node, the built closure, and collision checks. Only after these checks, including the operator-run dry-run, pass and the user explicitly approves activation should the operator run:
 
 ```bash
-sudo darwin-rebuild switch --flake /Users/mp/Projects/personal/dotfiles/nix#m5-mbp
+sudo darwin-rebuild switch --flake /Users/mp/Projects/personal/dotfiles#m5-mbp
 ```
 
 The activation requires interactive `sudo`; an agent must not run it or claim it completed without approval. Authentication starts only after this approved activation exposes the pinned CLI.
@@ -91,7 +91,7 @@ env -i \
   opencode acp --help
 ```
 
-Expected: Apple Silicon/`arm64`, the version named by the `opencode` tag in `nix/flake.nix`, a `.local/bin` link into `/nix/store`, no unintended `~/.opencode/bin/opencode`, and successful ACP help in both normal and minimal GUI-like environments.
+Expected: Apple Silicon/`arm64`, the version named by the `opencode` tag in `flake.nix`, a `.local/bin` link into `/nix/store`, no unintended `~/.opencode/bin/opencode`, and successful ACP help in both normal and minimal GUI-like environments.
 
 <a id="opencode-provider-onboarding"></a>
 
@@ -113,7 +113,7 @@ Do not encode a provider/model default in Nix and do not install external plugin
 
 ### DeepSeek through CLIProxyAPI
 
-`nix/home/mp/modules/opencode.jsonc` points the `deepseek` provider at the local proxy (`baseURL` `http://127.0.0.1:8317/v1`, `apiKey` `{env:CLIPROXY_CLIENT_KEY}`), so DeepSeek usage shows in the proxy's records. RepoPrompt CE and T3 Code both launch `opencode acp` and use this same config; nothing changes in either app. Models are `deepseek/deepseek-v4-pro` and `deepseek/deepseek-flash`. Add the DeepSeek key to the proxy first: [DeepSeek for OpenCode](cli-proxy-api.md#deepseek-for-opencode).
+`modules/llm-tools/opencode.jsonc` points the `deepseek` provider at the local proxy (`baseURL` `http://127.0.0.1:8317/v1`, `apiKey` `{env:CLIPROXY_CLIENT_KEY}`), so DeepSeek usage shows in the proxy's records. RepoPrompt CE and T3 Code both launch `opencode acp` and use this same config; nothing changes in either app. Models are `deepseek/deepseek-v4-pro` and `deepseek/deepseek-flash`. Add the DeepSeek key to the proxy first: [DeepSeek for OpenCode](cli-proxy-api.md#deepseek-for-opencode).
 
 1. A key saved by `opencode providers login` overrides `options.apiKey` in the pinned OpenCode (`packages/core/src/model-resolver.ts` at v2.2.5 drops the config `apiKey` when a stored credential exists), and an exported `DEEPSEEK_API_KEY` can do the same. A direct key would send traffic around the proxy. Log out of DeepSeek and confirm it is not listed:
 
@@ -222,9 +222,9 @@ Never delete the whole OpenCode config directory to fix one MCP entry.
 The source URL continues to name the configured OpenCode version tag until it is edited, so an intentional release upgrade starts with a tag change. Git tags can move, however: any lock update may change the locked revision or `narHash` even when the tag text is unchanged. Review those locked values on every update. To intentionally upgrade:
 
 1. Review the target upstream tag, Darwin output, changelog, and lock graph.
-2. Edit the OpenCode tag in `nix/flake.nix`.
+2. Edit the OpenCode tag in `flake.nix`.
 3. Run `nix flake update opencode` only.
-4. Empty `nodeModulesHashes` in `nix/packages/opencode/default.nix` and build. If the build fails with a hash mismatch for `opencode-node_modules`, add the reported `got:` hash for that platform and build again ([ADR-025](../../decisions/025-opencode-node-modules-hash-override.md)).
+4. Empty `nodeModulesHashes` in `packages/opencode/default.nix` and build. If the build fails with a hash mismatch for `opencode-node_modules`, add the reported `got:` hash for that platform and build again ([ADR-025](../../decisions/025-opencode-node-modules-hash-override.md)).
 5. Review `flake.lock`, build, dry-run, and recheck collisions.
 6. Obtain explicit approval before activation.
 7. After activation, rerun RepoPrompt Test Connection and one direct `agent_run` smoke test.

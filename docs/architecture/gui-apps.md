@@ -10,7 +10,7 @@
 
 ## Managed via nix-darwin Homebrew Casks
 
-These apps are declaratively managed in `nix/hosts/m5-mbp/homebrew.nix`:
+These apps are declaratively managed in `hosts/m5-mbp/homebrew.nix`:
 
 ### Tier 1: Development
 | App | Cask | Status |
@@ -111,7 +111,7 @@ If keystrokes don't appear: re-check Input Monitoring/Accessibility, then quit/r
 
 ## Managed via nix-darwin Homebrew Brews (Exception)
 
-These CLI tools and runtime dependencies are managed in `nix/hosts/m5-mbp/homebrew.nix` under `homebrew.brews` (see ADR-016):
+These CLI tools and runtime dependencies are managed in `hosts/m5-mbp/homebrew.nix` under `homebrew.brews` (see ADR-016):
 
 | Tool | Formula | Status |
 |------|---------|--------|
@@ -165,6 +165,12 @@ AudioPriorityBar keeps the external microphone as the default input, so dictatio
 
 ---
 
+## Login Items
+
+AudioPriorityBar, TinyCast, and NordVPN start at login. macOS keeps that list, not this repository: set it in System Settings → General → Login Items, or in the app's own settings ([TinyCast](tinycast.md#installation-and-startup) has a **Launch at Login** switch).
+
+---
+
 ## Adding a New App
 
 1. Find the cask name: `brew search <app>`
@@ -173,7 +179,7 @@ AudioPriorityBar keeps the external microphone as the default input, so dictatio
    brew info --cask <new-cask-token>
    # For tap casks: brew info --cask steipete/tap/<cask-token>
    ```
-3. Add to `nix/hosts/m5-mbp/homebrew.nix`:
+3. Add to `hosts/m5-mbp/homebrew.nix`:
    ```nix
    casks = [
      "existing-app"
@@ -182,13 +188,13 @@ AudioPriorityBar keeps the external microphone as the default input, so dictatio
    ```
 4. Stage and verify:
    ```bash
-   git add nix/hosts/m5-mbp/homebrew.nix
+   git add hosts/m5-mbp/homebrew.nix
    nix flake check --no-build
-   darwin-rebuild build --flake ./nix#m5-mbp
+   darwin-rebuild build --flake .#m5-mbp
    ```
 5. Apply (with user approval):
    ```bash
-   sudo darwin-rebuild switch --flake ./nix#m5-mbp
+   sudo darwin-rebuild switch --flake .#m5-mbp
    ```
 
 **Note:** `cleanup = "uninstall"` will remove any manually-installed brews/casks not declared in homebrew.nix.

@@ -1,8 +1,6 @@
-# Architecture
+# Overview
 
-> System design for the Nix-based macOS setup.
-
-This document describes the layered architecture, component responsibilities, and boundaries of the declarative macOS configuration.
+The layers of the declarative macOS configuration, what each one owns, and what stays outside Nix. [Repository layout](repository-layout.md) shows where the files are.
 
 ---
 
@@ -87,7 +85,7 @@ sudo determinate-nixd upgrade
 | Homebrew | Cask installation (and limited brews via ADR-016 exception) |
 | Home Manager | Integration as a module |
 
-**Configuration location:** `nix/hosts/<hostname>/configuration.nix`
+**Configuration location:** `hosts/<hostname>/configuration.nix`; see [Hosts](hosts.md)
 
 **Key options:**
 ```nix
@@ -122,9 +120,10 @@ sudo determinate-nixd upgrade
 | User services | Background daemons (rare on macOS) |
 
 **Configuration locations:**
-- `nix/home/mp/common.nix` - Cross-platform settings
-- `nix/home/mp/darwin.nix` - macOS-specific settings
-- `nix/home/mp/packages/tier*.nix` - Package lists by priority
+- `home/mp/common.nix` - Cross-platform settings
+- `home/mp/darwin.nix` - macOS-specific settings and the module imports
+- `home/mp/package-tiers/tier*.nix` - Package lists by priority
+- `modules/<tool>/default.nix` - One module per program
 
 **Key options:**
 ```nix
@@ -167,9 +166,9 @@ darwinConfigurations."<hostname>"
             └── home/mp/darwin.nix
                     │
                     ├── home/mp/common.nix (cross-platform)
-                    ├── home/mp/packages/tier1.nix
-                    ├── home/mp/packages/tier2.nix
-                    └── home/mp/modules/*.nix (program modules)
+                    ├── home/mp/package-tiers/tier1.nix
+                    ├── home/mp/package-tiers/tier2.nix
+                    └── modules/<tool>/default.nix (program modules)
 ```
 
 ### Shared vs Host-Specific
@@ -178,51 +177,8 @@ darwinConfigurations."<hostname>"
 |----------|---------|-------------|
 | `home/mp/common.nix` | Cross-platform home | Settings that work on macOS and Linux |
 | `home/mp/darwin.nix` | macOS home settings | macOS-specific paths, behaviors |
-| `home/mp/modules/*.nix` | Program modules | Fish, Git, Kitty, Neovim, etc. |
+| `modules/<tool>/` | Program modules | Fish, Git, Kitty, Neovim, etc. |
 | `hosts/<hostname>/*` | Per-host config | Machine-specific settings |
-
----
-
-## Directory Layout
-
-```
-dotfiles/nix/
-├── flake.nix                 # Flake entry point
-├── flake.lock                # Pinned dependencies
-├── README.md                 # Quick start
-├── AGENTS.md                 # Agent guardrails (symlinked as CLAUDE.md)
-│
-├── hosts/
-│   └── <hostname>/
-│       ├── configuration.nix # nix-darwin host module
-│       ├── defaults.nix      # macOS defaults for this host
-│       └── homebrew.nix      # Homebrew casks and brews
-│
-├── home/
-│   └── mp/
-│       ├── common.nix        # Cross-platform home config
-│       ├── darwin.nix        # macOS-specific home config
-│       ├── packages/
-│       │   ├── tier1.nix     # Essential (Day 1)
-│       │   └── tier2.nix     # Development (Day 2-3)
-│       └── modules/          # Program-specific configs
-│           ├── fish.nix      # Shell config
-│           ├── git.nix       # Git settings
-│           ├── kitty.nix     # Terminal config
-│           ├── neovim.nix    # Editor config
-│           ├── node.nix      # Node.js/mise setup
-│           └── ...
-│
-├── scripts/
-│   ├── nix-locate            # Package search
-│   ├── nix-ops               # Operational commands
-│   └── nix-verify            # Verification ladder
-│
-└── docs/
-    ├── 00-architecture.md    # This document
-    ├── 01-migration-phases.md
-    └── ...
-```
 
 ---
 
@@ -298,27 +254,10 @@ Tradeoff: Flakes are still "experimental" but widely used and stable in practice
 3. **Clear ownership:** Each package has a home
 4. **Easy pruning:** Remove entire tiers if needed
 
-See [02-packages-and-tiers.md](./02-packages-and-tiers.md) for tier definitions.
+See [Packages and tiers](packages-and-tiers.md) for tier definitions.
 
 ---
 
-## Rebuild Workflow
+## Rebuilding
 
-```bash
-# 1. Edit configuration
-nvim nix/home/mp/packages/tier1.nix
-
-# 2. Stage if new file
-git add nix/...
-
-# 3. Verify evaluation
-nix flake check --no-build
-
-# 4. Build (no apply)
-darwin-rebuild build --flake .#<hostname>
-
-# 5. Apply (when ready)
-sudo darwin-rebuild switch --flake .#<hostname>
-```
-
-See [04-operations-update-rollback.md](./04-operations-update-rollback.md) for update and rollback procedures.
+The [command ladder](command-ladder.md) gives the order for checking and applying a change, and [Operations](operations.md) covers updates and rollback.
