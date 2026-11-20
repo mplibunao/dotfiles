@@ -2,7 +2,7 @@
 
 Canonical operator procedure for the Nix-managed OpenCode ACP CLI in RepoPrompt CE. Nix owns the pinned executable and `~/.local/bin/opencode` discovery link. The operator owns authentication; OpenCode owns mutable credentials/config/data; RepoPrompt owns its connection, model catalog, role selections, and process-ephemeral MCP policy.
 
-See [ADR-021](../decisions/021-opencode-upstream-flake-for-repoprompt-acp.md).
+See [ADR-021](../../decisions/021-opencode-upstream-flake-for-repoprompt-acp.md).
 
 ## Guardrails
 
@@ -224,7 +224,7 @@ The source URL continues to name the configured OpenCode version tag until it is
 1. Review the target upstream tag, Darwin output, changelog, and lock graph.
 2. Edit the OpenCode tag in `nix/flake.nix`.
 3. Run `nix flake update opencode` only.
-4. Empty `nodeModulesHashes` in `nix/packages/opencode/default.nix` and build. If the build fails with a hash mismatch for `opencode-node_modules`, add the reported `got:` hash for that platform and build again ([ADR-025](../decisions/025-opencode-node-modules-hash-override.md)).
+4. Empty `nodeModulesHashes` in `nix/packages/opencode/default.nix` and build. If the build fails with a hash mismatch for `opencode-node_modules`, add the reported `got:` hash for that platform and build again ([ADR-025](../../decisions/025-opencode-node-modules-hash-override.md)).
 5. Review `flake.lock`, build, dry-run, and recheck collisions.
 6. Obtain explicit approval before activation.
 7. After activation, rerun RepoPrompt Test Connection and one direct `agent_run` smoke test.

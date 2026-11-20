@@ -16,7 +16,7 @@ Upstream's `bot-nix-hashes` workflow updates `nix/hashes.json` through a separat
 1. ADR-021 points 1 and 2 still apply: pin an upstream release tag and install that flake's `opencode` package.
 2. When the pinned tag's own `node_modules` hash fails on a platform, set that platform's hash in `nix/packages/opencode/default.nix` to the hash Nix reports in the mismatch error. The override changes only the expected hash. The source tree, `bun.lock`, and build steps still come from the tag.
 3. `tier1.nix` and `llm-tools.nix` both take the package from `nix/packages/opencode/default.nix`, so the Tier 1 package and the `~/.local/bin/opencode` bridge remain one store path.
-4. Every tag change follows the [upgrade procedure](../runbooks/opencode-repoprompt.md#opencode-upgrade), which first builds without the override and adds a hash only for a platform where the tag's own hash fails.
+4. Every tag change follows the [upgrade procedure](../architecture/runbooks/opencode-repoprompt.md#opencode-upgrade), which first builds without the override and adds a hash only for a platform where the tag's own hash fails.
 
 This decision revises ADR-021 point 2 only.
 

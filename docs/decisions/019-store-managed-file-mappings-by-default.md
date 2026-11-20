@@ -99,7 +99,7 @@ These are acceptable for a single-machine setup with a regular committer. They b
 
 - `cloudflared.nix`, `leaderkey.nix`, `karabiner.nix`, `nix-ops-tools.nix` were unchanged when this ADR was adopted. They matched conditions 1, 2, or 4 at that time.
 
-> **2026-08-26 retirement note:** `leaderkey.nix` was removed when Leader Key was retired (see the [retirement retrospective](../../../docs/ledgers/2026-11-20-whispering-and-leader-key-retirement-retrospective.md)). It remains listed above as historical evidence of the original decision; `karabiner.nix` is the surviving app-rewritten-config example.
+> **2026-08-26 retirement note:** `leaderkey.nix` was removed when Leader Key was retired (see the [retirement retrospective](../ledgers/2026-11-20-whispering-and-leader-key-retirement-retrospective.md)). It remains listed above as historical evidence of the original decision; `karabiner.nix` is the surviving app-rewritten-config example.
 
 ### Decision-log structure
 

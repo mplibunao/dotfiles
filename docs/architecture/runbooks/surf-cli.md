@@ -4,7 +4,7 @@
 
 Install the official [`surf-cli` npm package](https://www.npmjs.com/package/surf-cli), published from [nicobailon/surf-cli](https://github.com/nicobailon/surf-cli). npm owns the CLI and extension files. Chrome loads the extension, and Surf's bundled installer registers the native host that connects Chrome to the CLI.
 
-Use npm for Surf to keep upgrades aligned with upstream installation instructions. Node comes from mise under the [Node runtime decision](../decisions/020-nodejs-via-mise.md). Nix owns the surrounding shell configuration. npm owns this global package. Nix switches and generation rollbacks don't change the installed Surf version.
+Use npm for Surf to keep upgrades aligned with upstream installation instructions. Node comes from mise under the [Node runtime decision](../../decisions/020-nodejs-via-mise.md). Nix owns the surrounding shell configuration. npm owns this global package. Nix switches and generation rollbacks don't change the installed Surf version.
 
 The verified installation on 2026-10-05 uses CLI version **2.22.0** with mise Node **24**. Update this version record after a verified upgrade. Pinning the CLI version records the intended release. It doesn't lock every transitive dependency for a future reinstall.
 

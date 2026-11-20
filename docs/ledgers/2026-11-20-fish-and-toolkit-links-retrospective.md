@@ -12,7 +12,7 @@ Between 2025-12-25 and 2026-02-02, with one follow-up on 2026-04-27, this work m
 
 ## 1. Fish functions in Home Manager
 
-- Decision: [ADR-019](../../nix/docs/decisions/019-store-managed-file-mappings-by-default.md) owns how Fish files are mapped now: authored functions through one out-of-store link, completions store-managed. It superseded ADR-009, which had made functions store-managed. Source: the ADRs.
+- Decision: [ADR-019](../decisions/019-store-managed-file-mappings-by-default.md) owns how Fish files are mapped now: authored functions through one out-of-store link, completions store-managed. It superseded ADR-009, which had made functions store-managed. Source: the ADRs.
 - Evidence: `feat(nix): migrate fish functions to Home Manager` (2025-12-26) moved the functions into `nix/home/mp/modules/fish/functions/`, including `clm`, `findandkill`, `secret`, the Starship transient prompt, and the `a_mp/` set with `kt` and `kdev`. `refactor(nix): migrate fish functions to out-of-store symlink` (2026-04-27) made the switch ADR-019 describes.
 
 ## 2. Fish parity and the Starship config

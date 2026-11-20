@@ -15,7 +15,7 @@ The management key and any proxy client keys must not enter git, the Nix store, 
 
 1. Install CLIProxyAPI from the official release tarball, pinned at v8.0.53, the same way `packages/executor` and `packages/gh` install upstream binaries. `aarch64-darwin` is the Mac build. `x86_64-linux` exists so the same expression can be built and executed off the Mac.
 2. Generate a v8 `config.yaml` with no secrets: loopback port 8317, `management.allow-remote: false`, empty `management.secret-key`, `oauth.auth-dir: "~/.cli-proxy-api"`, usage statistics on, a 3600 second usage-queue retention, and built-in session affinity (`routing.session-affinity: true`, `session-affinity-ttl: 1h`, `session-affinity-rebind-on: quota`). No `routing.strategy` is set, so the upstream default (`round-robin`) applies to sessions without a binding. The LaunchAgent reads `CLIPROXY_MANAGEMENT_KEY` from `~/.config/cli-proxy-api/secrets.env` (mode 0600) and passes it as `MANAGEMENT_PASSWORD`.
-3. Do not package the dashboard. Run `pnpm run start` from a local checkout via a LaunchAgent, the same shape as `modules/surf-openai-gateway.nix`. The management key is the same file, exported as `CPA_MANAGEMENT_KEY`. Document the checkout and the move to `main` after PR #1 merges in the [runbook](../runbooks/cli-proxy-api.md).
+3. Do not package the dashboard. Run `pnpm run start` from a local checkout via a LaunchAgent, the same shape as `modules/surf-openai-gateway.nix`. The management key is the same file, exported as `CPA_MANAGEMENT_KEY`. Document the checkout and the move to `main` after PR #1 merges in the [runbook](../architecture/runbooks/cli-proxy-api.md).
 4. Do not add a routing plugin. A one-shot login LaunchAgent publishes Claude Code's proxy route. See the amendments below. Codex's `config.toml` stays in claude-tooling.
 5. `nix/scripts/cli-proxy-dashboard-setup` (ADR-011, shimmed like the other operational scripts) clones or updates the dashboard over SSH, checks out a ref, and runs `pnpm install` plus `pnpm run build` with Node 24's pnpm. It prints the checked-out SHA and does not read or write secrets. `init-secret` is a separate subcommand that may create the secrets file with `openssl rand -hex 32`, mode `0600`, without printing the value, and it refuses to overwrite an existing file. Browser OAuth logins stay manual, as in [ADR-021](021-opencode-upstream-flake-for-repoprompt-acp.md) point 7.
 
@@ -59,7 +59,7 @@ Claude Code uses the proxy by default from every launch path on m5-mbp: RepoProm
 - Codex Desktop's loss of ChatGPT-account plugins came from Codex's `cliproxy` provider, not from the Claude variables. claude-tooling PR #93 removed that provider from the synced Codex config, so Codex Desktop, RepoPrompt's Codex agent and plain `codex` use the ChatGPT login. The proxy keeps the Codex login so the dashboard can read limits.
 - Rejected: a RepoPrompt custom Claude-compatible provider, which loses Claude-only behavior such as Auto permission mode; a wrapper or relauncher around RepoPrompt, which starts in too many ways to cover; and a fish export layer, which adds a second writer and can't clear stale values that RepoPrompt merges from its own environment.
 
-Operating steps are in the [runbook](../runbooks/cli-proxy-api.md#claude-route).
+Operating steps are in the [runbook](../architecture/runbooks/cli-proxy-api.md#claude-route).
 
 ## Amendment (2026-11-17): live dashboard on its own clone of main
 

@@ -13,9 +13,9 @@ RepoPrompt CE can run OpenCode as an agent over the Agent Client Protocol (ACP).
 
 ## 1. Pinned OpenCode package and discovery path
 
-- Decision: [ADR-021](../../nix/docs/decisions/021-opencode-upstream-flake-for-repoprompt-acp.md) records the choices: the tagged upstream OpenCode flake with its own lock graph, Tier 1 membership, a Home Manager-owned `~/.local/bin/opencode` link for the GUI, no persistent OpenCode MCP entry, and authentication left to `opencode auth`. [The runbook](../../nix/docs/runbooks/opencode-repoprompt.md) covers onboarding and upgrades. Source: the plan.
+- Decision: [ADR-021](../decisions/021-opencode-upstream-flake-for-repoprompt-acp.md) records the choices: the tagged upstream OpenCode flake with its own lock graph, Tier 1 membership, a Home Manager-owned `~/.local/bin/opencode` link for the GUI, no persistent OpenCode MCP entry, and authentication left to `opencode auth`. [The runbook](../architecture/runbooks/opencode-repoprompt.md) covers onboarding and upgrades. Source: the plan.
 - Evidence: `feat(nix): add OpenCode for RepoPrompt` (2026-08-25) changed `nix/flake.nix`, `nix/flake.lock`, `nix/home/mp/packages/tier1.nix`, and `nix/home/mp/modules/llm-tools.nix`, pinning OpenCode `v1.18.21`. The plan records that `nix flake check --no-build --all-systems`, `nixfmt --check`, `deadnix`, and `darwin-rebuild build` passed, and that `statix` exited 1 on a repeated-key warning that predated the change.
-- Evidence: later changes replaced parts of this setup. [ADR-023](../../nix/docs/decisions/023-opencode-cursor-client-config-ownership.md) moved OpenCode's client config to exact-file ownership, [ADR-025](../../nix/docs/decisions/025-opencode-node-modules-hash-override.md) added a local `node_modules` hash override, and `feat(nix): install OpenCode 2.2.5 from its release tag` (merged 2026-11-03) replaced the 1.18.21 pin.
+- Evidence: later changes replaced parts of this setup. [ADR-023](../decisions/023-opencode-cursor-client-config-ownership.md) moved OpenCode's client config to exact-file ownership, [ADR-025](../decisions/025-opencode-node-modules-hash-override.md) added a local `node_modules` hash override, and `feat(nix): install OpenCode 2.2.5 from its release tag` (merged 2026-11-03) replaced the 1.18.21 pin.
 
 ## 2. Activation
 

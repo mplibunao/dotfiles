@@ -1,6 +1,6 @@
 # CLIProxyAPI and the usage dashboard
 
-Nix installs the pinned CLIProxyAPI release and keeps it running with a LaunchAgent. The usage dashboard is a second LaunchAgent pointed at a local checkout of the private repo `github.com/mplibunao/cli-proxy-dashboard`. Packaging that repo was not possible from a machine that cannot read it; this runbook is the setup that is possible. [ADR-026](../decisions/026-cliproxyapi-prebuilt-launchagent.md) records the packaging choice.
+Nix installs the pinned CLIProxyAPI release and keeps it running with a LaunchAgent. The usage dashboard is a second LaunchAgent pointed at a local checkout of the private repo `github.com/mplibunao/cli-proxy-dashboard`. Packaging that repo was not possible from a machine that cannot read it; this runbook is the setup that is possible. [ADR-026](../../decisions/026-cliproxyapi-prebuilt-launchagent.md) records the packaging choice.
 
 A third LaunchAgent, `com.mp.cli-proxy-env`, publishes Claude Code's route into the GUI session, so Claude Code uses the proxy by default wherever it starts, and it always publishes the client key that OpenCode's DeepSeek provider uses (see [Claude route](#claude-route)). Codex uses its own ChatGPT login unless a run opts in. OAuth logins only store credentials under `~/.cli-proxy-api`.
 

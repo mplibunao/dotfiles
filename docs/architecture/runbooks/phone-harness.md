@@ -1,6 +1,6 @@
 # Phone Harness: uv installation and recovery
 
-Ownership decision: [ADR-024](../decisions/024-phone-harness-installation-ownership.md). Nix supplies uv; uv manages Phone Harness outside Nix generations. The installed command is a Python application, not an MCP server. It requires no Codex MCP configuration or restart.
+Ownership decision: [ADR-024](../../decisions/024-phone-harness-installation-ownership.md). Nix supplies uv; uv manages Phone Harness outside Nix generations. The installed command is a Python application, not an MCP server. It requires no Codex MCP configuration or restart.
 
 ## Tested macOS baseline
 

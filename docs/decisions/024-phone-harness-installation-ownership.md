@@ -13,7 +13,7 @@ The pinned nixpkgs provides several PyObjC 11.1 packages, but lacks Phone Harnes
 
 Keep the working Phone Harness installation managed by uv. Nix owns uv; uv owns the application's Python environment and executable. MP accepted this choice after reviewing the RP Build proposal and dependency explanation.
 
-Keep Phone Harness configuration local and writable, including its existing telemetry opt-out and Android SDK adb path. No Nix recipe, activation step, executable bridge, custom helper, MCP entry, or new session-variable declaration is needed. Document installation, updates, and recovery in the [Phone Harness runbook](../runbooks/phone-harness.md).
+Keep Phone Harness configuration local and writable, including its existing telemetry opt-out and Android SDK adb path. No Nix recipe, activation step, executable bridge, custom helper, MCP entry, or new session-variable declaration is needed. Document installation, updates, and recovery in the [Phone Harness runbook](../architecture/runbooks/phone-harness.md).
 
 ## Alternatives considered
 

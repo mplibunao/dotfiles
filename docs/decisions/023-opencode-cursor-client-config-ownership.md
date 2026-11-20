@@ -15,7 +15,7 @@ Home Manager store-manages exactly two client configuration files: OpenCode's `~
 
 The OpenCode file is mapped at its separate P3 migration gate. Its non-secret model defaults and DeepSeek provider settings remain, but its API key moves to the local OpenCode auth store before the managed mapping is activated. Home Manager leaves the `~/.config/opencode` directory, `~/.local/share/opencode/auth.json`, sessions, history, project configuration, and credentials outside its scope.
 
-The Cursor file retains the existing RepoPrompt entry with the same parsed JSON values and adds only the `executor` entry specified by the [Executor gateway plan](../../../../ai/claude-toolkit/docs/exec-plans/active/2026-09-23-executor-mcp-gateway.md#cursor). Home Manager leaves the `~/.cursor` directory and other Cursor preferences outside its scope. RepoPrompt stays a direct MCP connection, separate from Executor.
+The Cursor file retains the existing RepoPrompt entry with the same parsed JSON values and adds only the `executor` entry specified by the Executor gateway plan (section "Cursor" of `docs/exec-plans/active/2026-09-23-executor-mcp-gateway.md` in the private claude-toolkit repository). Home Manager leaves the `~/.cursor` directory and other Cursor preferences outside its scope. RepoPrompt stays a direct MCP connection, separate from Executor.
 
 Both mappings use ordinary store-managed `home.file` or `xdg.configFile` sources under [ADR-019](019-store-managed-file-mappings-by-default.md). Neither mapping uses `force = true` to bypass a local-file collision.
 
@@ -37,7 +37,7 @@ Both mappings use ordinary store-managed `home.file` or `xdg.configFile` sources
 
 For Cursor, back up the existing regular `~/.cursor/mcp.json` privately with its mode preserved. Verify the versioned RepoPrompt entry equals the backed-up entry as parsed JSON. Build the configuration without applying it. Only after approval, move the regular file to the private rollback location immediately before the user runs `darwin-rebuild switch`; verify the resulting store symlink and both MCP entries. Restore the regular file after a failed activation only after confirming the target is outside Home Manager ownership.
 
-At OpenCode's P3 gate, follow the [Executor gateway plan's OpenCode credential migration](../../../../ai/claude-toolkit/docs/exec-plans/active/2026-09-23-executor-mcp-gateway.md#opencode) before mapping `opencode.jsonc`. That migration includes a real authenticated prompt before activation. The OpenCode exact-file mapping was activated on 2026-10-28. The managed file and a standalone Executor read passed verification.
+At OpenCode's P3 gate, follow the OpenCode credential migration in the same Executor gateway plan (section "OpenCode") before mapping `opencode.jsonc`. That migration includes a real authenticated prompt before activation. The OpenCode exact-file mapping was activated on 2026-10-28. The managed file and a standalone Executor read passed verification.
 
 ## Risks
 
