@@ -147,7 +147,7 @@ If your hostname doesn't match an existing host in `hosts/`, you may need to:
 
 ### Stage Any New Files
 ```bash
-git add .
+git add flake.nix flake.lock hosts home modules packages scripts data
 ```
 
 **IMPORTANT:** Nix flakes ignore untracked files. Always stage before evaluation.
