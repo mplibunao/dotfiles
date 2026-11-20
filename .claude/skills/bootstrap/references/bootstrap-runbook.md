@@ -5,7 +5,7 @@
 ## Phase 0: Preconditions
 
 ### System Requirements
-- macOS (Apple Silicon preferred, Intel supported)
+- macOS on Apple Silicon (the only host in the flake is `aarch64-darwin`; an Intel Mac would need its own host and packages)
 - Admin access (for sudo)
 - Internet connection
 
@@ -164,8 +164,8 @@ nix run nix-darwin#darwin-rebuild -- build --flake .#m5-mbp
 ```
 
 ### Apply (Level 4 - REQUIRES USER APPROVAL)
+The switch needs interactive `sudo`. After the build passes and the user approves, give them this command to run:
 ```bash
-# Only run this with explicit user approval
 sudo nix run nix-darwin#darwin-rebuild -- switch --flake .#m5-mbp
 ```
 
@@ -262,16 +262,10 @@ This installs a standalone binary to `~/.local/bin/claude` (no Node.js required)
 npm install -g @openai/codex
 ```
 
-### Beads Issue Tracker (Optional)
-```bash
-curl -sSL https://raw.githubusercontent.com/steveyegge/beads/main/scripts/install.sh | bash
-```
-
 ### Verify
 ```bash
 claude --version
 # codex --version (if installed)
-# bd --version (if installed)
 ```
 
 ---
@@ -304,12 +298,6 @@ nix-verify --to 2
 nix-ops update-inputs --yes --build
 ```
 
-### Find Available Work
-```bash
-bd ready
-bd show <id>
-```
-
 ---
 
 ## Troubleshooting
@@ -336,16 +324,15 @@ source /etc/static/bashrc  # or fish equivalent
 ```
 
 ### Wrong architecture packages
-Check `nixpkgs.hostPlatform` in host config matches your machine:
-- Apple Silicon: `aarch64-darwin`
-- Intel: `x86_64-darwin`
+Check that the machine is Apple Silicon (see [Architecture Check](#architecture-check)) and that `nixpkgs.hostPlatform` in the host config is `aarch64-darwin`. An Intel Mac needs its own host and packages. See [System Requirements](#system-requirements).
 
 ### Home Manager collision errors
-If HM refuses to overwrite existing files:
+If HM refuses to overwrite existing files, move the file aside:
 ```bash
 mv ~/.config/conflicting-file ~/.config/conflicting-file.backup
-darwin-rebuild switch --flake .#m5-mbp
 ```
+
+Then, once the user approves, give them the switch command that failed to run again. It needs interactive `sudo`. On the first switch, that's the `nix run` command from Phase 5's Apply step. After that, it's `sudo darwin-rebuild switch --flake .#m5-mbp`.
 
 ### Neovim validation fails
 

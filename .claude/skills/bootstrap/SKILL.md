@@ -39,11 +39,7 @@ Guide for provisioning a fresh macOS machine until an agent can take over with t
 
 ## Safety Rules
 
-These rules align with `nix/AGENTS.md`:
-
-1. **Never run `switch` without explicit user approval**
-2. **Always stage new files** before flake evaluation
-3. **Follow the ladder:** edit -> stage -> check -> build -> propose
+Follow [Core Safety Rules in `nix/AGENTS.md`](../../../nix/AGENTS.md#rule-1-never-run-switch-without-explicit-user-approval), beginning with Rule 1 on user approval before any `switch`.
 
 ## References
 
@@ -86,9 +82,8 @@ See [bootstrap-runbook.md](references/bootstrap-runbook.md#neovim-validation-fai
 
 When Phase 7 is complete:
 
-1. Run `bd ready` to check for available work
-2. Use the `nix` skill for ongoing configuration changes
-3. Point to `nix/AGENTS.md` for safety rules
+1. Use the `nix` skill for ongoing configuration changes
+2. Point to `nix/AGENTS.md` for safety rules
 
 ```bash
 # Verify handover

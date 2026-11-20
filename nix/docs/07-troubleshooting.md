@@ -433,7 +433,7 @@ These are actual issues hit during this migration, for reference.
 
 **Root Cause:** Partial migration - only a subset of abbreviations were ported from `setup-abbreviations.fish` to `fish.nix shellAbbrs`.
 
-**Solution:** Port remaining abbreviations to `programs.fish.shellAbbrs` in fish.nix, or source the legacy function file.
+**Solution:** Port remaining abbreviations to `programs.fish.shellAbbrs` in fish.nix.
 
 **Lesson:** When migrating shell config, verify all abbreviations/aliases are ported, not just a sample.
 

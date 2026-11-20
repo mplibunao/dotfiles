@@ -2,7 +2,9 @@
 
 > Staged migration from legacy dotfiles to Nix-based setup.
 
-This document outlines the phased approach to migrating from the existing `bootstrap.sh` + symlink workflow to a fully declarative Nix configuration. Each stage has explicit goals, actions, and "done" criteria.
+This document outlines the phased approach to migrating from a `bootstrap.sh` and symlink setup to a fully declarative Nix configuration. Each stage has explicit goals, actions, and "done" criteria.
+
+The flake, host, Homebrew, and defaults files these stages create already exist. To set up a fresh Mac from this repository, follow the [bootstrap skill](../../.claude/skills/bootstrap/SKILL.md) instead.
 
 ---
 
@@ -10,7 +12,6 @@ This document outlines the phased approach to migrating from the existing `boots
 
 | Stage | Name | Location | Goal |
 |-------|------|----------|------|
-| 0 | Pre-migration prep | Intel Mac | Export truth, tag repo |
 | 1 | Minimal bootstrap | New Mac | Clone repo, configure SSH |
 | 2 | Install Determinate Nix | New Mac | Get `nix` working |
 | 3 | Bootstrap flake | New Mac | nix-darwin + HM skeleton |
@@ -20,51 +21,6 @@ This document outlines the phased approach to migrating from the existing `boots
 | 7 | GUI apps policy | New Mac | Manual vs Homebrew |
 | 8 | macOS defaults | New Mac | System settings via nix-darwin |
 | 9 | Window management | New Mac | AeroSpace + Karabiner |
-
----
-
-## Stage 0: Pre-Migration Prep (Intel Mac)
-
-**Location:** Old Intel Mac only
-
-**Goal:** Publish the source of truth, no Nix work here.
-
-### Actions
-
-1. **Push dotfiles repo**
-   ```bash
-   cd ~/Projects/personal/dotfiles
-   git add -A
-   git commit -m "chore: pre-nix-migration snapshot"
-   git push origin HEAD
-   ```
-
-2. **Create migration tag**
-   ```bash
-   git tag pre-nix-migration
-   git push origin pre-nix-migration
-   ```
-
-3. **Verify inventory completeness**
-   - Review `NIX_MIGRATION_INVENTORY.md`
-   - Ensure tier mappings are accurate
-   - Document any last-minute additions
-
-4. **Optional: Export additional state**
-   ```bash
-   # Brew lists (if still using brew)
-   brew list --formula > inventory/brew-formulas.txt
-   brew list --cask > inventory/brew-casks.txt
-
-   # npm globals
-   npm list -g --depth=0 > inventory/npm-globals.txt
-   ```
-
-### Done Criteria
-
-- [ ] Dotfiles repo pushed and tagged `pre-nix-migration`
-- [ ] `NIX_MIGRATION_INVENTORY.md` is accurate and complete
-- [ ] No uncommitted changes on Intel Mac
 
 ---
 
@@ -468,7 +424,5 @@ After completing all stages:
 
 1. **Document remaining manual steps**
 2. **Set up regular GC schedule**
-3. **Configure CI for flake checks**
-4. **Archive legacy bootstrap.sh**
 
 See [04-operations-update-rollback.md](./04-operations-update-rollback.md) for ongoing maintenance.

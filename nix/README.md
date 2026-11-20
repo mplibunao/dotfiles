@@ -98,7 +98,7 @@ nix/
 | Configure a program | `home/mp/modules/<program>.nix` |
 | Add fish abbreviation | `home/mp/modules/fish.nix` → `shellAbbrs` |
 | Add fish function | `home/mp/modules/fish/functions/` |
-| Change macOS defaults | `hosts/m5-mbp/defaults.nix` (when created) |
+| Change macOS defaults | `hosts/m5-mbp/defaults.nix` |
 
 ## Operational Scripts
 
