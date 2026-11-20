@@ -22,7 +22,7 @@ Don't add `pnpm.fish` there. `modules/node/default.nix` generates the pnpm compl
 
 ## Cheat sheet
 
-An interactive HTML reference to the abbreviations, functions, plugins, and features lives at `~/.agent/diagrams/tooling-personal/fish-shell/cheatsheet.html`, on the machine rather than in this repository. Update it whenever a change adds, renames, or removes a function or an abbreviation.
+An interactive HTML reference to the abbreviations, functions, plugins, and features lives at `~/.agent/diagrams/tooling-personal/fish-shell/cheatsheet.html`, on the machine rather than in this repository. Update it whenever a change adds, changes, renames, or removes a function or an abbreviation.
 
 ## `clm` launch log
 

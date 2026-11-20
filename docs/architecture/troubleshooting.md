@@ -183,6 +183,11 @@ Activation stops only in two cases:
 
 Then run the switch again. Once it succeeds, compare Home Manager's file with the backup, carry any missing settings into the module, and delete the backup. Don't set `force = true` on the mapping to get past a collision.
 
+Two kinds of mapping skip this procedure:
+
+- Mappings with `force = true` skip the collision check, and activation replaces whatever is at the path without a backup. They are `~/.config/fish/functions`, which activation removes as a whole folder, `~/.config/karabiner`, `~/.cloudflared/config.yml`, and the script shims in `~/.local/bin`. Move anything you want to keep at those paths aside before the switch.
+- `modules/whisper-model/default.nix` checks the Whisper model's cache path before Home Manager's collision check and refuses an occupied path or an unexpected symlink. Moving or removing that path needs its own approval; the module's error message says which path.
+
 ### "permission denied"
 
 **Error:**

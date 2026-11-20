@@ -15,7 +15,7 @@ The `[mode.main.binding]` and `[mode.service.binding]` tables in `aerospace.toml
 
 ## Workspaces and app placement
 
-`data/workspaces.toml` names each workspace, and `default.nix` turns its app list into rules that move each app's windows to its workspace. Those rules run only while AeroSpace starts, so a window opened later stays on the current workspace. Workspaces `X` and `I` have no assignment rules, for mixed layouts and for scratch work on the built-in display.
+`data/workspaces.toml` names each workspace. `appAssignments` in `default.nix` lists app bundle IDs with their workspaces and becomes rules that move each app's windows there. Those rules run only while AeroSpace starts, so a window opened later stays on the current workspace. Workspaces `X` and `I` have no assignment rules, for mixed layouts and for scratch work on the built-in display.
 
 The utilities in `floatApps` in `default.nix` (System Settings, Finder, 1Password, and others) always float. To add one, find its bundle ID:
 
@@ -93,7 +93,7 @@ The `aerospace-layout` Fish function saves and restores which workspace each app
 | `delete <name>` | Remove a layout |
 | `help` | Show usage |
 
-Layout names use lowercase letters, numbers, hyphens, and underscores, up to 32 characters, such as `coding` or `deep-work`.
+Layout names start with a lowercase letter and use lowercase letters, numbers, hyphens, and underscores, up to 32 characters, such as `coding` or `deep-work`.
 
 A layout file looks like this:
 
@@ -117,7 +117,7 @@ A layout file looks like this:
 
 A restore checks that every workspace in the layout exists, then finds which apps are running and starts missing ones with `--launch`. It matches windows by exact title, then by case-insensitive substring, then takes any window of that app in a fixed order. It skips windows already on the right workspace and finally focuses the saved workspace.
 
-It needs Fish 3.4.0 or later (for `string escape --style=regex`), `jq`, and a running AeroSpace. It works only on the focused monitor, and it saves workspace membership, not the tiling tree or splits. Window titles change, so matching by title is a hint rather than a guarantee.
+It needs Fish 3.4.0 or later (for `string escape --style=regex`), `jq`, and a running AeroSpace. It works only on the focused monitor, and it saves workspace membership, not the tiling tree or splits. A save records one workspace per app, the workspace of that app's first window, so an app whose windows sit on several workspaces comes back on one. Window titles change, so matching by title is a hint rather than a guarantee.
 
 When a restore reports that a workspace in the layout doesn't exist, add that workspace or save the layout again with the current workspaces. When it reports that an app isn't running, rerun it with `--launch`.
 

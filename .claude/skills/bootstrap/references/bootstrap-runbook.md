@@ -289,13 +289,13 @@ Bootstrap is complete when:
 
 ```bash
 # Status check
-nix-ops status
+nix-ops status --host m5-mbp
 
 # Verification ladder
-nix-verify --to 2
+nix-verify --host m5-mbp --to 2
 
 # Update flake inputs
-nix-ops update-inputs --yes --build
+nix-ops update-inputs --host m5-mbp --yes --build
 ```
 
 ---

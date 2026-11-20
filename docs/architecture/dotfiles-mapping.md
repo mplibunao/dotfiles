@@ -45,7 +45,7 @@ The OpenCode executable entry is a store-managed link to the same immutable exec
 
 ### Files Linked out of the Store
 
-These paths point into this checkout through `mkOutOfStoreSymlink`, so editing the repository file changes the live one:
+These paths point into a working checkout through `mkOutOfStoreSymlink`, so editing the repository file changes the live one. All but the last row point into this repository:
 
 | Path | Repository file | Module |
 |------|-----------------|--------|
@@ -54,6 +54,7 @@ These paths point into this checkout through `mkOutOfStoreSymlink`, so editing t
 | `~/.config/tinycast/settings.json` | `modules/tinycast/settings.json` ([TinyCast](tinycast.md)) | `modules/tinycast/default.nix` |
 | `~/.cloudflared/config.yml` | `modules/cloudflared/config.yml` | `modules/cloudflared/default.nix` |
 | `~/.local/bin/nix-ops`, `nix-verify`, `nix-locate`, `claude-proxy-route`, `cli-proxy-dashboard-setup` | `scripts/` | `modules/nix-ops-tools/default.nix` |
+| `~/.local/bin/claude-launch`, `codex-launch` | `scripts/` in the claude-toolkit checkout, `~/Projects/personal/ai/claude-toolkit` | `modules/llm-tools/default.nix` |
 
 ---
 

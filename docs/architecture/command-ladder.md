@@ -14,9 +14,10 @@ nix-verify --host m5-mbp --print-only  # prints the commands without running the
 
 ```sh
 nix flake check --no-build --all-systems
+nix eval --raw .#darwinConfigurations.m5-mbp.system.drvPath
 ```
 
-Catches syntax errors, missing imports, and type mismatches without building anything.
+The first command checks the flake's standard outputs without building anything. It doesn't evaluate `darwinConfigurations`, so the second command evaluates the host itself, which catches syntax errors, missing imports, and type mismatches in the modules. CI runs both. `nix-verify` runs only the first at level 0; its level 2 build evaluates the host too.
 
 ## Level 1: format and lint
 
@@ -58,14 +59,14 @@ Activates the new configuration. It needs my approval and an interactive `sudo` 
 
 - Every new file is staged with `git add`.
 - `nix flake check --no-build --all-systems` passes.
-- `darwin-rebuild build` succeeds, with no Home Manager collision warnings in its output.
+- `darwin-rebuild build` succeeds. Home Manager checks for files in the way only during activation, so a clean build doesn't rule out a collision ([Troubleshooting](troubleshooting.md#file-is-in-the-way)).
 - The commit message describes the change.
 
 ## Quick reference
 
 | Action | Command | Changes the live system |
 |---|---|---|
-| Evaluate | `nix flake check --no-build --all-systems` | No |
+| Evaluate | `nix flake check --no-build --all-systems` and `nix eval --raw .#darwinConfigurations.m5-mbp.system.drvPath` | No |
 | Format | `git ls-files -z '*.nix' \| xargs -0 nixfmt` | No (rewrites files) |
 | Lint | `statix check .` | No |
 | Dead code | `deadnix .` | No |

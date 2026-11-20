@@ -45,7 +45,6 @@ These apps are declaratively managed in `hosts/m5-mbp/homebrew.nix`:
 | KeyCastr | `keycastr` | ✅ Configured |
 | MonitorControl | `monitorcontrol` | ✅ Configured |
 | Obsidian | `obsidian` | ✅ Configured |
-| Repo Prompt | `repo-prompt` | ✅ Configured |
 | RepoPrompt CE | `repoprompt/repoprompt-ce/repoprompt-ce` | ✅ Configured |
 
 #### CodexBar (RepoPrompt profile home)

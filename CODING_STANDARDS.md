@@ -6,7 +6,7 @@ Rules for changes to this configuration that need judgment. Formatting and lint 
 
 - Add new configuration as a Nix module, never as a symlink made by hand.
 - Use a Home Manager program module (`programs.<name>`) when one exists. Map a file with `xdg.configFile` or `home.file` only for configuration that has no module. [Dotfiles mapping](docs/architecture/dotfiles-mapping.md) shows both.
-- Keep mapped files store-managed by default. Use `config.lib.file.mkOutOfStoreSymlink` only for scripts that are run or iterated on often, configuration the app itself rewrites, and shell helpers, where seeing an edit take effect at once matters more than an immutable build. Say in a comment in the module which of those conditions applies. [ADR-019](docs/decisions/019-store-managed-file-mappings-by-default.md) has the full criteria.
+- Keep mapped files store-managed by default. Use `config.lib.file.mkOutOfStoreSymlink` only when one of [ADR-019](docs/decisions/019-store-managed-file-mappings-by-default.md)'s four conditions holds: a script that's run or iterated on often, configuration an app itself rewrites, a shell helper changed several times a week, or a checkout that a tool must read as its source of truth as it changes. Say in a comment in the module which condition applies.
 
 ## Packages
 

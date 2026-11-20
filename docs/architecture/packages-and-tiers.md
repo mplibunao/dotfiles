@@ -165,7 +165,7 @@ Quality of life improvements, lower priority.
 
 | Package | Notes |
 |---------|-------|
-| AeroSpace | Installed via Homebrew cask; config via HM |
+| AeroSpace | Nix package (`pkgs.aerospace`) through `programs.aerospace`; config via HM |
 | Karabiner-Elements | Installed via Homebrew cask; config via HM |
 
 ---
