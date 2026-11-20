@@ -75,6 +75,10 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
+# A fresh Mac has no Home Manager configuration yet, so the probe uses the
+# conventional clone location rather than DOTFILES_DIR or the current directory.
+dotfiles_dir="$HOME/Projects/personal/dotfiles"
+
 # Check functions
 check_xcode_clt() {
   xcode-select -p >/dev/null 2>&1
@@ -98,7 +102,7 @@ check_github_access() {
 }
 
 check_dotfiles() {
-  [[ -f "$HOME/Projects/personal/dotfiles/flake.nix" ]]
+  [[ -f "$dotfiles_dir/flake.nix" ]]
 }
 
 check_claude_toolkit() {
@@ -120,9 +124,9 @@ check_darwin_rebuild() {
 check_flake_build() {
   # darwin-rebuild build leaves result pointing at the system output; a
   # package built from the repository root would leave a different link.
-  local target
-  target="$(readlink "$HOME/Projects/personal/dotfiles/result")" || return 1
-  [[ "$target" == *-darwin-system-* && -x "$HOME/Projects/personal/dotfiles/result/activate" ]]
+  local result="$dotfiles_dir/result" target
+  target="$(readlink "$result")" || return 1
+  [[ "$target" == *-darwin-system-* && -x "$result/activate" ]]
 }
 
 check_claude_code() {
