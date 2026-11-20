@@ -1,7 +1,7 @@
 # Workspace Registry - Single Source of Truth
 #
-# Location: inside nix/ for flake-pure evaluation
-# Consumed by: Nix (builtins.fromTOML), Python tooling (keybinds validation)
+# Location: inside the flake, so evaluation stays pure
+# Consumed by: Nix (builtins.fromTOML in modules/aerospace/default.nix)
 #
 # This registry defines canonical workspace names. All references to lettered
 # workspaces in aerospace.toml and default.nix should use

@@ -1,8 +1,5 @@
 # AeroSpace Window Manager Configuration
-# CANONICAL SOURCE - Consumed by both Nix (builtins.fromTOML) and keybind tooling
-# Location: nix/home/mp/modules/aerospace/aerospace.toml
-#
-# DO NOT EDIT keybinds/sources/aerospace/ - that location is deprecated
+# CANONICAL SOURCE - default.nix in this folder reads it with builtins.fromTOML
 #
 # OWNERSHIP BOUNDARY:
 #   TOML owns: keybindings, key-mapping, gaps, layout, normalization, after-startup-command
@@ -14,7 +11,7 @@
 # ===== KEY SEMANTICS CONTRACT =====
 # Bindings use Dvorak character names under key-mapping.preset = 'dvorak'
 # Example: 'alt-d' means press the key labeled 'd' on Dvorak layout
-# Navigation uses Dvorak home row: d/h/t/n (physical QWERTY hjkl positions)
+# Navigation uses the characters h/j/k/l (vim-style), not their physical positions
 # ================================
 
 config-version = 2

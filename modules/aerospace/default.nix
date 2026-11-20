@@ -14,8 +14,6 @@
 #   TOML owns: keybindings, key-mapping, gaps, layout, normalization, after-startup-command
 #   Nix owns:  on-window-detected (float rules), exec (PATH/env)
 #   HM owns:   start-at-login, after-login-command (overridden by launchd.enable)
-#
-# See also: dotfiles/keybinds/ for conflict detection across all keybind sources
 
 let
   # Parse canonical TOML configuration

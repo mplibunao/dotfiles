@@ -1,6 +1,5 @@
 # macOS System Defaults via nix-darwin
 #
-# Settings from NIX_MIGRATION_INVENTORY.md "macOS System Settings" section
 # See: https://mynixos.com/nix-darwin/options/system.defaults
 #
 # NOTE: Some settings require logout/restart to take effect
