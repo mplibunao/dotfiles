@@ -4,6 +4,8 @@ A host is one Mac's nix-darwin configuration: a folder in `hosts/` and a `darwin
 
 ## Adding a host
 
+### Declare and stage the host
+
 1. Copy the existing host:
 
    ```sh
@@ -23,6 +25,8 @@ A host is one Mac's nix-darwin configuration: a folder in `hosts/` and a `darwin
    git add hosts/<new-hostname>/ flake.nix
    ```
 
-   Then follow the [command ladder](command-ladder.md), substituting `<new-hostname>` for `m5-mbp` wherever a command contains it. That covers the `nix-verify` examples, the evaluation, build, and dry-run commands, and the [level 4 apply](command-ladder.md#level-4-apply) command, which still needs approval.
+### Check and apply the host
 
-On a Mac that isn't set up yet, the [bootstrap skill](../../.claude/skills/bootstrap/SKILL.md) covers everything before the first build.
+When nix-darwin is already installed (`darwin-rebuild` is on the `PATH`), follow the [command ladder](command-ladder.md), substituting `<new-hostname>` for `m5-mbp` wherever a command contains it. That covers the `nix-verify` examples, the evaluation, build, and dry-run commands, and the [level 4 apply](command-ladder.md#level-4-apply) command, which still needs approval.
+
+On a Mac without nix-darwin, `darwin-rebuild` doesn't exist yet, so the ladder's build, dry-run, and apply commands can't run as written. [Phase 5 of the bootstrap runbook](../../.claude/skills/bootstrap/references/bootstrap-runbook.md#phase-5-bootstrap-flake) has the first build and switch, which run through `nix run`, with the new host name in place of `m5-mbp`. The [bootstrap skill](../../.claude/skills/bootstrap/SKILL.md) covers everything before it.

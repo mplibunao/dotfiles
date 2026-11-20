@@ -35,5 +35,5 @@ end
 Every step Nix can't express gets a script in `scripts/` when it can be automated, a written procedure when a person has to do it, or both, so nothing the system depends on is left undocumented. Examples are installing the Xcode Command Line Tools, creating an SSH key and adding it to GitHub, App Store apps, and one-time data migrations.
 
 - Steps for a new Mac go in the [bootstrap skill](.claude/skills/bootstrap/SKILL.md).
-- Operational steps go in a script under `scripts/` and in the architecture doc or runbook for that topic.
+- Operational steps a script can run go in a script under `scripts/` and in the architecture doc or runbook for that topic. Steps only the operator can perform, such as OAuth or secret entry, get a written procedure in that doc or runbook.
 - One-time migration steps go in the ledger of the run that performs them ([Docs and records](docs/architecture/docs-and-records.md)).

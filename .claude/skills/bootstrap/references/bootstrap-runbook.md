@@ -393,4 +393,4 @@ file ~/.local/share/nvim-lazy/lazy/markdown-preview.nvim/app/bin/markdown-previe
 
 ## Creating a New Host Configuration
 
-If you add a host for this machine instead of reusing `m5-mbp`, follow [Adding a host](../../../../docs/architecture/hosts.md#adding-a-host) before Phase 5's build.
+If you add a host for this machine instead of reusing `m5-mbp`, do only [Declare and stage the host](../../../../docs/architecture/hosts.md#declare-and-stage-the-host). Then return to [Phase 5](#phase-5-bootstrap-flake) and use the new host name wherever it says `m5-mbp`. Phase 5 has the first build and switch, because `darwin-rebuild` isn't installed yet.
