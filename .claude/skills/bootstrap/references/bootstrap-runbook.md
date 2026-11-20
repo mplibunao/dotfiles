@@ -266,7 +266,7 @@ Side effects of the helper:
 - `--validate` skips both the clone and the Fish variable write.
 - Any headless Neovim run, including `--validate`, can write state under `~/.local/share` and `~/.local/state`.
 
-The helper also has `--sync`, which runs `Lazy! restore` in headless Neovim. The `!` makes lazy.nvim wait for the restore to finish before Neovim quits. `--sync` currently stops with an error right after the restore, so use step 2 instead ([Neovim validation fails](#neovim-validation-fails)).
+For an unattended setup, add `--sync` to step 1. It runs `Lazy! restore` in headless Neovim (the `!` makes lazy.nvim wait for the restore to finish before Neovim quits), force-builds the plugins that have build steps, and runs the validation from step 3. It is best-effort: if the restore or the validation fails, it prints a warning, carries on, and exits 1. Open Neovim as in step 2 to see the errors ([Neovim validation fails](#neovim-validation-fails)).
 
 To skip the helper, run `git clone git@github.com:mplibunao/neovim-config.git ~/.config/nvim-lazy` yourself and continue at step 2.
 
@@ -349,7 +349,6 @@ Then, once the user approves, give them the switch command that failed to run ag
 | "No plugins configured" | The config loaded but doesn't declare any plugins. Open Neovim interactively and check the lazy.nvim setup call and its plugin specs |
 | "Config directory not found" | Run the helper without `--validate` to clone first |
 | `bootstrap-check.sh` says plugins aren't installed | `lazy-lock.json` is missing from the config folder. Open Neovim and run `:Lazy sync` |
-| `--sync` exits 1 with `local: can only be used in a function` | The helper has a shell error in its build step, so it stops after `Lazy! restore` without force-building or validating. Finish in Neovim with `:Lazy restore` and the native-build fix below, then run `--validate` |
 | `NVIM_APPNAME` is empty in a new Fish shell | The helper hides errors from the Fish write and still reports success. Run `set -Ux NVIM_APPNAME nvim-lazy` in Fish |
 
 **Tip:** For debugging, open Neovim interactively to see full error messages:
@@ -359,7 +358,7 @@ NVIM_APPNAME=nvim-lazy nvim
 
 ### Plugins with native binaries not working
 
-Some plugins (like `markdown-preview.nvim`, `blink.cmp`) require native binaries that must be built after installation. `:Lazy restore` can skip those builds.
+Some plugins (like `markdown-preview.nvim`, `blink.cmp`) require native binaries that must be built after installation. If `:Lazy restore` ran without the `--sync` force-build step, builds may have been skipped.
 
 **Symptoms:**
 - markdown-preview shows Node.js version instead of opening browser
@@ -368,7 +367,13 @@ Some plugins (like `markdown-preview.nvim`, `blink.cmp`) require native binaries
 
 **Why this happens:** lazy.nvim's build step only runs if the plugin is "dirty" (has git changes). On a fresh clone where plugins are already at the correct commit, they're not marked dirty, so builds are skipped.
 
-**Fix:**
+**Fix (automated):**
+```bash
+# Re-run the helper with --sync (includes the force-build step)
+~/Projects/personal/dotfiles/.claude/skills/bootstrap/scripts/bootstrap-neovim.sh --sync
+```
+
+**Fix (manual):**
 ```bash
 # Force-build all plugins with build configurations
 NVIM_APPNAME=nvim-lazy nvim --headless -c 'lua require("lazy").build({wait=true})' -c 'qa!'
