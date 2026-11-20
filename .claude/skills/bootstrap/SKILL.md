@@ -39,11 +39,7 @@ Guide for provisioning a fresh macOS machine until an agent can take over with t
 
 ## Safety Rules
 
-These rules align with `nix/AGENTS.md`:
-
-1. **Never run `switch` without explicit user approval.** The switch needs interactive `sudo`, so after approval, give the user the exact command to run
-2. **Always stage new files** before flake evaluation
-3. **Follow the ladder:** edit -> stage -> check -> build -> propose
+Follow [Core Safety Rules in `nix/AGENTS.md`](../../../nix/AGENTS.md#rule-1-never-run-switch-without-explicit-user-approval), beginning with Rule 1 on user approval before any `switch`.
 
 ## References
 
