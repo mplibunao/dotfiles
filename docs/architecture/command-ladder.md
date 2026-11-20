@@ -2,11 +2,10 @@
 
 How to check a change before it reaches the live system. Every change follows the same order: edit the Nix files, evaluate, build, and then propose the apply step. Stop at the build unless I approve the apply. [`AGENTS.md`](../../AGENTS.md) states that approval rule and the rule to stage new files first.
 
-Run the commands from the repository root. `nix-verify` runs levels 0 to 2 by default, or up to level 3 with `--to 3`, and it never runs level 4. It takes the host from `hostname -s` unless given `--host`, and this Mac's own host name isn't `m5-mbp`, so pass it explicitly. `nix-ops` has the same default. `--nix-root "$PWD"` makes `nix-verify` use the checkout you are in. [Level 1](#level-1-format-and-lint) explains how it picks a root without that flag.
+Run the commands from the repository root. `nix-verify` runs levels 0 to 2 by default, and it never runs level 4. Its `--to 3` option runs the level 3 dry-run without `sudo`, which nix-darwin refuses, so stop at level 2. It takes the host from `hostname -s` unless given `--host`, and this Mac's own host name isn't `m5-mbp`, so pass it explicitly. `nix-ops` has the same default. `--nix-root "$PWD"` makes `nix-verify` use the checkout you are in. [Level 1](#level-1-format-and-lint) explains how it picks a root without that flag.
 
 ```sh
 nix-verify --host m5-mbp --nix-root "$PWD"               # levels 0-2
-nix-verify --host m5-mbp --nix-root "$PWD" --to 3        # adds the dry-run, without sudo
 nix-verify --host m5-mbp --nix-root "$PWD" --print-only  # prints the commands without running them
 ```
 
@@ -45,7 +44,7 @@ Builds the whole system closure and leaves a `result` link in the repository roo
 sudo darwin-rebuild switch --dry-run --flake .#m5-mbp
 ```
 
-Shows what activation would do without applying it. On this Mac the dry-run needs `sudo`, so I run this command in my own terminal. An agent gives me the command and doesn't run it. The `--to 3` example at the [top of this page](#command-ladder) runs the same dry-run without `sudo`, so it's the non-elevated runner and doesn't supply the `sudo` this Mac needs.
+Shows what activation would do without applying it. nix-darwin refuses `darwin-rebuild switch` without root, `--dry-run` included, so I run this command in my own terminal. An agent gives me the command and doesn't run it.
 
 ## Level 4: apply
 

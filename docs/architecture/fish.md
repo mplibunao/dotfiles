@@ -9,7 +9,7 @@ Functions live in [`modules/fish/functions/`](../../modules/fish/functions/), on
 Home Manager links the folder to `~/.config/fish/functions` out of the store ([ADR-019](../decisions/019-store-managed-file-mappings-by-default.md)), so the live shell reads this checkout:
 
 - Adding, editing, renaming, or deleting a function file takes effect without a rebuild.
-- A shell that has already loaded a function keeps the old version until `functions --erase <name>` or a new shell.
+- A running shell reloads an edited function file by itself: when a call comes more than 15 seconds after fish last checked the file, fish reads it again. To load an edit at once, run `source <file>`. Don't use `functions --erase <name>` for this, because it also stops the function autoloading for the rest of that shell's session.
 - An untracked function file works locally, through the link, but `git stash`, a fresh checkout, and other machines don't have it. Stage it with `git add`.
 
 `CODING_STANDARDS.md` has the [`--description` rule](../../CODING_STANDARDS.md#fish-functions) for function definitions.

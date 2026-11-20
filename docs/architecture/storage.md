@@ -218,14 +218,14 @@ Symptoms:
 - `error: database disk image is malformed`
 - Missing store paths
 
-Recovery:
+Recovery. The database is owned by root, so the repair needs `sudo`:
 ```bash
 # Check database
 sqlite3 /nix/var/nix/db/db.sqlite "pragma integrity_check"
 
 # If corrupted, try repair
-mv /nix/var/nix/db/db.sqlite /nix/var/nix/db/db.sqlite-bkp
-sqlite3 /nix/var/nix/db/db.sqlite-bkp ".dump" | sqlite3 /nix/var/nix/db/db.sqlite
+sudo mv /nix/var/nix/db/db.sqlite /nix/var/nix/db/db.sqlite-bkp
+sqlite3 /nix/var/nix/db/db.sqlite-bkp ".dump" | sudo sqlite3 /nix/var/nix/db/db.sqlite
 ```
 
 ### If Nix Reports a Store Schema Version Mismatch

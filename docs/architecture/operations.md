@@ -184,9 +184,9 @@ If you need to pin nixpkgs to a specific commit:
 inputs.nixpkgs.url = "github:NixOS/nixpkgs/abc123...";
 ```
 
-Then update the lock:
+Then update only that input's lock entry:
 ```bash
-nix flake update
+nix flake update nixpkgs
 ```
 
 ### OpenCode tag updates
@@ -260,7 +260,7 @@ error: builder for '/nix/store/...' failed
 
 | Command | What it does |
 |---------|--------------|
-| `nix-verify` | Runs the [command ladder](command-ladder.md) up to the build; `--to 3` adds the dry-run without `sudo` ([level 3](command-ladder.md#level-3-dry-run)) |
+| `nix-verify` | Runs levels 0 to 2 of the [command ladder](command-ladder.md) |
 | `nix-ops status` | Shows diagnostics |
 | `nix-ops update-inputs --yes` | Updates `flake.lock`; `--input NAME` updates one input and `--build` builds afterwards |
 | `nix-ops generations` | Lists nix-darwin generations |

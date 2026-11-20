@@ -58,7 +58,7 @@ These paths point into a working checkout through `mkOutOfStoreSymlink`, so edit
 
 ### Forced Mappings
 
-A mapping with `force = true` skips Home Manager's collision check. Activation replaces whatever is at the target without a backup, and for a directory it removes the whole directory, including files Home Manager never created. That happens on any switch, even one that doesn't touch the mapping. Before you apply, move aside anything you want to keep that occupies one of these targets instead of the intended link. For `~/.config/fish/functions`, that includes functions saved with `funcsave`. Each row links to the line that sets `force = true`:
+A mapping with `force = true` skips Home Manager's collision check, but activation still applies `backupFileExtension = "backup"` from `hosts/m5-mbp/configuration.nix`. A file or directory at the target moves to `<target>.backup`, and a symlink is replaced without a backup. Nothing protects an existing `<target>.backup`: a file there is overwritten, and a directory target moves inside the old backup directory. This happens on any switch where something other than Home Manager's link occupies the target, so before you apply, move aside any `<target>.backup` you want to keep. Functions saved with `funcsave` into a real `~/.config/fish/functions` directory end up in `~/.config/fish/functions.backup`. Each row links to the line that sets `force = true`:
 
 | Path | Declaration |
 |------|-------------|

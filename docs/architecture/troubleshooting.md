@@ -190,7 +190,7 @@ Then run the switch again. Once it succeeds, compare Home Manager's file with th
 
 Two kinds of mapping skip this procedure:
 
-- Mappings with `force = true` skip the collision check, and activation replaces whatever is at the path without a backup. [Forced Mappings](dotfiles-mapping.md#forced-mappings) lists the paths. Move anything you want to keep at those paths aside before the switch.
+- Mappings with `force = true` skip the collision check. [Forced Mappings](dotfiles-mapping.md#forced-mappings) lists the paths and says what activation does with whatever occupies them.
 - `modules/whisper-model/default.nix` checks the Whisper model's cache path before Home Manager's collision check and refuses an occupied path or an unexpected symlink. Moving or removing that path needs its own approval; the module's error message says which path.
 
 ### "permission denied"
@@ -204,11 +204,11 @@ error: cannot create symlink '...': Permission denied
 
 **Solution:**
 ```bash
-# Check ownership
-ls -la ~/.config/
+# Check ownership of the path in the error
+ls -la <path from the error>
 
-# Fix ownership if needed
-sudo chown -R $USER:staff ~/.config/
+# Fix ownership of that path if needed
+sudo chown -R $USER:staff <path from the error>
 ```
 
 ---
@@ -331,7 +331,7 @@ xattr -d com.apple.quarantine /path/to/binary
 sudo determinate-nixd upgrade
 ```
 
-**Status:**
+**FlakeHub login status:**
 ```bash
 sudo determinate-nixd status
 ```
