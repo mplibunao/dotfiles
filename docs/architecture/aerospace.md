@@ -11,7 +11,7 @@ AeroSpace is the tiling window manager ([ADR-006](../decisions/006-aerospace-ins
 | Workspace names the Nix rules use | [`data/workspaces.toml`](../../data/workspaces.toml) |
 | Generated result | `~/.config/aerospace/aerospace.toml` |
 
-The `[mode.main.binding]` and `[mode.service.binding]` tables in `aerospace.toml` list every binding. Option (`alt`) is the main modifier, and `alt-shift-semicolon` enters service mode. [Keybindings](keybindings.md) explains how AeroSpace names keys under Dvorak.
+The `[mode.main.binding]` and `[mode.service.binding]` tables in [`aerospace.toml`](../../modules/aerospace/aerospace.toml) list every binding. Option (`alt`) is the main modifier. The binding under `# Enter service mode` in `[mode.main.binding]` switches to service mode, and `[mode.service.binding]` lists its commands. [Keybindings](keybindings.md) explains how AeroSpace names keys under Dvorak.
 
 ## Workspaces and app placement
 

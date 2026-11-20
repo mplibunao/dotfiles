@@ -14,7 +14,7 @@ The keyboard is ANSI QWERTY hardware with the Dvorak layout selected in macOS. S
 | Fish | [`modules/fish/default.nix`](../../modules/fish/default.nix): vi key bindings, `Ctrl+E` to edit the command line, and the `fzf.fish` plugin's bindings | Dvorak characters |
 | Neovim | The LazyVim configuration in the separate `mplibunao/neovim-config` repository, cloned to `~/.config/nvim-lazy` by the bootstrap skill | Dvorak characters |
 | VoiceInk | Set in the app and stored in its `com.prakashjoshipax.VoiceInk` preferences; this repository doesn't manage them | Recorded by the app |
-| TinyCast | `Option+Space` opens the launcher, set in TinyCast's own settings ([TinyCast](tinycast.md)) | |
+| TinyCast | The launcher shortcut, set in TinyCast's own settings and saved to [`modules/tinycast/settings.json`](../../modules/tinycast/settings.json) when Settings File is on; [TinyCast](tinycast.md#installation-and-startup) names the key | |
 | macOS | [`hosts/m5-mbp/defaults.nix`](../../hosts/m5-mbp/defaults.nix) turns off the `Ctrl+Space` input-source shortcut, for Neovim completion, and `Cmd+Shift+3` and `Cmd+Shift+4`, for Shottr | |
 
 Karabiner turns Caps Lock into Escape when tapped and Hyper (Shift+Command+Control+Option) when held. AeroSpace uses Option as its modifier so that it never competes with Hyper.

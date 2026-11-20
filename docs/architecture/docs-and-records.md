@@ -9,7 +9,7 @@ Where each kind of document goes, and which ones are committed. Current docs des
 | Plan | `docs/plans/<topic>-<YYYY-MM-DD>.md` | Never committed; [Plans](#plans) says when to delete one |
 | Run ledger | `docs/ledgers/<YYYY-MM-DD>[-issue-<number>]-<topic>.md`, one per orchestrated run | Only to finish the run that wrote it |
 | Retrospective ledger | `docs/ledgers/<YYYY-MM-DD>-<topic>-retrospective.md` | No |
-| Architecture decision record (ADR) | `docs/decisions/NNN-<slug>.md` | No; a later ADR supersedes it |
+| Architecture decision record (ADR) | `docs/decisions/NNN-<slug>.md` | No. The decision text stays as merged, and a later ADR supersedes it. [The decisions index](../decisions/README.md#format) covers the status marker and index row |
 | Investigation | `docs/investigations/<YYYY-MM-DD>-<topic>.md` | No |
 | Current docs | `docs/architecture/`, and the root `AGENTS.md`, `README.md`, `CODING_STANDARDS.md`, and `GLOSSARY.md` | Yes, in place |
 | Open work | Local plans, or GitHub issues on this repository | |
