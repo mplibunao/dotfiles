@@ -34,6 +34,13 @@
       ];
   };
 
+  assertions = [
+    {
+      assertion = false;
+      message = "linux-ci-parity-check-7f3a: deliberate failure to compare Linux evaluation with the Mac dry-run";
+    }
+  ];
+
   # Determinate Nix manages the Nix installation
   nix.enable = false;
 
