@@ -29,8 +29,8 @@ dotfiles/
 
 | Change | Where |
 |---|---|
-| A CLI package | `home/mp/package-tiers/tier1.nix` or `tier2.nix`; see [Packages and tiers](packages-and-tiers.md) |
-| A GUI app | `hosts/m5-mbp/homebrew.nix`; see [GUI apps](gui-apps.md) |
+| A tier-managed package | `home/mp/package-tiers/tier1.nix` or `tier2.nix`; see [Packages and tiers](packages-and-tiers.md) |
+| A Homebrew-managed app | `hosts/m5-mbp/homebrew.nix`; see [GUI apps](gui-apps.md) |
 | A program's configuration | `modules/<tool>/default.nix`, imported from `home/mp/darwin.nix` |
 | A file a module links or reads | Beside the module, in `modules/<tool>/` |
 | A Fish abbreviation | `shellAbbrs` in `modules/fish/default.nix` |

@@ -58,7 +58,7 @@ These paths point into a working checkout through `mkOutOfStoreSymlink`, so edit
 
 ### Forced Mappings
 
-A mapping with `force = true` skips Home Manager's collision check. Activation replaces whatever is at the path without a backup, and for a directory it removes the whole directory. Before a switch that adds or changes one of these, move aside anything at the path that you want to keep. Each row links to the line that sets `force = true`:
+A mapping with `force = true` skips Home Manager's collision check. Activation replaces whatever is at the target without a backup, and for a directory it removes the whole directory, including files Home Manager never created. That happens on any switch, even one that doesn't touch the mapping. Before you apply, move aside anything you want to keep that occupies one of these targets instead of the intended link. For `~/.config/fish/functions`, that includes functions saved with `funcsave`. Each row links to the line that sets `force = true`:
 
 | Path | Declaration |
 |------|-------------|

@@ -45,7 +45,7 @@ Builds the whole system closure and leaves a `result` link in the repository roo
 sudo darwin-rebuild switch --dry-run --flake .#m5-mbp
 ```
 
-Shows what activation would do without applying it. On this Mac the dry-run needs `sudo`, so I run this command in my own terminal. An agent gives me the command and doesn't run it. `nix-verify --host m5-mbp --to 3` runs the same dry-run without `sudo`, so it's the non-elevated runner and doesn't supply the `sudo` this Mac needs.
+Shows what activation would do without applying it. On this Mac the dry-run needs `sudo`, so I run this command in my own terminal. An agent gives me the command and doesn't run it. The `--to 3` example at the [top of this page](#command-ladder) runs the same dry-run without `sudo`, so it's the non-elevated runner and doesn't supply the `sudo` this Mac needs.
 
 ## Level 4: apply
 

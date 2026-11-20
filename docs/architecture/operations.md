@@ -256,7 +256,7 @@ error: builder for '/nix/store/...' failed
 
 ## Operational Scripts
 
-`scripts/nix-verify` and `scripts/nix-ops` wrap these procedures. Home Manager links both into `~/.local/bin`. Pass `--host m5-mbp` to either one ([command ladder](command-ladder.md)).
+`scripts/nix-verify` and `scripts/nix-ops` wrap these procedures. Home Manager links both into `~/.local/bin`. Pass `--host m5-mbp` to either one. The [command ladder's opening examples](command-ladder.md#command-ladder) show the full invocation, including the checkout root.
 
 | Command | What it does |
 |---------|--------------|

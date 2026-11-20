@@ -17,10 +17,12 @@ A host is one Mac's nix-darwin configuration: a folder in `hosts/` and a `darwin
 
 3. Copy the `darwinConfigurations."m5-mbp"` entry in [`flake.nix`](../../flake.nix) next to the original. In the copy, change the attribute name to `<new-hostname>` and the module path to `./hosts/<new-hostname>/configuration.nix`, and set `system` to the same value as `nixpkgs.hostPlatform`. Keep the `specialArgs` and `home-manager.extraSpecialArgs` as they are.
 
-4. Stage the new folder, then follow the [command ladder](command-ladder.md), passing `--host <new-hostname>` to `nix-verify`:
+4. Stage the new folder:
 
    ```sh
    git add hosts/<new-hostname>/ flake.nix
    ```
+
+   Then follow the [command ladder](command-ladder.md), using `--host <new-hostname>` in place of `m5-mbp` in its [opening `nix-verify` examples](command-ladder.md#command-ladder).
 
 On a Mac that isn't set up yet, the [bootstrap skill](../../.claude/skills/bootstrap/SKILL.md) covers everything before the first build.
