@@ -231,11 +231,7 @@ fi
 
 **Cause:** nix-darwin not installed or not in PATH.
 
-**Solution:**
-```bash
-# Bootstrap nix-darwin
-sudo nix run nix-darwin#darwin-rebuild -- switch --flake .#<hostname>
-```
+**Solution:** Use the `nix run` fallback under [If darwin-rebuild Broken](#if-darwin-rebuild-broken).
 
 ### Environment variables not set
 
@@ -343,28 +339,13 @@ sudo determinate-nixd status
 
 **Cause:** Nix database corruption.
 
-**Solution:**
-```bash
-# Check integrity
-sqlite3 /nix/var/nix/db/db.sqlite "pragma integrity_check"
-
-# Attempt repair
-mv /nix/var/nix/db/db.sqlite /nix/var/nix/db/db.sqlite-bkp
-sqlite3 /nix/var/nix/db/db.sqlite-bkp ".dump" | sqlite3 /nix/var/nix/db/db.sqlite
-```
+**Solution:** Check the database and repair it as [Storage](storage.md#if-store-becomes-corrupted) describes.
 
 ### "current Nix store schema is version X, but I only support Y"
 
 **Cause:** Nix version mismatch.
 
-**Solution:**
-```bash
-# Export with new version
-/path/to/new/nix-store --dump-db > /tmp/db.dump
-
-# Reimport with old version
-nix-store --load-db < /tmp/db.dump
-```
+**Solution:** Follow [the schema version procedure](storage.md#if-nix-reports-a-store-schema-version-mismatch) in Storage. The database isn't damaged, so the malformed-database repair doesn't apply.
 
 ---
 
@@ -406,10 +387,13 @@ which nix darwin-rebuild
 
 ### If darwin-rebuild Broken
 
+This also covers a missing `darwin-rebuild`. Run the switch through `nix run`, which takes `darwin-rebuild` from the nix-darwin flake instead of the installed copy:
+
 ```bash
-# Use nix directly
-sudo nix run nix-darwin#darwin-rebuild -- switch --flake .#<hostname>
+sudo nix run nix-darwin#darwin-rebuild -- switch --flake .#m5-mbp
 ```
+
+This is a switch, so it needs my approval ([`AGENTS.md`](../../AGENTS.md)), and I run it myself because it needs an interactive `sudo` prompt. On a Mac that has never had nix-darwin, [Phase 5 of the bootstrap runbook](../../.claude/skills/bootstrap/references/bootstrap-runbook.md#phase-5-bootstrap-flake) builds first with `nix run`, then gives the first switch.
 
 ### If Nix Broken
 

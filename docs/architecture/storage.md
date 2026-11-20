@@ -71,19 +71,21 @@ nix-collect-garbage
 
 ### Aggressive GC
 
-Remove all old generations, then GC:
+Delete old generations, then GC:
 
 ```bash
-# Delete all old generations
+# Delete old generations of the current user's profiles
 nix-collect-garbage -d
 
 # Or delete generations older than N days
 nix-collect-garbage --delete-older-than 30d
 ```
 
+Run without `sudo`, these remove only the generations of profiles the current user owns. The nix-darwin system generations, which `darwin-rebuild --list-generations` lists and `darwin-rebuild switch --rollback` goes back to, are in the root-owned `/nix/var/nix/profiles`. [Targeted Generation Cleanup](#targeted-generation-cleanup) removes them.
+
 ### Targeted Generation Cleanup
 
-Keep only the last N generations:
+Keep only the last N system generations, the rollback targets:
 
 ```bash
 # Remove all but last 5 generations
@@ -173,7 +175,7 @@ Choose one source per tool category.
 
 ## Scripts
 
-`nix-ops gc` prints the garbage-collection commands, and `nix-ops gc --apply` runs them after asking. [Operations](operations.md#operational-scripts) lists the other `nix-ops` commands.
+`nix-ops gc` prints `nix-collect-garbage -d` and `darwin-rebuild --list-generations` without running either. With `--apply` it asks you to type `GC` in an interactive terminal. It then runs only `nix-collect-garbage -d`, without `sudo`. That deletes the current user's old profile generations, which are the rollback targets for those profiles, and then collects garbage. It leaves the nix-darwin system generations ([Aggressive GC](#aggressive-gc)). [Operations](operations.md#operational-scripts) lists the other `nix-ops` commands.
 
 ---
 
@@ -226,9 +228,21 @@ mv /nix/var/nix/db/db.sqlite /nix/var/nix/db/db.sqlite-bkp
 sqlite3 /nix/var/nix/db/db.sqlite-bkp ".dump" | sqlite3 /nix/var/nix/db/db.sqlite
 ```
 
+### If Nix Reports a Store Schema Version Mismatch
+
+Symptom: `current Nix store schema is version X, but I only support Y`. The installed Nix doesn't support the schema version the database has. The database isn't damaged, so the repair above doesn't apply. Export with the Nix that supports it, then import with the installed one:
+
+```bash
+# Export with new version
+/path/to/new/nix-store --dump-db > /tmp/db.dump
+
+# Reimport with old version
+nix-store --load-db < /tmp/db.dump
+```
+
 ### If Disk Is Full
 
-1. Delete old generations first:
+1. Delete old generations first ([Aggressive GC](#aggressive-gc) says which generations each form removes):
    ```bash
    nix-collect-garbage -d
    ```

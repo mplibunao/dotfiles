@@ -191,20 +191,17 @@ nix flake update
 
 ### OpenCode tag updates
 
-OpenCode's upstream flake URL names a specific version tag for RepoPrompt ACP compatibility. The configured tag does not select a later release until edited, but Git tags can move, so every lock update still requires review of the revision and `narHash`. An intentional OpenCode release change must edit the tag and update only the `opencode` input; activation remains approval-gated. After either an OpenCode tag change or a RepoPrompt CE cask upgrade, revalidate both RepoPrompt UI discovery and direct MCP execution, treating new failures as a version-pairing issue first.
+Follow the [OpenCode upgrade procedure](runbooks/opencode-repoprompt.md#opencode-upgrade) in these cases:
 
-Follow the canonical [OpenCode upgrade procedure](runbooks/opencode-repoprompt.md#opencode-upgrade). The source and rollback decision remains recorded in [ADR-021](../decisions/021-opencode-upstream-flake-for-repoprompt-acp.md).
+- You intend to change the OpenCode release.
+- Any lock update. Review the locked revision and `narHash`, because Git tags can move.
+- A RepoPrompt CE cask upgrade, which needs the same revalidation.
+
+[ADR-021](../decisions/021-opencode-upstream-flake-for-repoprompt-acp.md) records the source decision.
 
 ### OpenCode rollback limits
 
-A Darwin generation rollback can restore the earlier OpenCode executable and `~/.local/bin/opencode` link. It does **not** roll back or delete:
-
-- `${XDG_DATA_HOME:-$HOME/.local/share}/opencode/auth.json` or other OpenCode session/history/database data;
-- `~/.config/opencode` or project OpenCode configuration;
-- provider API keys, OAuth grants, billing, quotas, or subscriptions;
-- RepoPrompt connection flags, role selections, or cached model catalogs.
-
-Activation and rollback remain approval-gated. Credential logout, upstream key/OAuth revocation, and RepoPrompt Sign Out remain separate from generation rollback. Follow the canonical [OpenCode rollback procedure](runbooks/opencode-repoprompt.md#opencode-rollback) for post-rollback verification and recovery.
+To roll back an OpenCode change, use the [rollback workflow](#rollback-workflow) above. The [OpenCode rollback procedure](runbooks/opencode-repoprompt.md#opencode-rollback) lists what a rollback leaves in place and how to verify afterward.
 
 ---
 
@@ -263,12 +260,12 @@ error: builder for '/nix/store/...' failed
 
 | Command | What it does |
 |---------|--------------|
-| `nix-verify` | Runs the [command ladder](command-ladder.md) up to the build; `--to 3` adds the dry-run |
+| `nix-verify` | Runs the [command ladder](command-ladder.md) up to the build; `--to 3` adds the dry-run without `sudo` ([level 3](command-ladder.md#level-3-dry-run)) |
 | `nix-ops status` | Shows diagnostics |
 | `nix-ops update-inputs --yes` | Updates `flake.lock`; `--input NAME` updates one input and `--build` builds afterwards |
 | `nix-ops generations` | Lists nix-darwin generations |
 | `nix-ops rollback` | Prints the rollback commands; `--apply` runs them after asking |
-| `nix-ops gc` | Prints the garbage-collection commands; `--apply` runs them after asking ([Storage](storage.md)) |
+| `nix-ops gc` | Prints `nix-collect-garbage -d` and `darwin-rebuild --list-generations`. With `--apply` it asks you to type `GC`. It then runs only `nix-collect-garbage -d`, without `sudo`. That deletes the current user's old profile generations, not the nix-darwin system generations ([Storage](storage.md#aggressive-gc)) |
 | `nix-ops switch` | Prints the switch command without running it |
 
 ---

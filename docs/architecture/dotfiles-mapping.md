@@ -39,9 +39,9 @@ By default a mapped file is copied into the Nix store at build time, and the hom
 | `~/.local/bin/opencode` | Pinned upstream package in `/nix/store` | `home.file` in `modules/llm-tools/default.nix` |
 | `~/Library/LaunchAgents/com.mp.executor.plist` | Generated in `modules/executor/default.nix` | `home.file` in the same module |
 
-Home Manager store-manages only `~/.config/opencode/opencode.jsonc` through `xdg.configFile`; its local authentication file and configuration directory remain outside Home Manager ownership. Cursor's exact-file mapping preserves the existing direct RepoPrompt entry and adds Executor. See [ADR-023](../decisions/023-opencode-cursor-client-config-ownership.md) for the ownership boundary and activation sequence.
+Home Manager store-manages only `~/.config/opencode/opencode.jsonc` through `xdg.configFile`; its local authentication file and configuration directory remain outside Home Manager ownership. The exact-file mapping retains non-secret model defaults, and per-session choices stay with the operator. Cursor's exact-file mapping preserves the existing direct RepoPrompt entry and adds Executor. See [ADR-023](../decisions/023-opencode-cursor-client-config-ownership.md) for the ownership boundary and activation sequence.
 
-The OpenCode executable entry is a store-managed link to the same immutable executable installed by Tier 1. It is a RepoPrompt GUI discovery bridge, not a wrapper or second package. Unlike ADR-012's `mkOutOfStoreSymlink` shims for frequently edited repository scripts, this mapping follows ADR-019's store-managed default. Activation requires one intended executable, no higher-priority competitor, and no `force = true` collision bypass; follow the canonical [prerequisite and collision procedure](runbooks/opencode-repoprompt.md#opencode-prerequisites-collisions).
+The OpenCode executable entry is a store-managed link to the same immutable executable installed by Tier 1. It is a RepoPrompt GUI discovery bridge, not a wrapper or second package. Unlike ADR-012's `mkOutOfStoreSymlink` shims for frequently edited repository scripts, this mapping follows ADR-019's store-managed default. The [OpenCode runbook](runbooks/opencode-repoprompt.md#opencode-prerequisites-collisions) has the checks to run before activating it.
 
 ### Files Linked out of the Store
 
@@ -129,7 +129,7 @@ Some files should remain manual:
 | `~/.config/executor-gateway/scope`, `~/.local/state/executor` | Executor workspace and service logs; `modules/executor/default.nix` only creates the folders (mode 0700) |
 | IDE project settings | Local preferences |
 
-RepoPrompt normal OpenCode launches use a process-ephemeral MCP overlay. Keep `mcp.RepoPromptCE` out of persistent configuration and keep OpenCode credentials outside Home Manager. The exact-file mapping retains non-secret model defaults while per-session choices remain operator-owned. Follow the canonical [ephemeral-MCP and persistent-entry cleanup procedure](runbooks/opencode-repoprompt.md#opencode-ephemeral-mcp).
+The [OpenCode runbook](runbooks/opencode-repoprompt.md#opencode-ephemeral-mcp) covers how RepoPrompt's OpenCode launches supply their MCP entry and how to clean up a persistent one.
 
 ---
 

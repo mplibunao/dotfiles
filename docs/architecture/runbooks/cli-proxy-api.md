@@ -71,10 +71,7 @@ lsof -a -p (pgrep -f 'src/server/index.ts') -d cwd -Fn | grep '^n'
 
 ## Switch
 
-```fish
-cd ~/Projects/personal/dotfiles
-sudo darwin-rebuild switch --flake .#m5-mbp
-```
+Switch with the [level 4 command of the command ladder](../command-ladder.md#level-4-apply), after the checks before it pass and you have approval.
 
 A switch reloads a job whose LaunchAgent plist changed: it runs `launchctl bootout`, waits for launchd to drop the job, then `launchctl bootstrap`, and fails if the job does not stay up for a few seconds. launchd reads a plist only when the job is bootstrapped, so `launchctl kickstart -k` restarts the old definition and a changed plist never takes effect without that reload. An unchanged job is left running. The plist that was loaded is recorded in `~/.local/state/cli-proxy-api/com.mp.cli-proxy-api.loaded-plist` (and the same under `cli-proxy-dashboard`); the first switch after this logic was added reloads each job once because no record exists yet.
 

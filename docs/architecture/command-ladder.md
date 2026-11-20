@@ -6,7 +6,7 @@ Run the commands from the repository root. `nix-verify` runs levels 0 to 2 by de
 
 ```sh
 nix-verify --host m5-mbp               # levels 0-2
-nix-verify --host m5-mbp --to 3        # adds the dry-run
+nix-verify --host m5-mbp --to 3        # adds the dry-run, without sudo
 nix-verify --host m5-mbp --print-only  # prints the commands without running them
 ```
 
@@ -42,10 +42,10 @@ Builds the whole system closure and leaves a `result` link in the repository roo
 ## Level 3: dry-run
 
 ```sh
-darwin-rebuild switch --dry-run --flake .#m5-mbp
+sudo darwin-rebuild switch --dry-run --flake .#m5-mbp
 ```
 
-Shows what activation would do without applying it. On this Mac the dry-run also needs `sudo`, so I run it in my own terminal.
+Shows what activation would do without applying it. On this Mac the dry-run needs `sudo`, so I run this command in my own terminal. An agent gives me the command and doesn't run it. `nix-verify --host m5-mbp --to 3` runs the same dry-run without `sudo`, so it's the non-elevated runner and doesn't supply the `sudo` this Mac needs.
 
 ## Level 4: apply
 
@@ -71,5 +71,5 @@ Activates the new configuration. It needs my approval and an interactive `sudo` 
 | Lint | `statix check .` | No |
 | Dead code | `deadnix .` | No |
 | Build | `darwin-rebuild build --flake .#m5-mbp` | No |
-| Dry-run | `darwin-rebuild switch --dry-run --flake .#m5-mbp` | No |
+| Dry-run | `sudo darwin-rebuild switch --dry-run --flake .#m5-mbp` | No; I run it |
 | Apply | `sudo darwin-rebuild switch --flake .#m5-mbp` | Yes; needs my approval |
