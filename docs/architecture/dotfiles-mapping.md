@@ -56,6 +56,25 @@ These paths point into a working checkout through `mkOutOfStoreSymlink`, so edit
 | `~/.local/bin/nix-ops`, `nix-verify`, `nix-locate`, `claude-proxy-route`, `cli-proxy-dashboard-setup` | `scripts/` | `modules/nix-ops-tools/default.nix` |
 | `~/.local/bin/claude-launch`, `codex-launch` | `scripts/` in the claude-toolkit checkout, `~/Projects/personal/ai/claude-toolkit` | `modules/llm-tools/default.nix` |
 
+### Forced Mappings
+
+A mapping with `force = true` skips Home Manager's collision check. Activation replaces whatever is at the path without a backup, and for a directory it removes the whole directory. Before a switch that adds or changes one of these, move aside anything at the path that you want to keep. Each row links to the line that sets `force = true`:
+
+| Path | Declaration |
+|------|-------------|
+| `~/.cloudflared/config.yml` | [`modules/cloudflared/default.nix`](../../modules/cloudflared/default.nix#L20) |
+| `~/.config/fish/functions` (directory) | [`modules/fish/default.nix`](../../modules/fish/default.nix#L53) |
+| `~/.config/karabiner` (directory) | [`modules/karabiner/default.nix`](../../modules/karabiner/default.nix#L27) |
+| `~/.local/bin/claude-launch` | [`modules/llm-tools/default.nix`](../../modules/llm-tools/default.nix#L75) |
+| `~/.local/bin/codex-launch` | [`modules/llm-tools/default.nix`](../../modules/llm-tools/default.nix#L79) |
+| `~/.local/bin/nix-locate` | [`modules/nix-ops-tools/default.nix`](../../modules/nix-ops-tools/default.nix#L38) |
+| `~/.local/bin/nix-verify` | [`modules/nix-ops-tools/default.nix`](../../modules/nix-ops-tools/default.nix#L42) |
+| `~/.local/bin/nix-ops` | [`modules/nix-ops-tools/default.nix`](../../modules/nix-ops-tools/default.nix#L46) |
+| `~/.local/bin/cli-proxy-dashboard-setup` | [`modules/nix-ops-tools/default.nix`](../../modules/nix-ops-tools/default.nix#L50) |
+| `~/.local/bin/claude-proxy-route` | [`modules/nix-ops-tools/default.nix`](../../modules/nix-ops-tools/default.nix#L54) |
+
+To check this list against the code, search `modules/` and `home/` for `force = true` and skip the matches in comments. Recovery from an ordinary collision is in [Troubleshooting](troubleshooting.md#file-is-in-the-way).
+
 ---
 
 ## Program Module Examples

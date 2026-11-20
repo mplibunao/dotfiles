@@ -167,7 +167,7 @@ nix run nix-darwin#darwin-rebuild -- build --flake .#m5-mbp
 After the first switch, builds use `darwin-rebuild` directly, as in [level 2 of the command ladder](../../../../docs/architecture/command-ladder.md#level-2-build).
 
 ### Apply (Level 4 - REQUIRES USER APPROVAL)
-Some mappings replace whatever is already at their path without a backup. Before the first switch, check those paths and move aside anything there worth keeping; the [troubleshooting doc](../../../../docs/architecture/troubleshooting.md#file-is-in-the-way) lists them.
+Some mappings replace whatever is already at their path without a backup. Before the first switch, check those paths and move aside anything there worth keeping. [Forced Mappings](../../../../docs/architecture/dotfiles-mapping.md#forced-mappings) lists them.
 
 The switch needs interactive `sudo`. After the build passes and the user approves, give them this command to run:
 ```bash

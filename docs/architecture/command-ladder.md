@@ -2,12 +2,12 @@
 
 How to check a change before it reaches the live system. Every change follows the same order: edit the Nix files, evaluate, build, and then propose the apply step. Stop at the build unless I approve the apply. [`AGENTS.md`](../../AGENTS.md) states that approval rule and the rule to stage new files first.
 
-Run the commands from the repository root. `nix-verify` runs levels 0 to 2 by default, or up to level 3 with `--to 3`, and it never runs level 4. It takes the host from `hostname -s` unless given `--host`, and this Mac's own host name isn't `m5-mbp`, so pass it explicitly. `nix-ops` has the same default.
+Run the commands from the repository root. `nix-verify` runs levels 0 to 2 by default, or up to level 3 with `--to 3`, and it never runs level 4. It takes the host from `hostname -s` unless given `--host`, and this Mac's own host name isn't `m5-mbp`, so pass it explicitly. `nix-ops` has the same default. `--nix-root "$PWD"` makes `nix-verify` use the checkout you are in. [Level 1](#level-1-format-and-lint) explains how it picks a root without that flag.
 
 ```sh
-nix-verify --host m5-mbp               # levels 0-2
-nix-verify --host m5-mbp --to 3        # adds the dry-run, without sudo
-nix-verify --host m5-mbp --print-only  # prints the commands without running them
+nix-verify --host m5-mbp --nix-root "$PWD"               # levels 0-2
+nix-verify --host m5-mbp --nix-root "$PWD" --to 3        # adds the dry-run, without sudo
+nix-verify --host m5-mbp --nix-root "$PWD" --print-only  # prints the commands without running them
 ```
 
 ## Level 0: evaluate
