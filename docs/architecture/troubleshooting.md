@@ -171,7 +171,7 @@ error: Package 'foo' is not available on the requested hostPlatform
 Existing file '/Users/mp/.config/git/config' is in the way of '/nix/store/...', will be moved to '/Users/mp/.config/git/config.backup'
 ```
 
-Activation stops only in two cases:
+For an ordinary mapping, activation stops only in two cases:
 
 - **The backup name is taken.** `Existing file '<file>.backup' would be clobbered by backing up '<file>'` means an earlier activation already left a backup there. Compare it with the current file, keep anything from it you still need, then move it to a name nothing uses:
 

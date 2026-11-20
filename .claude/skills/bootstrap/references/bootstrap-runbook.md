@@ -145,6 +145,8 @@ If your hostname doesn't match an existing host in `hosts/`, you may need to:
 1. Create a new host config, or
 2. Use an existing one (e.g., `m5-mbp`)
 
+The commands in this runbook name the host `m5-mbp`. If you created a host, use its name wherever they say `m5-mbp`.
+
 ### Stage New Host Files
 A clean clone has nothing to stage. If you created a host config above, stage it:
 ```bash
@@ -165,6 +167,8 @@ nix run nix-darwin#darwin-rebuild -- build --flake .#m5-mbp
 ```
 
 ### Apply (Level 4 - REQUIRES USER APPROVAL)
+Some mappings replace whatever is already at their path without a backup. Before the first switch, check those paths and move aside anything there worth keeping; the [troubleshooting doc](../../../../docs/architecture/troubleshooting.md#file-is-in-the-way) lists them.
+
 The switch needs interactive `sudo`. After the build passes and the user approves, give them this command to run:
 ```bash
 sudo nix run nix-darwin#darwin-rebuild -- switch --flake .#m5-mbp

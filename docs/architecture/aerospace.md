@@ -8,14 +8,14 @@ AeroSpace is the tiling window manager ([ADR-006](../decisions/006-aerospace-ins
 |---|---|
 | Bindings, key mapping, gaps, layout, normalization, startup commands | [`modules/aerospace/aerospace.toml`](../../modules/aerospace/aerospace.toml), the canonical authored config ([ADR-014](../decisions/014-aerospace-toml-as-canonical-authored-config.md)) |
 | Float rules, app-to-workspace rules, `PATH` and environment | [`modules/aerospace/default.nix`](../../modules/aerospace/default.nix), which also asserts that the TOML leaves those keys alone |
-| Workspace names | [`data/workspaces.toml`](../../data/workspaces.toml) |
+| Workspace names the Nix rules use | [`data/workspaces.toml`](../../data/workspaces.toml) |
 | Generated result | `~/.config/aerospace/aerospace.toml` |
 
 The `[mode.main.binding]` and `[mode.service.binding]` tables in `aerospace.toml` list every binding. Option (`alt`) is the main modifier, and `alt-shift-semicolon` enters service mode. [Keybindings](keybindings.md) explains how AeroSpace names keys under Dvorak.
 
 ## Workspaces and app placement
 
-`data/workspaces.toml` names each workspace. `appAssignments` in `default.nix` lists app bundle IDs with their workspaces and becomes rules that move each app's windows there. Those rules run only while AeroSpace starts, so a window opened later stays on the current workspace. Workspaces `X` and `I` have no assignment rules, for mixed layouts and for scratch work on the built-in display.
+`data/workspaces.toml` names the workspaces that the rules in `default.nix` use; `aerospace.toml` names others directly in its bindings. `appAssignments` in `default.nix` lists app bundle IDs with their workspaces and becomes rules that move each app's windows there. Those rules run only while AeroSpace starts, so a window opened later stays on the current workspace. Workspaces `X` and `I` have no assignment rules, for mixed layouts and for scratch work on the built-in display.
 
 The utilities in `floatApps` in `default.nix` (System Settings, Finder, 1Password, and others) always float. To add one, find its bundle ID:
 
