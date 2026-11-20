@@ -56,7 +56,7 @@
     ast-grep # Structural search/rewriter
 
     # Prose linting
-    vale # Configurable prose linter (global config managed in vale.nix)
+    vale # Configurable prose linter (global config managed in modules/vale)
 
     # Shell linting
     shellcheck # Shell script linter (used by claude-toolkit verify:shell + pre-commit)

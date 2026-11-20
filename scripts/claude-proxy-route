@@ -27,7 +27,7 @@ umask 077
 prog="claude-proxy-route"
 label="com.mp.cli-proxy-env"
 # The URL the env agent publishes, from mp.cliProxyApi.host and port in
-# cli-proxy-api.nix.
+# modules/cli-proxy/api.nix.
 proxy_url="http://127.0.0.1:8317"
 launchctl_bin="/bin/launchctl"
 poll_interval=0.2

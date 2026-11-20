@@ -54,7 +54,7 @@ in
   #   - rtk: not in nixpkgs; Homebrew formula maintained upstream
   #
   # Cross-shell support:
-  #   - Fish: fully supported (`mise activate fish` in fish.nix).
+  #   - Fish: fully supported (`mise activate fish` in modules/fish).
   #   - Other shells (zsh/bash): Codex may not find `node` unless mise is activated
   #     or a Nix-managed Node fallback is added for that shell.
   #   - claude-code works in any shell (standalone binary).

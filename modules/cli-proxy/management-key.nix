@@ -5,7 +5,7 @@
 # under `set -x`: bash would trace the assignment.
 #
 # There is no sops or agenix setup in this repo. Executor and the surf gateway
-# do not keep service secrets either. The nearby pattern is llm-tools.nix
+# do not keep service secrets either. The nearby pattern is modules/llm-tools
 # seeding ~/.npmrc as a local 0600 file so tokens never become a store path.
 { lib }:
 rec {

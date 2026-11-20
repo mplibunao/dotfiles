@@ -7,7 +7,7 @@
   # Node.js via mise (replaces fnm — see ADR-020, which supersedes ADR-004).
   #
   # mise itself is installed in tier2 and activated for interactive shells in
-  # fish.nix (`mise activate fish`), which puts the active Node on PATH and
+  # modules/fish (`mise activate fish`), which puts the active Node on PATH and
   # auto-switches versions on `cd`. Its shims dir is on PATH for non-interactive
   # shells via common.nix. So this module's job is narrow:
   #   1. Re-enable idiomatic version files (.nvmrc / .node-version) for node —
@@ -26,7 +26,7 @@
     # into the Node prefix ourselves, using the active Node's own bundled
     # corepack (Node <= 24). Node 25+ unbundled corepack, so fall back to the
     # npm-global one (`npm i -g corepack`) by EXPLICIT path — npm's prefix is
-    # ~/.npm-global (set in llm-tools.nix). Not a PATH lookup: mise's shims dir
+    # ~/.npm-global (set in modules/llm-tools). Not a PATH lookup: mise's shims dir
     # is early on PATH and ships a `corepack` shim that, under Node 25+, would
     # dispatch to the active Node where corepack is absent (see ADR-020). Shims
     # count as healthy only if executable, so a stale/non-exec file still
@@ -126,7 +126,7 @@
     # itself) and hard-errors on `pnpm i -g` if that dir is absent from PATH.
     # Reference PNPM_HOME (defined above) rather than re-spelling the path, so
     # the two can't drift. Mirrors the `$BUN_INSTALL/bin` convention in
-    # llm-tools.nix (and npm's ~/.npm-global/bin).
+    # modules/llm-tools (and npm's ~/.npm-global/bin).
     sessionPath = [
       "$PNPM_HOME/bin"
     ];
