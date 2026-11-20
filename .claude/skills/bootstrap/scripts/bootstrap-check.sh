@@ -29,7 +29,7 @@ Phases:
   2: No dotfiles clone
   3: No Homebrew
   4: No Nix
-  5: Nix exists but build not tested
+  5: Nix exists but no build, or built but never switched
   6: Build works, post-bootstrap tooling missing
   7: Complete - ready for handover
 EOF
@@ -202,7 +202,10 @@ elif ! check_nix; then
   next_step="Install Determinate Nix: curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install"
 elif ! check_flake_build; then
   phase=5
-  next_step="Build flake: cd ~/Projects/personal/dotfiles && nix run nix-darwin#darwin-rebuild -- build --flake .#m5-mbp"
+  next_step="Build flake (put your host's name in place of m5-mbp if you added one): cd ~/Projects/personal/dotfiles && nix run nix-darwin#darwin-rebuild -- build --flake .#m5-mbp"
+elif ! check_darwin_rebuild; then
+  phase=5
+  next_step="First switch: after the user approves, give them the Apply command from Phase 5 of the bootstrap runbook"
 elif ! check_claude_code && ! check_codex; then
   phase=6
   next_step="Install Claude Code (or Codex): curl -fsSL https://claude.ai/install.sh | bash"

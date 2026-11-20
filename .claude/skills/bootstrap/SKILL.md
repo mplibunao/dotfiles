@@ -33,7 +33,7 @@ Guide for provisioning a fresh macOS machine until an agent can take over by fol
 | No dotfiles/claude-toolkit | 2 | Clone repos |
 | No Homebrew | 3 | Install Homebrew |
 | No Nix | 4 | Install Determinate Nix |
-| Nix but no build | 5 | Bootstrap flake |
+| Nix but no build, or built but never switched | 5 | Bootstrap flake |
 | Build works but missing tools/config | 6 | Install agent tools + Neovim config |
 | Agent tools + Neovim config exist | 7 | **Handover** |
 
@@ -51,7 +51,7 @@ Follow the [rules in `AGENTS.md`](../../../AGENTS.md#rules), starting with the u
 
 ## Neovim Setup
 
-Phase 6 includes the Neovim config. The runbook has the steps: [Neovim (LazyVim config)](references/bootstrap-runbook.md#neovim-lazyvim-config) gives the recommended order and what [`bootstrap-neovim.sh`](scripts/bootstrap-neovim.sh) changes, and [Neovim validation fails](references/bootstrap-runbook.md#neovim-validation-fails) covers recovery. `scripts/bootstrap-neovim.sh --help` lists the script's options.
+Phase 6 includes the Neovim config. The runbook has the steps: [Neovim (LazyVim config)](references/bootstrap-runbook.md#neovim-lazyvim-config) gives the recommended order and what [`bootstrap-neovim.sh`](scripts/bootstrap-neovim.sh) changes, and [Neovim validation fails](references/bootstrap-runbook.md#neovim-validation-fails) covers recovery. `.claude/skills/bootstrap/scripts/bootstrap-neovim.sh --help` lists the script's options.
 
 ## Handover
 
