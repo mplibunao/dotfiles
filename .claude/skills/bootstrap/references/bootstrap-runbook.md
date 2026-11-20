@@ -280,7 +280,7 @@ claude --version
 Bootstrap is complete when:
 - [x] `nix --version` works
 - [x] `darwin-rebuild --version` works
-- [x] `darwin-rebuild build --flake .#HOSTNAME` succeeds
+- [x] `darwin-rebuild build --flake .#m5-mbp` succeeds
 - [x] `claude --version` works (or preferred agent CLI)
 - [x] `~/.config/nvim-lazy` exists (LazyVim config repo)
 
@@ -386,4 +386,4 @@ file ~/.local/share/nvim-lazy/lazy/markdown-preview.nvim/app/bin/markdown-previe
 
 ## Creating a New Host Configuration
 
-If this machine's hostname differs from `m5-mbp`, follow [Adding a host](../../../../docs/architecture/hosts.md#adding-a-host) before Phase 5's build.
+If you add a host for this machine instead of reusing `m5-mbp`, follow [Adding a host](../../../../docs/architecture/hosts.md#adding-a-host) before Phase 5's build.
