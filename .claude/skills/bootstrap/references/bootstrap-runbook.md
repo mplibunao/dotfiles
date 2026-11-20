@@ -145,12 +145,13 @@ If your hostname doesn't match an existing host in `hosts/`, you may need to:
 1. Create a new host config, or
 2. Use an existing one (e.g., `m5-mbp`)
 
-### Stage Any New Files
+### Stage New Host Files
+A clean clone has nothing to stage. If you created a host config above, stage it:
 ```bash
-git add flake.nix flake.lock hosts home modules packages scripts data
+git add hosts/<new-hostname>/
 ```
 
-**IMPORTANT:** Nix flakes ignore untracked files. Always stage before evaluation.
+**IMPORTANT:** Nix flakes ignore untracked files. Stage every new file the flake reads before evaluation.
 
 ### Evaluate (Level 0 - Safe)
 ```bash
