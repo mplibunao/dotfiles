@@ -10,8 +10,11 @@ repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 tmp="$(mktemp -d)"
 trap 'rm -rf "$tmp"' EXIT
 
+# fd 3 is the harness's own stderr, so a failure inside switch still reaches
+# the console when a case captures the switch's stderr.
+exec 3>&2
 fail() {
-  printf 'fail: %s\n' "$1" >&2
+  printf 'fail: %s\n' "$1" >&3
   exit 1
 }
 
@@ -65,7 +68,10 @@ chmod +x "${fake_bin}/launchctl" "${fake_bin}/sleep"
 
 render() {
   # $1: store path the snippet should treat as the plist content.
-  nix eval --impure --raw --expr "
+  # Exits the harness on failure: case 7 calls switch inside `if`, where
+  # errexit is off, and would otherwise run an empty snippet.
+  local snippet
+  snippet="$(nix eval --impure --raw --expr "
     let
       lib = (builtins.getFlake \"path:${repo_root}/nix\").inputs.nixpkgs.lib;
       loadAgent = import ${repo_root}/nix/home/mp/modules/cli-proxy/launch-agent.nix { inherit lib; };
@@ -76,7 +82,11 @@ render() {
       plistSource = \"$1\";
       logDir = \"${logs}\";
     }
-  " 2>/dev/null |
+  " 2>"${tmp}/render-err")" || {
+    cat "${tmp}/render-err" >&3
+    fail "nix eval could not render the snippet from launch-agent.nix"
+  }
+  printf '%s\n' "$snippet" |
     sed -e "s#/bin/launchctl#${fake_bin}/launchctl#g" -e "s#/usr/bin/awk#awk#g"
 }
 
