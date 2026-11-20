@@ -2,7 +2,7 @@
 
 Request: none · Plans: `nix/plans/aerospace-wm.md`, `nix/plans/aerospace-enhancements.md`, `nix/plans/leaderkey-install.md`, and `nix/plans/leaderkey-aerospace-integration.md` in `mplibunao/dotfiles-private`
 
-Between 2025-12-26 and 2026-01-02, this work replaced yabai and skhd with the AeroSpace tiling window manager and added the Leader Key launcher. The plans behind it are undated. The ADRs record the lasting decisions, and this ledger records what changed and when. [The AeroSpace cheat sheet](../../nix/docs/aerospace-cheatsheet.md) and [layout notes](../../nix/docs/aerospace-layouts.md) describe the current setup.
+Between 2025-12-26 and 2026-01-02, this work replaced yabai and skhd with the AeroSpace tiling window manager and added the Leader Key launcher. The plans behind it are undated. The ADRs record the lasting decisions, and this ledger records what changed and when. [The AeroSpace cheat sheet](../architecture/aerospace.md) and [layout notes](../architecture/aerospace.md#layout-manager) describe the current setup.
 
 | Item | Outcome |
 |------|---------|
@@ -13,7 +13,7 @@ Between 2025-12-26 and 2026-01-02, this work replaced yabai and skhd with the Ae
 
 ## 1. AeroSpace in place of yabai and skhd
 
-- Decision: [ADR-006](../../nix/docs/decisions/006-aerospace-instead-of-yabai.md) chose AeroSpace over yabai, [ADR-014](../../nix/docs/decisions/014-aerospace-toml-as-canonical-authored-config.md) made `aerospace.toml` the authored config and superseded ADR-013, and [ADR-017](../../nix/docs/decisions/017-aerospace-keepalive-false-for-gaming-mode.md) turned off launchd's keep-alive for gaming mode. Source: the ADRs.
+- Decision: [ADR-006](../decisions/006-aerospace-instead-of-yabai.md) chose AeroSpace over yabai, [ADR-014](../decisions/014-aerospace-toml-as-canonical-authored-config.md) made `aerospace.toml` the authored config and superseded ADR-013, and [ADR-017](../decisions/017-aerospace-keepalive-false-for-gaming-mode.md) turned off launchd's keep-alive for gaming mode. Source: the ADRs.
 - Evidence: `wm: add AeroSpace + use nixpkgs jankyborders` (2025-12-27) added AeroSpace and the JankyBorders window borders, which AeroSpace still starts. `refactor(aerospace): consolidate TOML as canonical config source` (2025-12-29) followed. `chore(aerospace): disable until ready to learn` turned AeroSpace off the same day, and `feat(keybinds): LeaderKey-AeroSpace integration` turned it back on, also on 2025-12-29.
 
 ## 2. Navigation, workspaces, and app placement

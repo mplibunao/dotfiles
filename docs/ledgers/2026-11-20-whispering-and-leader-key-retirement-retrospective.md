@@ -27,7 +27,7 @@ Whispering was a dictation app and Leader Key a launcher bound to a CapsLock tap
 
 ## 3. Leader Key removed, CapsLock restored
 
-- Decision: hard cutover. Remove `leaderkey.nix`, the `leader-key` cask, the Leader Key source and extractor in the keybinding tool, and the AeroSpace integration, and restore CapsLock's earlier tap-Escape, hold-Hyper rule in Karabiner. Source: the plan. [ADR-019](../../nix/docs/decisions/019-store-managed-file-mappings-by-default.md) keeps `leaderkey.nix` as a historical example with a retirement note.
+- Decision: hard cutover. Remove `leaderkey.nix`, the `leader-key` cask, the Leader Key source and extractor in the keybinding tool, and the AeroSpace integration, and restore CapsLock's earlier tap-Escape, hold-Hyper rule in Karabiner. Source: the plan. [ADR-019](../decisions/019-store-managed-file-mappings-by-default.md) keeps `leaderkey.nix` as a historical example with a retirement note.
 - Evidence: `feat: retire Leader Key integration` and `fix: remove retired Leader Key source` (2026-08-27). The keybinding tool's tests gained checks that the retired source is gone. That tool isn't part of this repository.
 - Evidence (checked 2026-11-20): `/Applications/Leader Key.app` isn't installed.
 - Deferred: no CapsLock key-press result is recorded: not verified.

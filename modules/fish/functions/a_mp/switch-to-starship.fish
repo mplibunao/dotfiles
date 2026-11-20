@@ -7,7 +7,7 @@
 function switch-to-starship -d "Deprecated: Starship is already Nix-managed"
     if status is-interactive
         echo "Starship is already Nix-managed. No action needed."
-        echo "See: nix/README.md and nix/AGENTS.md"
+        echo "See: modules/starship/default.nix and AGENTS.md"
     else
         echo "switch-to-starship: deprecated (exit 2)" >&2
     end

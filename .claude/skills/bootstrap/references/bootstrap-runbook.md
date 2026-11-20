@@ -5,7 +5,7 @@
 ## Phase 0: Preconditions
 
 ### System Requirements
-- macOS on Apple Silicon (the only host in the flake is `aarch64-darwin`; an Intel Mac would need its own host and packages)
+- macOS on Apple Silicon ([Cross-platform](../../../../docs/architecture/cross-platform.md#current-scope) explains why an Intel Mac isn't supported)
 - Admin access (for sudo)
 - Internet connection
 
@@ -145,6 +145,8 @@ If your hostname doesn't match an existing host in `hosts/`, you may need to:
 1. Create a new host config, or
 2. Use an existing one (e.g., `m5-mbp`)
 
+The commands in this runbook name the host `m5-mbp`. If you created a host, use its name wherever they say `m5-mbp`.
+
 ### Stage New Host Files
 A clean clone has nothing to stage. If you created a host config above, stage it:
 ```bash
@@ -154,9 +156,7 @@ git add hosts/<new-hostname>/
 **IMPORTANT:** Nix flakes ignore untracked files. Stage every new file the flake reads before evaluation.
 
 ### Evaluate (Level 0 - Safe)
-```bash
-nix flake check --no-build
-```
+Run [level 0 of the command ladder](../../../../docs/architecture/command-ladder.md#level-0-evaluate).
 
 ### Build (Level 2 - Safe)
 ```bash
@@ -164,7 +164,11 @@ nix flake check --no-build
 nix run nix-darwin#darwin-rebuild -- build --flake .#m5-mbp
 ```
 
+After the first switch, builds use `darwin-rebuild` directly, as in [level 2 of the command ladder](../../../../docs/architecture/command-ladder.md#level-2-build).
+
 ### Apply (Level 4 - REQUIRES USER APPROVAL)
+Some mappings skip Home Manager's collision check. Before the first switch, read [Forced Mappings](../../../../docs/architecture/dotfiles-mapping.md#forced-mappings), which lists them and says what activation does with whatever is at their paths.
+
 The switch needs interactive `sudo`. After the build passes and the user approves, give them this command to run:
 ```bash
 sudo nix run nix-darwin#darwin-rebuild -- switch --flake .#m5-mbp
@@ -229,27 +233,42 @@ pnpm i -g vercel --config.minimum-release-age=0
 
 ### Neovim (LazyVim config)
 
-This dotfiles setup assumes your Neovim config lives in a separate repo at `~/.config/nvim-lazy`
-and is selected via `NVIM_APPNAME=nvim-lazy`.
+The Neovim config is in a separate repository, cloned to `~/.config/nvim-lazy` and selected with `NVIM_APPNAME=nvim-lazy`. `bootstrap-neovim.sh` sets that up, and `bootstrap-neovim.sh --help` lists its options.
 
-```bash
-# Clone config repo + set NVIM_APPNAME default in Fish
-~/Projects/personal/dotfiles/.claude/skills/bootstrap/scripts/bootstrap-neovim.sh
+1. Run the helper without options:
 
-# With headless plugin restore (recommended for automated setup)
-~/Projects/personal/dotfiles/.claude/skills/bootstrap/scripts/bootstrap-neovim.sh --sync
+   ```bash
+   ~/Projects/personal/dotfiles/.claude/skills/bootstrap/scripts/bootstrap-neovim.sh
+   ```
 
-# Validate existing setup (no clone, no fish var write)
-~/Projects/personal/dotfiles/.claude/skills/bootstrap/scripts/bootstrap-neovim.sh --validate
-```
+   It clones `git@github.com:mplibunao/neovim-config.git` (branch `main`) into `~/.config/nvim-lazy` unless that folder is already a Git repository, and sets the Fish universal variable `NVIM_APPNAME` to `nvim-lazy`. If the folder exists but isn't a Git repository, the helper stops without changing it. Move the folder aside and run the helper again.
 
-**Lazy! Syntax:** The script uses `Lazy!` (with bang) for synchronous plugin operations. The `!` makes lazy.nvim wait for completion before proceeding.
+2. Open Neovim with that config and install the plugins:
 
-**Note:** `nvim --headless` may write to `~/.local/share/nvim` and `~/.local/state/nvim`.
+   ```bash
+   NVIM_APPNAME=nvim-lazy nvim
+   ```
 
-If you prefer doing it manually:
-- Clone: `git clone git@github.com:mplibunao/neovim-config.git ~/.config/nvim-lazy`
-- Then open: `NVIM_APPNAME=nvim-lazy nvim` and run `:Lazy restore` (or `:Lazy sync`)
+   Run `:Lazy restore` to install the plugin versions pinned in `lazy-lock.json`, or `:Lazy sync` if the lock file is missing.
+
+3. Run the validation:
+
+   ```bash
+   ~/Projects/personal/dotfiles/.claude/skills/bootstrap/scripts/bootstrap-neovim.sh --validate
+   ```
+
+   Validation checks that Neovim starts with the config and that lazy.nvim has plugins declared. It doesn't check that each plugin is installed or built.
+
+Side effects of the helper:
+
+- It clones the config repository, as in step 1.
+- It sets `NVIM_APPNAME` as a Fish universal variable. `--no-default` skips this. A config folder outside `~/.config` needs `XDG_CONFIG_HOME` as well, so for that case the helper prints the command to run and sets nothing.
+- `--validate` skips both the clone and the Fish variable write.
+- Any headless Neovim run, including `--validate`, can write state under `~/.local/share` and `~/.local/state`.
+
+For an unattended setup, add `--sync` to step 1. It runs `Lazy! restore` in headless Neovim (the `!` makes lazy.nvim wait for the restore to finish before Neovim quits), force-builds the plugins that have build steps, and runs the validation from step 3. It is best-effort: if the restore or the validation fails, it prints a warning, carries on, and exits 1. Open Neovim as in step 2 to see the errors ([Neovim validation fails](#neovim-validation-fails)).
+
+To skip the helper, run `git clone git@github.com:mplibunao/neovim-config.git ~/.config/nvim-lazy` yourself and continue at step 2.
 
 ### Claude Code
 ```bash
@@ -276,28 +295,16 @@ claude --version
 Bootstrap is complete when:
 - [x] `nix --version` works
 - [x] `darwin-rebuild --version` works
-- [x] `darwin-rebuild build --flake .#HOSTNAME` succeeds
+- [x] The [level 2 build](../../../../docs/architecture/command-ladder.md#level-2-build) succeeds (Phase 5 covers the first build, which runs through `nix run`)
 - [x] `claude --version` works (or preferred agent CLI)
 - [x] `~/.config/nvim-lazy` exists (LazyVim config repo)
 
 ### Next Steps
 
-1. **Read the quick-start:** `~/Projects/personal/dotfiles/nix/README.md`
-2. **Understand agent rules:** `~/Projects/personal/dotfiles/nix/AGENTS.md`
-3. **Use nix skill** for ongoing configuration changes
+1. **Read the agent rules:** `~/Projects/personal/dotfiles/AGENTS.md` states the safety rules and links the document for each topic.
+2. **Follow its command ladder** (`docs/architecture/command-ladder.md`) for ongoing configuration changes.
 
-### Operational Commands
-
-```bash
-# Status check
-nix-ops status
-
-# Verification ladder
-nix-verify --to 2
-
-# Update flake inputs
-nix-ops update-inputs --yes --build
-```
+[Operations](../../../../docs/architecture/operations.md) covers flake input updates and the `nix-ops` commands.
 
 ---
 
@@ -325,24 +332,24 @@ source /etc/static/bashrc  # or fish equivalent
 ```
 
 ### Wrong architecture packages
-Check that the machine is Apple Silicon (see [Architecture Check](#architecture-check)) and that `nixpkgs.hostPlatform` in the host config is `aarch64-darwin`. An Intel Mac needs its own host and packages. See [System Requirements](#system-requirements).
+Check that the machine is Apple Silicon (see [Architecture Check](#architecture-check)) and that `nixpkgs.hostPlatform` in the host config is `aarch64-darwin`. See [System Requirements](#system-requirements).
 
 ### Home Manager collision errors
-If HM refuses to overwrite existing files, move the file aside:
-```bash
-mv ~/.config/conflicting-file ~/.config/conflicting-file.backup
-```
+If activation stops because a file is in the way, follow ["file is in the way"](../../../../docs/architecture/troubleshooting.md#file-is-in-the-way) in the troubleshooting doc. Home Manager already moves most conflicting files aside by itself.
 
-Then, once the user approves, give them the switch command that failed to run again. It needs interactive `sudo`. On the first switch, that's the `nix run` command from Phase 5's Apply step. After that, it's `sudo darwin-rebuild switch --flake .#m5-mbp`.
+Then, once the user approves, give them the switch command that failed to run again. It needs interactive `sudo`. On the first switch, that's the `nix run` command from Phase 5's Apply step. After that, it's the [level 4 command](../../../../docs/architecture/command-ladder.md#level-4-apply).
 
 ### Neovim validation fails
+
+`--validate` checks that Neovim starts with the config and that lazy.nvim has plugins declared.
 
 | Problem | Solution |
 |---------|----------|
 | "lazy.nvim not found" | Config didn't load. Check `init.lua` exists and has no syntax errors |
-| "No plugins configured" | Run `--sync` or manually `:Lazy restore` in Neovim |
-| "Config directory not found" | Run without `--validate` to clone first |
-| Plugins incomplete | `lazy-lock.json` missing. Run `:Lazy sync` in Neovim interactively |
+| "No plugins configured" | The config loaded but doesn't declare any plugins. Open Neovim interactively and check the lazy.nvim setup call and its plugin specs |
+| "Config directory not found" | Run the helper without `--validate` to clone first |
+| `bootstrap-check.sh` says plugins aren't installed | `lazy-lock.json` is missing from the config folder. Open Neovim and run `:Lazy sync` |
+| `NVIM_APPNAME` is empty in a new Fish shell | The helper hides errors from the Fish write and still reports success. Run `set -Ux NVIM_APPNAME nvim-lazy` in Fish |
 
 **Tip:** For debugging, open Neovim interactively to see full error messages:
 ```bash
@@ -351,7 +358,7 @@ NVIM_APPNAME=nvim-lazy nvim
 
 ### Plugins with native binaries not working
 
-Some plugins (like `markdown-preview.nvim`, `blink.cmp`) require native binaries that must be built after installation. If `Lazy restore` was used without the `--sync` flag's force-build step, builds may have been skipped.
+Some plugins (like `markdown-preview.nvim`, `blink.cmp`) require native binaries that must be built after installation. If `:Lazy restore` ran without the `--sync` force-build step, builds may have been skipped.
 
 **Symptoms:**
 - markdown-preview shows Node.js version instead of opening browser
@@ -362,7 +369,7 @@ Some plugins (like `markdown-preview.nvim`, `blink.cmp`) require native binaries
 
 **Fix (automated):**
 ```bash
-# Re-run bootstrap with --sync (includes force-build step)
+# Re-run the helper with --sync (includes the force-build step)
 ~/Projects/personal/dotfiles/.claude/skills/bootstrap/scripts/bootstrap-neovim.sh --sync
 ```
 
@@ -386,26 +393,4 @@ file ~/.local/share/nvim-lazy/lazy/markdown-preview.nvim/app/bin/markdown-previe
 
 ## Creating a New Host Configuration
 
-If this machine's hostname differs from `m5-mbp`:
-
-1. **Create host directory:**
-   ```bash
-   mkdir -p hosts/<new-hostname>
-   ```
-
-2. **Copy and modify configuration:**
-   ```bash
-   cp hosts/m5-mbp/configuration.nix hosts/<new-hostname>/
-   cp hosts/m5-mbp/homebrew.nix hosts/<new-hostname>/
-   cp hosts/m5-mbp/defaults.nix hosts/<new-hostname>/
-   ```
-
-3. **Update flake.nix** to add the new host target
-
-4. **Stage and verify:**
-   ```bash
-   git add hosts/<new-hostname>/
-   nix flake check --no-build
-   ```
-
-See `nix/docs/00-architecture.md` for full host configuration details.
+If you add a host for this machine instead of reusing `m5-mbp`, do only [Declare and stage the host](../../../../docs/architecture/hosts.md#declare-and-stage-the-host). Then return to [Phase 5](#phase-5-bootstrap-flake) and use the new host name wherever it says `m5-mbp`. Phase 5 has the first build and switch, because `darwin-rebuild` isn't installed yet.

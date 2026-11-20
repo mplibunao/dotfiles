@@ -5,7 +5,7 @@
 # different checkout, so switching branches there never changes the live
 # dashboard. The repo is not a Nix package: it is private, and this flake
 # cannot lock a git+ssh input or a pnpm dependency hash without Mark's GitHub
-# SSH key. nix/docs/runbooks/cli-proxy-api.md has the deploy steps.
+# SSH key. docs/architecture/runbooks/cli-proxy-api.md has the deploy steps.
 #
 # Feature switches such as SOONEST_RESET_ROUTING come from the checkout's
 # config/production.env, which Bun loads with --env-file. A variable set in
@@ -208,7 +208,7 @@ in
       checkCliProxyDashboardRuntime = lib.hm.dag.entryBefore [ "writeBoundary" ] ''
         if [ ! -f ${lib.escapeShellArg "${cfg.repoDir}/package.json"} ]; then
           echo "mp.cliProxyDashboard: ${cfg.repoDir}/package.json is missing." >&2
-          echo "  Run scripts/cli-proxy-dashboard-setup. See nix/docs/runbooks/cli-proxy-api.md." >&2
+          echo "  Run scripts/cli-proxy-dashboard-setup. See docs/architecture/runbooks/cli-proxy-api.md." >&2
           exit 1
         fi
         if [ ! -f ${lib.escapeShellArg "${cfg.repoDir}/src/server/index.ts"} ]; then

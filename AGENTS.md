@@ -1,21 +1,25 @@
-# Agent Instructions
+# Dotfiles
 
-## Nix Migration In Progress
+My macOS configuration as a Nix flake: Determinate Nix, nix-darwin for the system, and Home Manager for my user, with Home Manager modules grouped by tool in `modules/<tool>/`. It builds one host, `m5-mbp`, and the live checkout is `~/Projects/personal/dotfiles`, which some modules link into directly.
 
-**IMPORTANT**: This dotfiles repo is actively being migrated to Nix (nix-darwin + Home Manager).
+This file states the rules that appear in no other document, and for every other topic it links to the document that defines it. Read that document before acting on its topic.
 
-- **All configuration is in the flake at the repository root**, with one folder per tool under `modules/`. Karabiner's configuration is `modules/karabiner/config/`, which Home Manager links into `~/.config/karabiner`
-- **For Nix-specific guidance, see [`nix/AGENTS.md`](nix/AGENTS.md)** - contains safety rules, command ladder, and conventions
-- **For fresh Mac setup, use the `/bootstrap` command** or see `.claude/skills/bootstrap/SKILL.md`
-- When adding new configuration, add it as a Nix module rather than a manual symlink
-- **Plans, ledgers, ADRs, and investigations:** where each goes and what gets committed is in [`docs/architecture/docs-and-records.md`](docs/architecture/docs-and-records.md)
+## Rules
 
-## Keyboard Layout
+- Never run `darwin-rebuild switch`, `sudo darwin-rebuild switch`, or `home-manager switch`, rollbacks included, unless I explicitly say to apply or switch. Activation needs an interactive `sudo` prompt, so once the [command ladder](docs/architecture/command-ladder.md) passes and I approve, give me the exact command to run, and don't claim you completed it.
+- Stage every new file with `git add` before any `nix` command evaluates the flake. A flake sees only the files Git tracks. An untracked file fails evaluation with a confusing "No such file or directory" error for a store path.
+- I type on a Dvorak layout. Before suggesting or adding a keybinding, read [Keybindings](docs/architecture/keybindings.md).
 
-**IMPORTANT**: The user uses a **Dvorak keyboard layout**.
+## Documents by topic
 
-When suggesting or implementing keybindings:
-- Consider Dvorak key positions (e.g., `h/j/k/l` are scattered, not a row)
-- AeroSpace uses vim-style hjkl for navigation (character-based, for muscle memory)
-- Prefer mnemonic bindings over positional ones when possible
-- Document whether bindings are "Dvorak-native" or "QWERTY-positional"
+- **Any configuration change:** the [command ladder](docs/architecture/command-ladder.md) for checking it, [repository layout](docs/architecture/repository-layout.md) for where it goes, and [`CODING_STANDARDS.md`](CODING_STANDARDS.md) for the judgment rules. [`GLOSSARY.md`](GLOSSARY.md) defines the Nix terms.
+- **Packages and apps:** [packages and tiers](docs/architecture/packages-and-tiers.md), [GUI apps](docs/architecture/gui-apps.md).
+- **Configuration files and links:** [dotfiles mapping](docs/architecture/dotfiles-mapping.md), [Fish](docs/architecture/fish.md).
+- **Window management and the terminal:** [AeroSpace](docs/architecture/aerospace.md), [Kitty](docs/architecture/kitty.md).
+- **A new Mac or a new host:** the `/bootstrap` command and its [skill](.claude/skills/bootstrap/SKILL.md), then [Hosts](docs/architecture/hosts.md).
+- **Updates, rollback, and disk space:** [operations](docs/architecture/operations.md), [storage](docs/architecture/storage.md).
+- **Something broke:** [troubleshooting](docs/architecture/troubleshooting.md).
+- **CI and Linux:** [cross-platform](docs/architecture/cross-platform.md).
+- **Tools with their own procedures:** [CLIProxyAPI](docs/architecture/runbooks/cli-proxy-api.md), [OpenCode](docs/architecture/runbooks/opencode-repoprompt.md), [Phone Harness](docs/architecture/runbooks/phone-harness.md), [Surf](docs/architecture/runbooks/surf-cli.md), [TinyCast](docs/architecture/tinycast.md).
+- **Plans, ledgers, ADRs, and investigations:** [Docs and records](docs/architecture/docs-and-records.md) says which are committed and where each goes. The [decisions index](docs/decisions/README.md) lists the ADRs.
+- **Everything else:** the [architecture index](docs/architecture/index.md).

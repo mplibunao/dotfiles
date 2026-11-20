@@ -34,7 +34,7 @@
 # agent: that helper fails a job that exits, and this one is meant to. The
 # key is never written into this module's strings.
 #
-# Login, the secret file, and log checks: nix/docs/runbooks/cli-proxy-api.md.
+# Login, the secret file, and log checks: docs/architecture/runbooks/cli-proxy-api.md.
 {
   config,
   lib,

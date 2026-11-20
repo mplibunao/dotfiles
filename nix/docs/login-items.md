@@ -1,3 +1,0 @@
-AudioPriority
-TinyCast
-NordVPN

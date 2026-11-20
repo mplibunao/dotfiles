@@ -9,7 +9,7 @@
 #
 # This command does not read or write the management key. `init-secret`
 # creates the secrets file and `init-client-key` appends the client key to it.
-# Neither prints a value. OAuth logins stay manual. See nix/docs/runbooks/cli-proxy-api.md.
+# Neither prints a value. OAuth logins stay manual. See docs/architecture/runbooks/cli-proxy-api.md.
 #
 # Do not run this script under `set -x`. A trace would show the generated
 # key while `init-secret` is writing it.
