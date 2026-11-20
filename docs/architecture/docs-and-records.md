@@ -24,14 +24,9 @@ Delete a plan only after I've said the work is done, and only once its decisions
 
 ## Run ledgers
 
-An orchestrated run writes one ledger and commits it in the run's pull request. The `rp-orchestrate` skills in my claude-toolkit repository own the template, which has these parts:
+An orchestrated run writes one ledger and commits it in the run's pull request. The template for its contents (the heading, work-item table, outcomes, per-item fields, and parked decisions) is "The run ledger" section of the `rp-orchestrate-loop` skill in my private claude-toolkit repository, at `.claude/skills/rp-orchestrate-loop/SKILL.md`. Write the ledger from that template.
 
-- a `# Run ledger: <topic>` heading and a `Request · Plan` line;
-- a table of work items with each item's outcome (`done`, `partial`, `dropped`, or `parked`), agent session, and commits, listed by subject line because a rebase changes their hashes;
-- one section per item with `Decision` lines (each with its source), `Evidence` lines, and `Deferred` lines;
-- `Parked decisions`: questions that wait for me, with the options, a recommendation, and what each one blocks.
-
-The date in the name is the day the run started. Add an issue number only for an issue on this repository. The agent session column names the agent's role and session title; session IDs, transcripts, and raw tool output stay out.
+The date in the file name is the day the run started. Add an issue number only for an issue on this repository. Session IDs, transcripts, and raw tool output stay out of the ledger.
 
 ## Retrospective ledgers
 
