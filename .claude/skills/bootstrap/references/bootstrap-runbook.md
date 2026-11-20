@@ -327,9 +327,14 @@ source /etc/static/bashrc  # or fish equivalent
 Check that the machine is Apple Silicon (see [Architecture Check](#architecture-check)) and that `nixpkgs.hostPlatform` in the host config is `aarch64-darwin`. An Intel Mac needs its own host and packages. See [System Requirements](#system-requirements).
 
 ### Home Manager collision errors
-If HM refuses to overwrite existing files, move the file aside. Then, once the user approves, give them the switch command that failed to run again, because it needs interactive `sudo`. Until the first switch puts `darwin-rebuild` on PATH, that's the `nix run` form from Phase 5:
+If HM refuses to overwrite existing files, move the file aside. Then, once the user approves, give them the switch command that failed to run again, because it needs interactive `sudo`:
 ```bash
 mv ~/.config/conflicting-file ~/.config/conflicting-file.backup
+
+# First switch, before darwin-rebuild is on PATH (Phase 5)
+sudo nix run nix-darwin#darwin-rebuild -- switch --flake .#m5-mbp
+
+# Any later switch
 sudo darwin-rebuild switch --flake .#m5-mbp
 ```
 
