@@ -1,0 +1,182 @@
+# AeroSpace Window Manager Configuration
+# CANONICAL SOURCE - default.nix in this folder reads it with builtins.fromTOML
+#
+# OWNERSHIP BOUNDARY:
+#   TOML owns: keybindings, key-mapping, gaps, layout, normalization, after-startup-command
+#   Nix owns:  on-window-detected (float rules), exec (PATH/env)
+#   HM owns:   start-at-login, after-login-command (overridden by launchd.enable)
+#
+# See: https://nikitabobko.github.io/AeroSpace/guide
+#
+# ===== KEY SEMANTICS CONTRACT =====
+# Bindings use Dvorak character names under key-mapping.preset = 'dvorak'
+# Example: 'alt-d' means press the key labeled 'd' on Dvorak layout
+# Navigation uses the characters h/j/k/l (vim-style), not their physical positions
+# ================================
+
+config-version = 2
+
+# Startup (launchd-managed via Home Manager, not start-at-login)
+# after-login-command is forced empty by HM when launchd.enable = true
+after-startup-command = [
+    'exec-and-forget borders active_color=0xffb4befe inactive_color=0xff6c7086 width=4.0'
+]
+
+# Normalizations
+enable-normalization-flatten-containers = true
+enable-normalization-opposite-orientation-for-nested-containers = true
+
+# Layout defaults
+# New workspaces default to accordion (stacked windows, one expanded); toggle a
+# workspace to side-by-side tiles with alt-backslash when needed.
+accordion-padding = 30
+default-root-container-layout = 'accordion'
+default-root-container-orientation = 'auto'
+
+# Mouse follows focus
+on-focused-monitor-changed = ['move-mouse monitor-lazy-center']
+
+# Disable macOS hide (prevent accidental cmd-h)
+automatically-unhide-macos-hidden-apps = true
+
+# IMPORTANT: Using Dvorak layout
+# This affects how key names are interpreted
+[key-mapping]
+preset = 'dvorak'
+
+# Gaps (matching previous yabai config ~15px)
+[gaps]
+inner.horizontal = 15
+inner.vertical = 15
+outer.left = 15
+outer.bottom = 15
+outer.top = 15
+outer.right = 15
+
+# NOTE: exec block is Nix-owned - do not add here
+# NOTE: on-window-detected is Nix-owned (float rules) - do not add here
+# NOTE: start-at-login is HM-overridden - do not add here
+# NOTE: after-login-command is HM-overridden - do not add here
+
+# Main mode bindings
+# Uses Option (alt) as primary modifier to avoid Karabiner Hyper conflicts
+#
+# Kitty conflicts avoided:
+# - alt+minus -> Kitty hsplit (we use alt-shift-minus for resize)
+# - alt+/ -> Kitty vsplit (we use alt-backslash for layout toggle)
+# - alt+r -> Kitty rotate (we don't bind alt-r)
+[mode.main.binding]
+
+# Layout switching (changed from alt-slash to avoid Kitty vsplit conflict)
+alt-backslash = 'layout tiles horizontal vertical'
+alt-comma = 'layout accordion horizontal vertical'
+
+# Navigation - vim style hjkl (character-based, not positional)
+alt-h = 'focus left'
+alt-j = 'focus down'
+alt-k = 'focus up'
+alt-l = 'focus right'
+
+# Move window - paired with navigation
+alt-shift-h = 'move left'
+alt-shift-j = 'move down'
+alt-shift-k = 'move up'
+alt-shift-l = 'move right'
+
+# Resize (alt-minus conflicts with Kitty hsplit, use shift variants)
+alt-shift-minus = 'resize smart -50'
+alt-shift-equal = 'resize smart +50'
+
+# Workspaces (numbers)
+alt-1 = 'workspace 1'
+alt-2 = 'workspace 2'
+alt-3 = 'workspace 3'
+alt-4 = 'workspace 4'
+alt-5 = 'workspace 5'
+alt-6 = 'workspace 6'
+alt-7 = 'workspace 7'
+alt-8 = 'workspace 8'
+alt-9 = 'workspace 9'
+
+# Move to workspace (numeric)
+alt-shift-1 = 'move-node-to-workspace 1'
+alt-shift-2 = 'move-node-to-workspace 2'
+alt-shift-3 = 'move-node-to-workspace 3'
+alt-shift-4 = 'move-node-to-workspace 4'
+alt-shift-5 = 'move-node-to-workspace 5'
+alt-shift-6 = 'move-node-to-workspace 6'
+alt-shift-7 = 'move-node-to-workspace 7'
+alt-shift-8 = 'move-node-to-workspace 8'
+alt-shift-9 = 'move-node-to-workspace 9'
+
+# Lettered workspaces - mnemonic keys
+alt-shift-b = 'workspace B'      # Browser
+alt-shift-t = 'workspace T'      # Terminal
+alt-shift-c = 'workspace C'      # Chat
+alt-shift-m = 'workspace M'      # Music
+alt-shift-d = 'workspace D'      # Discord
+alt-shift-s = 'workspace S'      # Slack
+alt-shift-o = 'workspace O'      # Obsidian
+alt-shift-i = 'workspace I'      # Internal display scratch (ad-hoc, no auto-assign)
+
+# Send to lettered workspace
+alt-ctrl-b = 'move-node-to-workspace B'
+alt-ctrl-t = 'move-node-to-workspace T'
+alt-ctrl-c = 'move-node-to-workspace C'
+alt-ctrl-m = 'move-node-to-workspace M'
+alt-ctrl-d = 'move-node-to-workspace D'
+alt-ctrl-s = 'move-node-to-workspace S'
+alt-ctrl-o = 'move-node-to-workspace O'
+alt-ctrl-i = 'move-node-to-workspace I'
+
+# Quick workspace switching
+alt-tab = 'workspace-back-and-forth'
+alt-shift-tab = 'move-workspace-to-monitor --wrap-around next'
+
+# Fullscreen
+alt-f = 'fullscreen'
+
+# Balance windows
+alt-equal = 'balance-sizes'
+
+# Enter service mode
+alt-shift-semicolon = 'mode service'
+
+# Service mode (for less common operations)
+# Uses plain keys without modifiers since we're already in a mode
+# This avoids duplicate binding conflicts with main mode
+[mode.service.binding]
+esc = ['reload-config', 'mode main']
+r = ['flatten-workspace-tree', 'balance-sizes', 'mode main']  # Complete layout reset
+f = ['layout floating tiling', 'mode main']  # Toggle float
+backspace = ['close-all-windows-but-current', 'mode main']
+
+# Join with adjacent window (plain keys - no alt prefix in service mode)
+# Uses vim-style hjkl
+h = ['join-with left', 'mode main']
+j = ['join-with down', 'mode main']
+k = ['join-with up', 'mode main']
+l = ['join-with right', 'mode main']
+
+# Pin workspaces to monitors. Keywords: `main` = display set as Main in
+# System Settings; `built-in` = MacBook Retina. In laptop-only mode both
+# resolve to the laptop, so workspaces collapse correctly.
+[workspace-to-monitor-force-assignment]
+1 = 'main'
+2 = 'built-in'  # Reserved for the built-in display; primary workspace when on the laptop screen (accordion via global default)
+3 = 'main'
+4 = 'main'
+5 = 'main'
+6 = 'main'
+7 = 'main'
+8 = 'main'
+9 = 'main'
+B = 'main'
+T = 'main'
+C = 'main'
+O = 'main'
+X = 'main'
+M = 'built-in'
+D = 'built-in'
+S = 'built-in'
+I = 'built-in'  # Ad-hoc scratch on the laptop screen (no app auto-assignment)

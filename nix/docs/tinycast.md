@@ -1,8 +1,8 @@
 # TinyCast
 
 TinyCast is the primary macOS launcher, installed through
-[Tier 1](../home/mp/packages/tier1.nix). The
-[package definition](../packages/tinycast/default.nix) pins the official
+[Tier 1](../../home/mp/package-tiers/tier1.nix). The
+[package definition](../../packages/tinycast/default.nix) pins the official
 Apple Silicon release and its archive checksum. Update the version and checksum
 together. The package preserves the upstream code signature.
 
@@ -26,9 +26,9 @@ Rebuilding the package preserves these settings.
 
 Enable **Settings → Backup → Settings File** to synchronize supported preferences
 with `~/.config/tinycast/settings.json`. Home Manager links that file to
-[`settings.json`](../home/mp/modules/tinycast/settings.json) in this checkout.
+[`settings.json`](../../modules/tinycast/settings.json) in this checkout.
 TinyCast can write through the link, so changes made in the app appear in Git.
-The [module](../home/mp/modules/tinycast/default.nix) follows the decision for
+The [module](../../modules/tinycast/default.nix) follows the decision for
 app-written configuration in [ADR-019](decisions/019-store-managed-file-mappings-by-default.md).
 
 For an existing local settings file, review it and copy the preferences to the

@@ -1,0 +1,341 @@
+#!/usr/bin/env bash
+set -u
+
+# Keep fixture creation independent from caller repository location and Git policy.
+unset GIT_DIR GIT_WORK_TREE GIT_COMMON_DIR GIT_INDEX_FILE GIT_OBJECT_DIRECTORY
+unset GIT_ALTERNATE_OBJECT_DIRECTORIES GIT_CEILING_DIRECTORIES
+unset GIT_CONFIG_GLOBAL GIT_CONFIG_NOSYSTEM GIT_CONFIG_PARAMETERS GIT_CONFIG_COUNT
+unset GIT_TEMPLATE_DIR
+while IFS='=' read -r git_env_name _; do
+  case "$git_env_name" in
+    GIT_CONFIG_KEY_*|GIT_CONFIG_VALUE_*) unset "$git_env_name" ;;
+  esac
+done < <(env)
+export GIT_CONFIG_GLOBAL=/dev/null
+export GIT_CONFIG_NOSYSTEM=1
+
+repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+functions_dir="$repo_root/modules/fish/functions"
+completion_file="$repo_root/modules/fish/completions/hd.fish"
+raw_tmp="$(mktemp -d "${TMPDIR:-/tmp}/worktree-review-dx.XXXXXX")" || {
+  printf 'Error: failed to create temporary directory\n' >&2
+  exit 1
+}
+tmp="$(cd "$raw_tmp" && pwd -P)" || {
+  printf 'Error: failed to canonicalize temporary directory: %s\n' "$raw_tmp" >&2
+  rm -rf -- "$raw_tmp"
+  exit 1
+}
+[[ -n "$tmp" && "$tmp" != / ]] || {
+  printf 'Error: unsafe temporary directory path: %s\n' "$tmp" >&2
+  rm -rf -- "$raw_tmp"
+  exit 1
+}
+trap 'rm -rf -- "$tmp"' EXIT
+
+# Caller-provided fake controls must never influence fixture behavior.
+unset FZF_INPUT_LOG FZF_ARGS_LOG FZF_STATUS FZF_CHOICE FZF_DELETE_PATH
+unset HUNK_LOG HUNK_STATUS HARNESS_FIXTURE_ROOT
+
+passes=0
+failures=0
+
+run_scenario() {
+  local name="$1"
+  shift
+  if ("$@"); then
+    printf 'PASS: %s\n' "$name"
+    passes=$((passes + 1))
+  else
+    printf 'FAIL: %s\n' "$name"
+    failures=$((failures + 1))
+  fi
+}
+
+fail() {
+  printf '  assertion failed: %s\n' "$*" >&2
+  return 1
+}
+
+assert_eq() {
+  local expected="$1" actual="$2" label="$3"
+  [[ "$actual" == "$expected" ]] || fail "$label (expected '$expected', got '$actual')"
+}
+
+assert_contains() {
+  local haystack="$1" needle="$2" label="$3"
+  [[ "$haystack" == *"$needle"* ]] || fail "$label (missing '$needle')"
+}
+
+make_fakes() {
+  mkdir -p "$tmp/bin" || return 1
+  cat >"$tmp/bin/fzf" <<'EOF' || return 1
+#!/usr/bin/env bash
+set -u
+{
+  printf 'argc=%d' "$#"
+  index=0
+  for arg in "$@"; do
+    index=$((index + 1))
+    printf ' arg%d=%q' "$index" "$arg"
+  done
+  printf '\n'
+} >"${FZF_ARGS_LOG:?}"
+input="$(cat)"
+printf '%s\n' "$input" >"${FZF_INPUT_LOG:?}"
+status="${FZF_STATUS:-0}"
+if [[ "$status" != 0 ]]; then
+  exit "$status"
+fi
+line="$(printf '%s\n' "$input" | sed -n "${FZF_CHOICE:-1}p")"
+if [[ -n "${FZF_DELETE_PATH:-}" ]]; then
+  case "$FZF_DELETE_PATH" in
+    "${HARNESS_FIXTURE_ROOT:?}"/*) rm -rf -- "$FZF_DELETE_PATH" ;;
+    *)
+      printf 'fake fzf: refusing to delete path outside fixture root: %s\n' "$FZF_DELETE_PATH" >&2
+      exit 2
+      ;;
+  esac
+fi
+printf '%s\n' "$line"
+EOF
+  cat >"$tmp/bin/hunk" <<'EOF' || return 1
+#!/usr/bin/env bash
+set -u
+{
+  printf 'pwd=%q argc=%d' "$PWD" "$#"
+  index=0
+  for arg in "$@"; do
+    index=$((index + 1))
+    printf ' arg%d=%q' "$index" "$arg"
+  done
+  printf '\n'
+} >>"${HUNK_LOG:?}"
+exit "${HUNK_STATUS:-0}"
+EOF
+  chmod +x "$tmp/bin/fzf" "$tmp/bin/hunk" || return 1
+  [[ -x "$tmp/bin/fzf" && -x "$tmp/bin/hunk" ]]
+}
+
+make_fixture() {
+  fixture="$tmp/fixture"
+  main="$fixture/main"
+  branch_wt="$fixture/branch-worktree"
+  detached_wt="$fixture/detached-worktree"
+  spaced_wt="$fixture/path with worktree spaces"
+  prunable_wt="$fixture/prunable-worktree"
+  live_prunable_wt="$fixture/live-prunable-worktree"
+  mkdir -p "$fixture" \
+    && git init -q "$main" \
+    && git -C "$main" config user.email fixture@example.invalid \
+    && git -C "$main" config user.name Fixture \
+    && printf 'fixture\n' >"$main/file.txt" \
+    && git -C "$main" add file.txt \
+    && git -C "$main" commit -qm initial \
+    && git -C "$main" worktree add -q -b review-branch "$branch_wt" \
+    && git -C "$main" worktree add -q --detach "$detached_wt" \
+    && git -C "$main" worktree add -q -b spaced-branch "$spaced_wt" \
+    && git -C "$main" worktree add -q -b stale-branch "$prunable_wt" \
+    && rm -rf "$prunable_wt" \
+    && git -C "$main" worktree add -q -b live-stale-branch "$live_prunable_wt" \
+    && rm "$live_prunable_wt/.git"
+}
+
+assert_prunable_registration() {
+  local porcelain="$1" path="$2"
+  printf '%s\n' "$porcelain" | awk -v expected="$path" '
+    BEGIN { RS = ""; FS = "\n" }
+    {
+      matching_path = 0
+      prunable = 0
+      for (field_no = 1; field_no <= NF; field_no++) {
+        if ($field_no == "worktree " expected) matching_path = 1
+        if ($field_no ~ /^prunable([ ]|$)/) prunable = 1
+      }
+      if (matching_path && prunable) found = 1
+    }
+    END { exit(found ? 0 : 1) }
+  '
+}
+
+verify_fixture() {
+  local porcelain
+  porcelain="$(git -C "$main" worktree list --porcelain)" || return 1
+  [[ ! -d "$prunable_wt" ]] || fail 'missing-directory prunable fixture directory was not removed' || return 1
+  [[ -d "$live_prunable_wt" ]] || fail 'existing-directory prunable fixture directory is missing' || return 1
+  assert_prunable_registration "$porcelain" "$prunable_wt" \
+    || fail 'missing-directory prunable registration absent from Git porcelain' || return 1
+  assert_prunable_registration "$porcelain" "$live_prunable_wt" \
+    || fail 'existing-directory prunable registration absent from Git porcelain' || return 1
+}
+
+fish_with_functions() {
+  local body="$1"
+  shift
+  PATH="$tmp/bin:$PATH" fish --no-config -c "
+    source '$functions_dir/__pick_git_worktree.fish'
+    source '$functions_dir/cwt.fish'
+    source '$functions_dir/hd.fish'
+    $body
+  " -- "$@"
+}
+
+scenario_picker() {
+  local output status stderr rows actual_rows expected_rows main_branch short_head actual_args expected_args
+  export FZF_INPUT_LOG="$tmp/fzf-picker.log"
+  export FZF_ARGS_LOG="$tmp/fzf-picker-args.log"
+  export FZF_CHOICE=3 FZF_STATUS=0
+  output="$(fish_with_functions 'cd -- "$argv[1]"; __pick_git_worktree' "$main" 2>"$tmp/picker.err")" || return 1
+  actual_args="$(cat "$FZF_ARGS_LOG")"
+  printf -v expected_args 'argc=3 arg1=%q arg2=%q arg3=%q' \
+    --no-multi $'--delimiter=\t' --with-nth=2
+  assert_eq "$expected_args" "$actual_args" 'picker fzf invocation options' || return 1
+  rows="$(wc -l <"$FZF_INPUT_LOG" | tr -d ' ')"
+  assert_eq 4 "$rows" 'picker selectable row count' || return 1
+  main_branch="$(git -C "$main" branch --show-current)"
+  short_head="$(git -C "$detached_wt" rev-parse --short=8 HEAD)"
+  actual_rows="$(cat "$FZF_INPUT_LOG")"
+  expected_rows="$(
+    printf '1\t%s  %s\n2\t%s  %s\n3\t%s  %s\n4\t%s  %s\n' \
+      "$main_branch" "$main" \
+      'review-branch' "$branch_wt" \
+      "detached @ $short_head" "$detached_wt" \
+      'spaced-branch' "$spaced_wt"
+  )"
+  assert_eq "$expected_rows" "$actual_rows" 'picker exact raw rows with hidden indexes' || return 1
+  ! grep -Fq "$prunable_wt" "$FZF_INPUT_LOG" || fail 'missing-directory prunable worktree excluded' || return 1
+  ! grep -Fq "$live_prunable_wt" "$FZF_INPUT_LOG" || fail 'existing-directory prunable worktree excluded' || return 1
+  assert_eq "$detached_wt" "$output" 'chosen row returns authoritative path' || return 1
+
+  for cancel_status in 130 1; do
+    export FZF_STATUS="$cancel_status"
+    stderr="$(fish_with_functions 'cd -- "$argv[1]"; __pick_git_worktree' "$main" 2>&1 >/dev/null)"
+    status=$?
+    assert_eq 130 "$status" "fzf $cancel_status normalized status" || return 1
+    assert_eq '' "$stderr" "fzf $cancel_status is silent" || return 1
+  done
+
+  export FZF_STATUS=0
+  stderr="$(fish_with_functions 'cd -- "$argv[1]"; __pick_git_worktree' "$tmp" 2>&1 >/dev/null)"
+  status=$?
+  [[ $status -ne 0 ]] || fail 'outside-repo picker fails' || return 1
+  assert_contains "$stderr" 'failed to list Git worktrees' 'outside-repo picker is loud' || return 1
+
+  local bare="$tmp/empty.git" stale="$tmp/empty-stale"
+  git clone -q --bare "$main" "$bare"
+  git --git-dir="$bare" worktree add -q --detach "$stale"
+  rm -rf "$stale"
+  stderr="$(fish_with_functions 'cd -- "$argv[1]"; __pick_git_worktree' "$bare" 2>&1 >/dev/null)"
+  status=$?
+  [[ $status -ne 0 ]] || fail 'zero-usable picker fails' || return 1
+  assert_contains "$stderr" 'excluded 1 stale or unrepresentable registration(s)' 'empty case counts stale registration' || return 1
+}
+
+scenario_hd_wt() {
+  local output status stderr caller="$main" actual_record expected_record
+  export FZF_INPUT_LOG="$tmp/fzf-hd.log" FZF_ARGS_LOG="$tmp/fzf-hd-args.log" FZF_CHOICE=4 FZF_STATUS=0
+  export HUNK_LOG="$tmp/hunk-wt.log" HUNK_STATUS=0
+  export XDG_CONFIG_HOME="$tmp/config"
+  mkdir -p "$XDG_CONFIG_HOME/fish"
+  printf 'echo nested-config-loaded\n' >"$XDG_CONFIG_HOME/fish/config.fish"
+  : >"$HUNK_LOG"
+  output="$(fish_with_functions 'cd -- "$argv[1]"; set before $PWD; hd wt staged alpha "two words"; set s $status; test "$PWD" = "$before"; and exit $s; exit 99' "$caller")" || return 1
+  assert_eq '' "$output" 'hd wt child skips user config output' || return 1
+  actual_record="$(cat "$HUNK_LOG")"
+  printf -v expected_record 'pwd=%q argc=4 arg1=%q arg2=%q arg3=%q arg4=%q' \
+    "$spaced_wt" diff --staged alpha 'two words'
+  assert_eq "$expected_record" "$actual_record" 'hd wt cwd, staged normalization, and indexed passthrough' || return 1
+
+  export HUNK_STATUS=47
+  fish_with_functions 'cd -- "$argv[1]"; hd wt' "$caller" >/dev/null 2>&1
+  status=$?
+  assert_eq 47 "$status" 'hunk exit status propagates' || return 1
+
+  : >"$HUNK_LOG"
+  export HUNK_STATUS=0 FZF_STATUS=130
+  stderr="$(fish_with_functions 'cd -- "$argv[1]"; hd wt' "$caller" 2>&1 >/dev/null)"
+  status=$?
+  assert_eq 130 "$status" 'hd cancellation status' || return 1
+  assert_eq '' "$stderr" 'hd cancellation silent' || return 1
+  [[ ! -s "$HUNK_LOG" ]] || fail 'cancel does not launch hunk' || return 1
+
+  : >"$HUNK_LOG"
+  export FZF_STATUS=0 FZF_CHOICE=2 FZF_DELETE_PATH="$branch_wt"
+  stderr="$(fish_with_functions 'cd -- "$argv[1]"; hd wt' "$caller" 2>&1 >/dev/null)"
+  status=$?
+  unset FZF_DELETE_PATH
+  [[ $status -ne 0 ]] || fail 'deleted-after-selection race fails' || return 1
+  assert_contains "$stderr" 'selected worktree no longer exists' 'deleted-after-selection race is loud' || return 1
+  [[ ! -s "$HUNK_LOG" ]] || fail 'race does not launch hunk' || return 1
+}
+
+scenario_cwt() {
+  local output status pwd_line zoxide_lines
+  export FZF_INPUT_LOG="$tmp/fzf-cwt.log" FZF_ARGS_LOG="$tmp/fzf-cwt-args.log" FZF_CHOICE=3 FZF_STATUS=0
+  local zo="$tmp/zoxide"
+  mkdir -p "$zo"
+  output="$(PATH="$tmp/bin:$PATH" _ZO_DATA_DIR="$zo" fish --no-config -c "
+    zoxide init fish | source
+    set -e fish_private_mode
+    source '$functions_dir/__pick_git_worktree.fish'
+    source '$functions_dir/cwt.fish'
+    cd -- '$main'
+    cwt; or exit
+    echo PWD=\"\$PWD\"
+    echo __ZOXIDE_QUERY_BEGIN__
+    zoxide query --list
+    echo __ZOXIDE_QUERY_END__
+  ")" || return 1
+  pwd_line="$(printf '%s\n' "$output" | grep '^PWD=')"
+  assert_eq "PWD=$detached_wt" "$pwd_line" 'cwt changes real fish PWD' || return 1
+  zoxide_lines="$(printf '%s\n' "$output" | awk '/^__ZOXIDE_QUERY_BEGIN__$/ { capture = 1; next } /^__ZOXIDE_QUERY_END__$/ { capture = 0 } capture')"
+  printf '%s\n' "$zoxide_lines" | grep -Fxq "$detached_wt" \
+    || fail 'isolated zoxide query lacks selected worktree line' || return 1
+  [[ -e "$zo/db.zo" ]] || fail 'isolated zoxide database created' || return 1
+
+  export FZF_STATUS=1
+  output="$(fish_with_functions 'cd -- "$argv[1]"; set before $PWD; cwt >/dev/null 2>/dev/null; set s $status; echo "$s|$before|$PWD"' "$main")"
+  IFS='|' read -r status before after <<<"$output"
+  assert_eq 130 "$status" 'cwt cancellation status' || return 1
+  assert_eq "$before" "$after" 'cwt cancellation leaves PWD unchanged' || return 1
+}
+
+scenario_hd_regression() {
+  local help actual_records expected_records first_record second_record
+  export HUNK_LOG="$tmp/hunk-regression.log" HUNK_STATUS=0 FZF_STATUS=0
+  : >"$HUNK_LOG"
+  fish_with_functions 'cd -- "$argv[1]"; hd main -- src/ui; hd staged' "$main" || return 1
+  actual_records="$(cat "$HUNK_LOG")"
+  printf -v first_record 'pwd=%q argc=4 arg1=%q arg2=%q arg3=%q arg4=%q' \
+    "$main" diff main -- src/ui
+  printf -v second_record 'pwd=%q argc=2 arg1=%q arg2=%q' \
+    "$main" diff --staged
+  expected_records="$(printf '%s\n%s\n' "$first_record" "$second_record")"
+  assert_eq "$expected_records" "$actual_records" 'plain and staged per-invocation records' || return 1
+  help="$(fish_with_functions 'hd help')" || return 1
+  assert_contains "$help" 'hd wt [args...]' 'help documents wt mode' || return 1
+  assert_contains "$help" 'hd wt staged' 'help documents wt staged mode' || return 1
+  assert_contains "$help" "Use \`hd wt\` to reach a worktree's uncommitted state" 'help names the full worktree subcommand' || return 1
+  [[ "$help" != *'Use `wt` to reach'* ]] || fail 'help contains ambiguous bare wt instruction' || return 1
+}
+
+scenario_fish_syntax() {
+  fish --no-config -n \
+    "$functions_dir/__pick_git_worktree.fish" \
+    "$functions_dir/cwt.fish" \
+    "$functions_dir/hd.fish" \
+    "$completion_file"
+}
+
+make_fakes || exit 1
+make_fixture || exit 1
+export HARNESS_FIXTURE_ROOT="$fixture"
+verify_fixture || exit 1
+run_scenario 'picker contract' scenario_picker
+run_scenario 'cwt and isolated zoxide hook' scenario_cwt
+run_scenario 'hd wt behavior' scenario_hd_wt
+run_scenario 'plain hd regression and help' scenario_hd_regression
+run_scenario 'fish syntax (four files)' scenario_fish_syntax
+
+printf '\nSummary: %d PASS, %d FAIL\n' "$passes" "$failures"
+((failures == 0))

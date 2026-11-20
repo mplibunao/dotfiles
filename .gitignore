@@ -6,7 +6,7 @@ __pycache__/
 *.py[cod]
 
 # Runtime/generated backup files
-karabiner/automatic_backups/
+modules/karabiner/config/automatic_backups/
 *.bak
 *.backup
 *.old

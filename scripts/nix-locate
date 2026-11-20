@@ -1,0 +1,100 @@
+#!/usr/bin/env bash
+#
+# nix-locate
+# ==========
+# Locate the dotfiles Nix flake root (the repository root, which holds flake.nix).
+#
+# Usage:
+#   nix-locate [--nix-root|--dotfiles-root|--json]
+#
+# Precedence:
+#   1) $DOTFILES_DIR, when set (an error if it has no flake.nix)
+#   2) ~/Projects/personal/dotfiles (default location, if it holds flake.nix)
+#   3) Walk up from $PWD until a flake.nix is found (fallback)
+
+set -euo pipefail
+
+usage() {
+  cat <<'EOF'
+Usage: nix-locate [options]
+
+Options:
+  --nix-root          Print the flake root path (default)
+  --dotfiles-root     Print the dotfiles root path (the same path as --nix-root)
+  --json              Print JSON with nix_root + dotfiles_root
+  -h, --help          Show help
+EOF
+}
+
+want="nix-root"
+want_json="false"
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --nix-root)
+      want="nix-root"
+      shift
+      ;;
+    --dotfiles-root)
+      want="dotfiles-root"
+      shift
+      ;;
+    --json)
+      want_json="true"
+      shift
+      ;;
+    -h|--help)
+      usage
+      exit 0
+      ;;
+    *)
+      echo "Error: unknown argument: $1" >&2
+      usage >&2
+      exit 2
+      ;;
+  esac
+done
+
+find_by_walking_up() {
+  local dir="$PWD"
+  while [[ "$dir" != "/" ]]; do
+    if [[ -f "$dir/flake.nix" ]]; then
+      echo "$dir"
+      return 0
+    fi
+    dir="$(dirname "$dir")"
+  done
+  return 1
+}
+
+nix_root=""
+dotfiles_root=""
+
+if [[ -n "${DOTFILES_DIR:-}" ]]; then
+  if [[ ! -f "$DOTFILES_DIR/flake.nix" ]]; then
+    echo "Error: DOTFILES_DIR is $DOTFILES_DIR, which has no flake.nix." >&2
+    exit 1
+  fi
+  nix_root="$DOTFILES_DIR"
+elif [[ -f "$HOME/Projects/personal/dotfiles/flake.nix" ]]; then
+  nix_root="$HOME/Projects/personal/dotfiles"
+elif ! nix_root="$(find_by_walking_up)"; then
+  echo "Error: could not locate a Nix flake root." >&2
+  echo "Tried ~/Projects/personal/dotfiles and walking up from \$PWD." >&2
+  exit 1
+fi
+dotfiles_root="$nix_root"
+
+if [[ "$want_json" == "true" ]]; then
+  printf '{"nix_root":"%s","dotfiles_root":"%s"}\n' "$nix_root" "$dotfiles_root"
+  exit 0
+fi
+
+case "$want" in
+  nix-root) echo "$nix_root" ;;
+  dotfiles-root) echo "$dotfiles_root" ;;
+  *)
+    echo "Error: internal: unknown output mode: $want" >&2
+    exit 2
+    ;;
+esac

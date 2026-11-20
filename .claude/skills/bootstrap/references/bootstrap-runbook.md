@@ -132,7 +132,7 @@ nix flake metadata github:NixOS/nixpkgs
 
 ### Navigate to Nix Config
 ```bash
-cd ~/Projects/personal/dotfiles/nix
+cd ~/Projects/personal/dotfiles
 ```
 
 ### Check Hostname
@@ -145,12 +145,13 @@ If your hostname doesn't match an existing host in `hosts/`, you may need to:
 1. Create a new host config, or
 2. Use an existing one (e.g., `m5-mbp`)
 
-### Stage Any New Files
+### Stage New Host Files
+A clean clone has nothing to stage. If you created a host config above, stage it:
 ```bash
-git add .
+git add hosts/<new-hostname>/
 ```
 
-**IMPORTANT:** Nix flakes ignore untracked files. Always stage before evaluation.
+**IMPORTANT:** Nix flakes ignore untracked files. Stage every new file the flake reads before evaluation.
 
 ### Evaluate (Level 0 - Safe)
 ```bash
@@ -186,8 +187,8 @@ Install tools needed for agent-assisted development.
 
 ### Node.js (via mise)
 
-**mise** manages Node, not fnm (see `nix/home/mp/modules/node.nix` and ADR-020,
-which supersedes ADR-004). tier2 installs mise and `fish.nix` activates it, so it's
+**mise** manages Node, not fnm (see `modules/node/default.nix` and ADR-020,
+which supersedes ADR-004). tier2 installs mise and `modules/fish/default.nix` activates it, so it's
 on PATH after the first `darwin-rebuild switch`.
 
 ```bash
@@ -198,7 +199,7 @@ mise --version
 mise use -g node@lts
 ```
 
-The Fish init in `node.nix` installs Corepack's `pnpm`/`yarn` shims into the active
+The Fish init in `modules/node/default.nix` installs Corepack's `pnpm`/`yarn` shims into the active
 Node prefix automatically, so no manual `corepack enable` step is needed.
 
 ### Global npm/pnpm CLIs (imperative)
@@ -206,7 +207,7 @@ Node prefix automatically, so no manual `corepack enable` step is needed.
 Some CLIs aren't packaged in nixpkgs (or were dropped when upstream removed
 `nodePackages` on 2026-03-03), so pnpm installs them globally instead. These installs
 are **imperative**: package state lives under `$PNPM_HOME` (`~/Library/pnpm`) and
-pnpm 11 links the executables into `$PNPM_HOME/bin` (which `node.nix` adds to PATH),
+pnpm 11 links the executables into `$PNPM_HOME/bin` (which `modules/node/default.nix` adds to PATH),
 but `darwin-rebuild switch` does not reinstall them. Reinstall them here on a fresh
 machine:
 
@@ -218,8 +219,8 @@ pnpm i -g vercel
 |----------|------------------------------------------------------------|
 | `vercel` | Not in nixpkgs; was `nodePackages.vercel` before that set was removed upstream |
 
-**Release-age gate:** `node.nix` configures `~/.config/pnpm/rc` to hold back releases
-newer than 7 days for supply-chain hardening (rationale lives in `node.nix`). To
+**Release-age gate:** `modules/node/default.nix` configures `~/.config/pnpm/rc` to hold back releases
+newer than 7 days for supply-chain hardening (rationale lives in `modules/node/default.nix`). To
 install a brand-new release immediately, override per-invocation:
 
 ```bash
@@ -303,7 +304,7 @@ nix-ops update-inputs --yes --build
 ## Troubleshooting
 
 ### "flake.nix not found"
-Ensure you're in `~/Projects/personal/dotfiles/nix/`, not `dotfiles/`.
+Run flake commands from the repository root, `~/Projects/personal/dotfiles/`.
 
 ### "file not found" after adding .nix
 Stage new files first:
@@ -389,21 +390,21 @@ If this machine's hostname differs from `m5-mbp`:
 
 1. **Create host directory:**
    ```bash
-   mkdir -p nix/hosts/<new-hostname>
+   mkdir -p hosts/<new-hostname>
    ```
 
 2. **Copy and modify configuration:**
    ```bash
-   cp nix/hosts/m5-mbp/configuration.nix nix/hosts/<new-hostname>/
-   cp nix/hosts/m5-mbp/homebrew.nix nix/hosts/<new-hostname>/
-   cp nix/hosts/m5-mbp/defaults.nix nix/hosts/<new-hostname>/
+   cp hosts/m5-mbp/configuration.nix hosts/<new-hostname>/
+   cp hosts/m5-mbp/homebrew.nix hosts/<new-hostname>/
+   cp hosts/m5-mbp/defaults.nix hosts/<new-hostname>/
    ```
 
 3. **Update flake.nix** to add the new host target
 
 4. **Stage and verify:**
    ```bash
-   git add nix/hosts/<new-hostname>/
+   git add hosts/<new-hostname>/
    nix flake check --no-build
    ```
 
