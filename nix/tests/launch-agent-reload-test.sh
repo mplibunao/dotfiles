@@ -68,8 +68,7 @@ chmod +x "${fake_bin}/launchctl" "${fake_bin}/sleep"
 
 render() {
   # $1: store path the snippet should treat as the plist content.
-  # Exits the harness on failure: case 7 calls switch inside `if`, where
-  # errexit is off, and would otherwise run an empty snippet.
+  # Nix's stderr is shown only when nix eval fails.
   local snippet
   snippet="$(nix eval --impure --raw --expr "
     let
@@ -100,7 +99,10 @@ install_plist() {
 switch() {
   local version="$1" dry="${2:-}"
   : >"$calls"
-  render "/nix/store/fake-${version}.plist" >"${tmp}/snippet.sh"
+  # Case 7 calls switch inside `if`, where errexit is off, so a failed render
+  # has to stop the harness here instead of running an empty snippet.
+  render "/nix/store/fake-${version}.plist" >"${tmp}/snippet.sh" ||
+    fail "could not write the activation snippet"
   PATH="${fake_bin}:${PATH}" FAKE_LAUNCHD="$fake_state" DRY_RUN_CMD="$dry" \
     bash "${tmp}/snippet.sh"
 }
