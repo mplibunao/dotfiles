@@ -46,6 +46,4 @@ If you fork this repo, update these values before bootstrapping:
 
 1. **GitHub username** in clone URLs
 2. **Email** for SSH key generation
-3. **Hostname** in flake commands (run `hostname -s` to get yours)
-
-See the bootstrap guide for a personalization checklist.
+3. **Host name** in flake commands: the `darwinConfigurations` name you give your host in `flake.nix`, which doesn't have to match `hostname -s` ([Hosts](docs/architecture/hosts.md#declare-and-stage-the-host))

@@ -20,6 +20,7 @@ dotfiles/
 ├── data/workspaces.toml     # AeroSpace workspace registry
 ├── docs/                    # architecture docs, ADRs, ledgers, investigations
 ├── .claude/                 # Claude Code commands and the bootstrap skill
+├── .githooks/               # pre-commit and pre-push hooks (Docs and records, Hooks)
 └── .github/workflows/       # CI: flake evaluation on Linux
 ```
 

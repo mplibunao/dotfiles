@@ -1,6 +1,6 @@
 ---
 name: bootstrap
-description: Bootstrap a fresh Mac with this dotfiles repo's Nix configuration. Use when setting up a new Mac, installing Determinate Nix, or getting to first darwin-rebuild. Covers pre-agent steps through handover to the repository's AGENTS.md.
+description: Bootstrap a fresh Mac with this dotfiles repo's Nix configuration. Use when setting up a new Mac, installing Determinate Nix, or getting to first darwin-rebuild.
 ---
 
 # Bootstrap

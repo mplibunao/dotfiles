@@ -94,15 +94,6 @@ Switch to a specific generation:
 sudo darwin-rebuild switch --switch-generation 42
 ```
 
-### Home Manager Generations
-
-Home Manager also tracks generations (though when using the nix-darwin module, they're linked to system generations).
-
-View generations:
-```bash
-home-manager generations
-```
-
 ---
 
 ## State Version Rules
@@ -267,26 +258,3 @@ error: builder for '/nix/store/...' failed
 | `nix-ops rollback` | Prints `sudo darwin-rebuild switch --rollback`, `darwin-rebuild --list-generations`, and `sudo darwin-rebuild switch --switch-generation N`. With `--apply` it asks you to type `ROLLBACK`. It then runs only `sudo darwin-rebuild switch --rollback`, or the `nix run` form of it when `darwin-rebuild` is missing. Like any switch, it needs my approval |
 | `nix-ops gc` | Prints `nix-collect-garbage -d` and `darwin-rebuild --list-generations`. With `--apply` it asks you to type `GC`. It then runs only `nix-collect-garbage -d`, without `sudo`. [Storage](storage.md#scripts) says what that deletes |
 | `nix-ops switch` | Prints the switch command without running it |
-
----
-
-## Best Practices
-
-### Before Any Update
-
-1. Ensure clean git state
-2. Commit current changes
-3. Note current generation number
-
-### After Successful Update
-
-1. Commit flake.lock
-2. Test critical workflows
-3. Run garbage collection if needed
-
-### When Something Breaks
-
-1. Roll back immediately
-2. Document the issue
-3. Investigate before retrying
-4. Consider partial updates to isolate the problem

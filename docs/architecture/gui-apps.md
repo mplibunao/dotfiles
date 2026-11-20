@@ -4,8 +4,6 @@
 
 **Policy:** Homebrew casks via nix-darwin (ADR-005), with limited Homebrew brews allowed via exception (ADR-016).
 
-**Cleanup:** `onActivation.cleanup = "uninstall"` (changed from `"zap"` per ADR-016 to protect stateful app data)
-
 ---
 
 ## Managed via nix-darwin Homebrew Casks
@@ -143,12 +141,3 @@ git -C "$tap_dir" log -1 --oneline
 | RepoPrompt CE | cask | `/Applications/RepoPrompt CE.app` TeamIdentifier + Gatekeeper | Pending |
 
 Re-verify after tap updates.
-
----
-
-## Notes
-
-- `onActivation.cleanup = "uninstall"` removes undeclared brews and casks (preserves cask app data; see ADR-016)
-- Prefer Nix packages when available and functional
-- GUI apps via Homebrew are installed to `/Applications/`
-- TinyCast uses a local Nix package for the signed upstream app.

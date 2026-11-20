@@ -6,7 +6,7 @@ See [ADR-021](../../decisions/021-opencode-upstream-flake-for-repoprompt-acp.md)
 
 ## Guardrails
 
-- Do not run `darwin-rebuild switch` without explicit user approval.
+- Follow the [rules in `AGENTS.md`](../../../AGENTS.md#rules) for every switch.
 - Do not put API keys, OAuth records, provider/model defaults, or OpenCode auth/config paths in Nix or Git.
 - Do not add a login wrapper, external OpenCode plugins, a daemon, or a persistent RepoPrompt MCP entry for normal use. Interactive provider selection, browser OAuth, and secret entry are steps only the operator performs, and they cannot be safely scripted. This runbook is the written procedure the [non-declarative steps rule](../../../CODING_STANDARDS.md#non-declarative-steps) asks for when a person has to do a step, and the upstream CLI is the operational mechanism.
 - Run initial checks in a disposable, non-sensitive repository with a read-only task. Do not select full-access mode.
@@ -39,8 +39,6 @@ Set `project_root` to the explicit project that will be used for initial verific
 
 Identify the owner of every path from `type -a` and both fixed hints before changing it. Inspect `ls -l` and `readlink` output, then match the resolved prefix and package inventory to Homebrew (`brew --prefix` / `brew list`), npm (`npm prefix -g` / `npm ls -g --depth=0`), Bun’s global package inventory, the upstream installer under `~/.opencode`, Nix, or a manual file/link. Record the owner and exact package/formula name. Uninstall or disable a managed competitor through that package manager or installer; do not move files out from under its database. Move only a manual file or symlink to a unique timestamped backup outside the searched names. Never use Home Manager `force = true` to hide a collision.
 
-Commit `64de4d0` landed the `v1.18.21` input, Tier 1 package, and store-managed discovery bridge. It did not activate them.
-
 <a id="opencode-activation"></a>
 
 ## 2. Verify, then request activation approval
@@ -60,7 +58,7 @@ nix path-info -rsSh ./result | grep -i opencode
 
 The operator runs the ladder's [level 3 dry-run](../command-ladder.md#level-3-dry-run), because on this host it needs root and an interactive `sudo` prompt. An agent provides the command and records its output rather than claiming to have run it.
 
-Review formatter changes, the OpenCode lock node, the built closure, and collision checks. Only after these checks, including the operator-run dry-run, pass and the user explicitly approves activation should the operator run the [level 4 apply](../command-ladder.md#level-4-apply) command from that checkout. An agent must not run it or claim it completed without approval. Authentication starts only after this approved activation exposes the pinned CLI.
+Review formatter changes, the OpenCode lock node, the built closure, and collision checks. Only after these checks, including the operator-run dry-run, pass and the user explicitly approves activation should the operator run the [level 4 apply](../command-ladder.md#level-4-apply) command from that checkout. Authentication starts only after this approved activation exposes the pinned CLI.
 
 <a id="opencode-executable-verification"></a>
 

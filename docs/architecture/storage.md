@@ -52,9 +52,6 @@ nix path-info -Sh nixpkgs#<package>
 ```bash
 # Darwin generations
 darwin-rebuild --list-generations
-
-# Home Manager generations (if standalone)
-home-manager generations
 ```
 
 ---
@@ -190,24 +187,6 @@ rm -rf /nix/store/...
 
 This corrupts the Nix database. Always use `nix-collect-garbage`.
 
-### Don't Keep Too Many Generations
-
-Old generations pin old store paths, preventing GC.
-
-### Don't Install Heavy Dev Tools Globally
-
-Large toolchains (Android SDK, full texlive, etc.) should be in project devShells, not global packages.
-
-### Don't Mix Package Managers
-
-Avoid:
-```bash
-# Same tool from multiple sources
-nix profile install nixpkgs#nodejs
-brew install node
-npm install -g n
-```
-
 ---
 
 ## Recovery
@@ -218,7 +197,7 @@ Symptoms:
 - `error: database disk image is malformed`
 - Missing store paths
 
-Recovery. The database is owned by root, so the repair needs `sudo`:
+Recovery. The repair uses `sudo` because `/nix/var/nix/db` is `root:wheel`:
 ```bash
 # Check database
 sqlite3 /nix/var/nix/db/db.sqlite "pragma integrity_check"
