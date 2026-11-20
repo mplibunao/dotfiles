@@ -233,27 +233,42 @@ pnpm i -g vercel --config.minimum-release-age=0
 
 ### Neovim (LazyVim config)
 
-This dotfiles setup assumes your Neovim config lives in a separate repo at `~/.config/nvim-lazy`
-and is selected via `NVIM_APPNAME=nvim-lazy`.
+The Neovim config is in a separate repository, cloned to `~/.config/nvim-lazy` and selected with `NVIM_APPNAME=nvim-lazy`. `bootstrap-neovim.sh` sets that up, and `bootstrap-neovim.sh --help` lists its options.
 
-```bash
-# Clone config repo + set NVIM_APPNAME default in Fish
-~/Projects/personal/dotfiles/.claude/skills/bootstrap/scripts/bootstrap-neovim.sh
+1. Run the helper without options:
 
-# With headless plugin restore (recommended for automated setup)
-~/Projects/personal/dotfiles/.claude/skills/bootstrap/scripts/bootstrap-neovim.sh --sync
+   ```bash
+   ~/Projects/personal/dotfiles/.claude/skills/bootstrap/scripts/bootstrap-neovim.sh
+   ```
 
-# Validate existing setup (no clone, no fish var write)
-~/Projects/personal/dotfiles/.claude/skills/bootstrap/scripts/bootstrap-neovim.sh --validate
-```
+   It clones `git@github.com:mplibunao/neovim-config.git` (branch `main`) into `~/.config/nvim-lazy` unless that folder is already a Git repository, and sets the Fish universal variable `NVIM_APPNAME` to `nvim-lazy`. If the folder exists but isn't a Git repository, the helper stops without changing it. Move the folder aside and run the helper again.
 
-**Lazy! Syntax:** The script uses `Lazy!` (with bang) for synchronous plugin operations. The `!` makes lazy.nvim wait for completion before proceeding.
+2. Open Neovim with that config and install the plugins:
 
-**Note:** `nvim --headless` may write to `~/.local/share/nvim` and `~/.local/state/nvim`.
+   ```bash
+   NVIM_APPNAME=nvim-lazy nvim
+   ```
 
-If you prefer doing it manually:
-- Clone: `git clone git@github.com:mplibunao/neovim-config.git ~/.config/nvim-lazy`
-- Then open: `NVIM_APPNAME=nvim-lazy nvim` and run `:Lazy restore` (or `:Lazy sync`)
+   Run `:Lazy restore` to install the plugin versions pinned in `lazy-lock.json`, or `:Lazy sync` if the lock file is missing.
+
+3. Run the validation:
+
+   ```bash
+   ~/Projects/personal/dotfiles/.claude/skills/bootstrap/scripts/bootstrap-neovim.sh --validate
+   ```
+
+   Validation checks that Neovim starts with the config and that lazy.nvim has plugins declared. It doesn't check that each plugin is installed or built.
+
+Side effects of the helper:
+
+- It clones the config repository, as in step 1.
+- It sets `NVIM_APPNAME` as a Fish universal variable. `--no-default` skips this. A config folder outside `~/.config` needs `XDG_CONFIG_HOME` as well, so for that case the helper prints the command to run and sets nothing.
+- `--validate` skips both the clone and the Fish variable write.
+- Any headless Neovim run, including `--validate`, can write state under `~/.local/share` and `~/.local/state`.
+
+The helper also has `--sync`, which runs `Lazy! restore` in headless Neovim. The `!` makes lazy.nvim wait for the restore to finish before Neovim quits. `--sync` currently stops with an error right after the restore, so use step 2 instead ([Neovim validation fails](#neovim-validation-fails)).
+
+To skip the helper, run `git clone git@github.com:mplibunao/neovim-config.git ~/.config/nvim-lazy` yourself and continue at step 2.
 
 ### Claude Code
 ```bash
@@ -326,12 +341,16 @@ Then, once the user approves, give them the switch command that failed to run ag
 
 ### Neovim validation fails
 
+`--validate` checks that Neovim starts with the config and that lazy.nvim has plugins declared.
+
 | Problem | Solution |
 |---------|----------|
 | "lazy.nvim not found" | Config didn't load. Check `init.lua` exists and has no syntax errors |
-| "No plugins configured" | Run `--sync` or manually `:Lazy restore` in Neovim |
-| "Config directory not found" | Run without `--validate` to clone first |
-| Plugins incomplete | `lazy-lock.json` missing. Run `:Lazy sync` in Neovim interactively |
+| "No plugins configured" | The config loaded but doesn't declare any plugins. Open Neovim interactively and check the lazy.nvim setup call and its plugin specs |
+| "Config directory not found" | Run the helper without `--validate` to clone first |
+| `bootstrap-check.sh` says plugins aren't installed | `lazy-lock.json` is missing from the config folder. Open Neovim and run `:Lazy sync` |
+| `--sync` exits 1 with `local: can only be used in a function` | The helper has a shell error in its build step, so it stops after `Lazy! restore` without force-building or validating. Finish in Neovim with `:Lazy restore` and the native-build fix below, then run `--validate` |
+| `NVIM_APPNAME` is empty in a new Fish shell | The helper hides errors from the Fish write and still reports success. Run `set -Ux NVIM_APPNAME nvim-lazy` in Fish |
 
 **Tip:** For debugging, open Neovim interactively to see full error messages:
 ```bash
@@ -340,7 +359,7 @@ NVIM_APPNAME=nvim-lazy nvim
 
 ### Plugins with native binaries not working
 
-Some plugins (like `markdown-preview.nvim`, `blink.cmp`) require native binaries that must be built after installation. If `Lazy restore` was used without the `--sync` flag's force-build step, builds may have been skipped.
+Some plugins (like `markdown-preview.nvim`, `blink.cmp`) require native binaries that must be built after installation. `:Lazy restore` can skip those builds.
 
 **Symptoms:**
 - markdown-preview shows Node.js version instead of opening browser
@@ -349,13 +368,7 @@ Some plugins (like `markdown-preview.nvim`, `blink.cmp`) require native binaries
 
 **Why this happens:** lazy.nvim's build step only runs if the plugin is "dirty" (has git changes). On a fresh clone where plugins are already at the correct commit, they're not marked dirty, so builds are skipped.
 
-**Fix (automated):**
-```bash
-# Re-run bootstrap with --sync (includes force-build step)
-~/Projects/personal/dotfiles/.claude/skills/bootstrap/scripts/bootstrap-neovim.sh --sync
-```
-
-**Fix (manual):**
+**Fix:**
 ```bash
 # Force-build all plugins with build configurations
 NVIM_APPNAME=nvim-lazy nvim --headless -c 'lua require("lazy").build({wait=true})' -c 'qa!'

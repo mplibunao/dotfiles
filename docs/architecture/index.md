@@ -35,6 +35,8 @@ How the configuration works now. These docs are edited in place when the configu
 ## Runbooks
 
 - [CLIProxyAPI and the usage dashboard](runbooks/cli-proxy-api.md)
+- [Cloudflared named tunnel](../../modules/cloudflared/README.md): the procedure is in the module's folder.
+- [CodexBar profile home](runbooks/codexbar.md)
 - [OpenCode in RepoPrompt CE](runbooks/opencode-repoprompt.md)
 - [Phone Harness](runbooks/phone-harness.md)
 - [Surf CLI](runbooks/surf-cli.md)

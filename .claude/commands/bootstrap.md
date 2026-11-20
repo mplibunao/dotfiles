@@ -27,26 +27,11 @@ Wrapper for the bootstrap skill. Use when setting up a fresh macOS machine with 
 
 # Get just the phase number
 .claude/skills/bootstrap/scripts/bootstrap-check.sh --phase
-
-# Setup Neovim config (clone + fish NVIM_APPNAME)
-.claude/skills/bootstrap/scripts/bootstrap-neovim.sh
-
-# Setup with headless plugin sync (uses Lazy! for synchronous restore)
-.claude/skills/bootstrap/scripts/bootstrap-neovim.sh --sync
-
-# Validate existing Neovim setup (no clone, no writes)
-.claude/skills/bootstrap/scripts/bootstrap-neovim.sh --validate
 ```
 
-## Neovim Troubleshooting
+## Neovim
 
-| Problem | Solution |
-|---------|----------|
-| "lazy.nvim not found" | Check `init.lua` exists, no syntax errors |
-| "No plugins configured" | Run with `--sync` or `:Lazy restore` in nvim |
-| Validation fails | Open nvim interactively for full errors |
-
-**Note:** `nvim --headless` may write to `~/.local/share/nvim` and `~/.local/state/nvim`.
+Phase 6 includes the Neovim config. Follow [Neovim (LazyVim config)](../skills/bootstrap/references/bootstrap-runbook.md#neovim-lazyvim-config) in the runbook, and see [Neovim validation fails](../skills/bootstrap/references/bootstrap-runbook.md#neovim-validation-fails) if it breaks. `.claude/skills/bootstrap/scripts/bootstrap-neovim.sh --help` lists the script's options.
 
 ## References
 

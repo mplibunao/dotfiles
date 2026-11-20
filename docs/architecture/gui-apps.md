@@ -14,41 +14,7 @@
 
 ### CodexBar (RepoPrompt profile home)
 
-CodexBar counts only the active Codex session home, and RepoPrompt CE runs its bundled Codex against an isolated one. `mp.codexbar.enable` keeps that home available as an alternate profile by reconciling a single array member of CodexBar's own writable config at activation time. It does not combine the normal and RepoPrompt homes into one total. ADR-022 records the ownership split; the commands below are the operational surface.
-
-CodexBar 0.54.1 prevents a profile switch from rendering the previous profile's token counts, costs, usage chart, top model, or cost history under the new profile. Selecting a profile doesn't guarantee an immediate local token scan. If the selected profile has no current local snapshot, use the popup's **Refresh** action. You can also close and reopen the popup after enabling **Refresh all providers when opening the menu**. Quota usage can refresh independently, so it isn't evidence that the local profile scan completed.
-
-The app self-updates through Sparkle, so the installed bundle can be newer than the Homebrew receipt. Compare all four versions before any Homebrew operation on this cask, because a `brew upgrade --cask` driven by stale tap metadata can replace a newer bundle:
-
-```bash
-defaults read /Applications/CodexBar.app/Contents/Info CFBundleShortVersionString
-codexbar --version
-brew list --versions --cask codexbar
-brew info --json=v2 --cask codexbar | jq -r '.casks[0].version'
-```
-
-After any in-app or cask update, revalidate with the read-only check. It reports the same four versions and validates the schema without writing:
-
-```bash
-codexbar-config check \
-    --config "$HOME/.config/codexbar/config.json" \
-    --profile-home "$HOME/Library/Application Support/RepoPrompt CE/Codex/Release/home"
-```
-
-Activation defers rather than racing a running app, and prints the command to finish the job. Quit CodexBar first, then:
-
-```bash
-codexbar-config reconcile \
-    --config "$HOME/.config/codexbar/config.json" \
-    --profile-home "$HOME/Library/Application Support/RepoPrompt CE/Codex/Release/home" \
-    --backup-dir "$HOME/.local/state/codexbar-config/backups"
-```
-
-To hand the value back to CodexBar temporarily, quit the app and swap `reconcile` for `remove-managed-profile` with the same arguments. It removes that one path and nothing else. While `mp.codexbar.enable` stays true, a later activation will reconcile the path back into CodexBar's configuration. Durable rollback requires first disabling the option or removing the module in a reviewed change before a later approved switch.
-
-Every write first stores a byte-for-byte copy under `~/.local/state/codexbar-config/backups/`, and nothing prunes them. Those backups are the only recovery source for this file: `darwin-rebuild switch --rollback` restores the module, not the app's writable JSON.
-
-On a machine where CodexBar has never run, there is no config to merge into and activation fails closed. Launch the app once so it writes its own skeleton, or leave `mp.codexbar.enable = false` until then. The config at `~/.config/codexbar/config.json` must exist before reconciliation. Activation doesn't copy, rename, reconcile, or delete the legacy `~/.codexbar/config.json`.
+`mp.codexbar.enable` keeps RepoPrompt CE's isolated Codex home available as an alternate profile in CodexBar. The [CodexBar runbook](runbooks/codexbar.md) has the version check, the reconcile and removal commands, and recovery from backups. [ADR-022](../decisions/022-codexbar-profile-home-merge-boundary.md) records the ownership split.
 
 ### KeyCastr (post-install)
 

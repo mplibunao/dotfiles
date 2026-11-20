@@ -96,7 +96,7 @@ sudo determinate-nixd upgrade
 | Area | Examples |
 |------|----------|
 | User packages | CLI tools (git, nvim, fzf, ripgrep) |
-| Dotfiles | `~/.config/fish/`, `~/.gitconfig`, `~/.config/kitty/` |
+| Dotfiles | `~/.config/fish/`, `~/.config/git/config`, `~/.config/kitty/` |
 | Shell config | Fish functions, abbreviations, starship |
 | Program config | Git settings, editor config |
 | User services | Background daemons (rare on macOS) |

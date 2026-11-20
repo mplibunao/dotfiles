@@ -99,17 +99,7 @@ nix-collect-garbage
 
 ### 1. Use Package Tiers
 
-Only import tiers you actually need:
-
-```nix
-# home/mp/darwin.nix
-{
-  imports = [
-    ./package-tiers/tier1.nix
-    # ./package-tiers/tier2.nix  # Comment out until needed
-  ];
-}
-```
+Only import tiers you actually need. [`home/mp/darwin.nix`](../../home/mp/darwin.nix) imports the tier files, and commenting out a tier's import drops its packages from the closure.
 
 ### 2. Know the Cost of Unstable Nixpkgs
 

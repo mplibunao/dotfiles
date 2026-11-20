@@ -51,32 +51,7 @@ Follow the [rules in `AGENTS.md`](../../../AGENTS.md#rules), starting with the u
 
 ## Neovim Setup
 
-### bootstrap-neovim.sh Options
-
-```bash
-# Basic setup: clone config + set fish NVIM_APPNAME
-.claude/skills/bootstrap/scripts/bootstrap-neovim.sh
-
-# With plugin sync (runs headless Lazy! restore)
-.claude/skills/bootstrap/scripts/bootstrap-neovim.sh --sync
-
-# Validate existing setup (no clone, no fish var write)
-.claude/skills/bootstrap/scripts/bootstrap-neovim.sh --validate
-```
-
-### Lazy! Syntax
-
-The script uses `Lazy!` (with bang) for synchronous plugin operations. The `!` makes lazy.nvim wait for completion before proceeding. Without it, Neovim may quit before plugins finish installing.
-
-### Troubleshooting
-
-| Problem | Solution |
-|---------|----------|
-| "lazy.nvim not found" | Check `init.lua` exists and has no syntax errors |
-| "No plugins configured" | Run `--sync` or manually `:Lazy restore` |
-| Native plugins not working | Run `--sync` (forces rebuild) |
-
-See [bootstrap-runbook.md](references/bootstrap-runbook.md#neovim-validation-fails) for detailed troubleshooting.
+Phase 6 includes the Neovim config. The runbook has the steps: [Neovim (LazyVim config)](references/bootstrap-runbook.md#neovim-lazyvim-config) gives the recommended order and what [`bootstrap-neovim.sh`](scripts/bootstrap-neovim.sh) changes, and [Neovim validation fails](references/bootstrap-runbook.md#neovim-validation-fails) covers recovery. `scripts/bootstrap-neovim.sh --help` lists the script's options.
 
 ## Handover
 
