@@ -4,6 +4,8 @@
 
 This document outlines the phased approach to migrating from a `bootstrap.sh` and symlink setup to a fully declarative Nix configuration. Each stage has explicit goals, actions, and "done" criteria.
 
+The flake, host, Homebrew, and defaults files these stages create already exist. To set up a fresh Mac from this repository, follow the [bootstrap skill](../../.claude/skills/bootstrap/SKILL.md) instead.
+
 ---
 
 ## Overview

@@ -21,7 +21,7 @@ With `key-mapping.preset = 'dvorak'` in aerospace.toml:
 - Example: `alt-b` means press the key labeled 'b' on Dvorak layout
 - Navigation uses vim-style hjkl (character-based, for muscle memory consistency)
 
-The `aerospace.toml` header comment states this invariant.
+The binding tables in `aerospace.toml` show which keys do what.
 
 **Do not mix physical and mnemonic interpretations.**
 

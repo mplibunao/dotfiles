@@ -51,7 +51,7 @@ Wrapper for the bootstrap skill. Use when setting up a fresh macOS machine with 
 ## Safety Rules
 
 From `nix/AGENTS.md`:
-- **Never run `darwin-rebuild switch` without explicit user approval**
+- **Never run `darwin-rebuild switch` without explicit user approval.** It needs interactive `sudo`, so after approval, give the user the exact command to run
 - **Always stage new files** before flake evaluation
 - **Follow the ladder:** edit -> stage -> check -> build -> propose
 

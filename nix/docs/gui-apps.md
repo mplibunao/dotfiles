@@ -161,7 +161,7 @@ These cannot be managed via Homebrew:
 | Licensed apps | Activation required | Manual + license key |
 | AudioPriorityBar | No Homebrew cask or Nix package | `AudioPriorityBar.zip` from [tobi/AudioPriorityBar releases](https://github.com/tobi/AudioPriorityBar/releases), unzipped to `/Applications/AudioPriorityBar.app` |
 
-AudioPriorityBar keeps the external microphone as the default input, so dictation and recording apps don't switch to the iPhone microphone. Its release builds are ad-hoc signed, with no Developer ID, so Gatekeeper blocks the first launch until you allow it in System Settings → Privacy & Security. To update, download the latest release and replace the app.
+AudioPriorityBar keeps the external microphone as the default input, so dictation and recording apps don't switch to the iPhone microphone. Its release builds are ad-hoc signed, with no Developer ID, so Gatekeeper rejects the app; on first launch, allow it with **Open Anyway** in System Settings → Privacy & Security. To update, download the latest release and replace the app.
 
 ---
 

@@ -5,7 +5,7 @@
 ## Phase 0: Preconditions
 
 ### System Requirements
-- macOS (Apple Silicon preferred, Intel supported)
+- macOS on Apple Silicon (the only host in the flake is `aarch64-darwin`; an Intel Mac would need its own host and packages)
 - Admin access (for sudo)
 - Internet connection
 
@@ -164,8 +164,8 @@ nix run nix-darwin#darwin-rebuild -- build --flake .#m5-mbp
 ```
 
 ### Apply (Level 4 - REQUIRES USER APPROVAL)
+The switch needs interactive `sudo`. After the build passes and the user approves, give them this command to run:
 ```bash
-# Only run this with explicit user approval
 sudo nix run nix-darwin#darwin-rebuild -- switch --flake .#m5-mbp
 ```
 
@@ -329,10 +329,9 @@ Check `nixpkgs.hostPlatform` in host config matches your machine:
 - Intel: `x86_64-darwin`
 
 ### Home Manager collision errors
-If HM refuses to overwrite existing files, move the file aside, then switch again with the user's approval:
+If HM refuses to overwrite existing files, move the file aside. Then, once the user approves, give them the switch command to run, because it needs interactive `sudo`:
 ```bash
 mv ~/.config/conflicting-file ~/.config/conflicting-file.backup
-# Only run this with explicit user approval
 sudo darwin-rebuild switch --flake .#m5-mbp
 ```
 

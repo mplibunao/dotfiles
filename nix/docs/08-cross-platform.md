@@ -12,8 +12,8 @@ This configuration is structured to support multiple platforms while keeping mac
 
 | Platform | System | Status |
 |----------|--------|--------|
-| macOS (Apple Silicon) | `aarch64-darwin` | Primary target |
-| macOS (Intel) | `x86_64-darwin` | Supported, not tested |
+| macOS (Apple Silicon) | `aarch64-darwin` | The only host in the flake (`m5-mbp`) |
+| macOS (Intel) | `x86_64-darwin` | Not supported; needs its own host, and some packages (such as CLIProxyAPI) only fetch Apple Silicon or Linux archives |
 
 ### Planned Future
 
@@ -303,7 +303,7 @@ nix eval --raw ./nix#darwinConfigurations.m5-mbp.system.drvPath
 
 ### Continuous Integration
 
-[`.github/workflows/nix-check.yml`](../../.github/workflows/nix-check.yml) runs one job on `ubuntu-latest`:
+[`.github/workflows/nix-check.yml`](../../.github/workflows/nix-check.yml) runs on pushes to `main` and pull requests that touch `nix/` or the workflow, and on manual runs. It has one job on `ubuntu-latest`:
 
 - the shell tests from `nix/tests/` that the workflow lists
 - `nix eval` of the `m5-mbp` Darwin system's derivation path
