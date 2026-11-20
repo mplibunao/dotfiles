@@ -119,13 +119,18 @@ error: The option 'programs.foo.bar' does not exist
 error: hash mismatch in fixed-output derivation
 ```
 
-**Cause:** Source content changed since lock file was created.
+**Cause:** Nix fetched or built something whose hash differs from the hash recorded for it. `nix flake update` moves only the revisions and hashes of the flake inputs in `flake.lock`. It doesn't change a hash written in a package expression, and it also upgrades every other input, so it isn't a general fix.
 
-**Solution:**
-```bash
-# Update the lock file
-nix flake update
-```
+**Solution:** Find the failing derivation or input in the error, then use the matching row:
+
+| Failing derivation or message | File that declares the expected hash | Procedure |
+|---|---|---|
+| The CLIProxyAPI release archive (`cli-proxy-api`) | `sources.<system>.hash` in [`packages/cli-proxy-api/default.nix`](../../packages/cli-proxy-api/default.nix) | [Upgrade CLIProxyAPI](runbooks/cli-proxy-api.md#upgrade-cliproxyapi) |
+| `opencode-node_modules` | `nodeModulesHashes` in [`packages/opencode/default.nix`](../../packages/opencode/default.nix) | [OpenCode upgrade](runbooks/opencode-repoprompt.md#opencode-upgrade) |
+| `NAR hash mismatch in input '...'` | The input's node in [`flake.lock`](../../flake.lock) | [Update workflow](operations.md#update-workflow), only if you mean to change that input |
+| Any other derivation | The expression that declares the `specified:` hash; search the repository for that hash or the derivation name | The doc for the module or package that declares it, if there is one |
+
+A mismatch you didn't cause by editing a version or tag means the upstream content changed. Find out why before you copy the `got:` hash into the file.
 
 ### "builder failed"
 

@@ -126,16 +126,13 @@ brew cat gildas/tap/bitbucket-cli
 brew info --json=v2 gildas/tap/bitbucket-cli | jq '.formulae[0] | {name, full_name, tap, versions, urls, bottle}'
 ```
 
-Record tap commit at time of install or update for audit trail:
+Record the tap commit when you install or update, for the audit trail. This example uses `gildas/tap`, so repeat it for each tap your change affects. `homebrew.taps` in [`hosts/m5-mbp/homebrew.nix`](../../hosts/m5-mbp/homebrew.nix) lists every tap the host declares.
 
 ```bash
 # Get tap commit (requires local tap clone)
-for tap in gildas/tap repoprompt/repoprompt-ce steipete/tap; do
-  tap_dir="$(brew --repo "$tap")"
-  printf '%s ' "$tap"
-  git -C "$tap_dir" rev-parse HEAD
-  git -C "$tap_dir" log -1 --oneline
-done
+tap_dir="$(brew --repo gildas/tap)"
+git -C "$tap_dir" rev-parse HEAD
+git -C "$tap_dir" log -1 --oneline
 ```
 
 ### Expected Verification Records
@@ -144,7 +141,6 @@ done
 |------|------|--------------|--------|
 | CodexBar | cask | TeamIdentifier | Pending |
 | RepoPrompt CE | cask | `/Applications/RepoPrompt CE.app` TeamIdentifier + Gatekeeper | Pending |
-| hunk | flake package | `nix build` + `hunk --version` + `hunk skill path` | Pending |
 
 Re-verify after tap updates.
 

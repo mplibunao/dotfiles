@@ -260,7 +260,7 @@ launchctl bootout gui/(id -u)/com.mp.cli-proxy-api
 launchctl bootstrap gui/(id -u) ~/Library/LaunchAgents/com.mp.cli-proxy-api.plist
 ```
 
-Then follow the OpenCode steps in the other runbook (switch for the new `opencode.jsonc`, logging OpenCode out of DeepSeek, restarting RepoPrompt and T3 Code). To roll back, remove `baseURL` and `apiKey` from the `deepseek` provider options in `opencode.jsonc`, switch, and delete the `DEEPSEEK_API_KEY` line.
+Then follow the OpenCode steps in the other runbook (switch for the new `opencode.jsonc`, logging OpenCode out of DeepSeek, restarting RepoPrompt and T3 Code). To roll back, first finish the client steps in [Roll back to direct DeepSeek](opencode-repoprompt.md#roll-back-to-direct-deepseek). Then delete the `DEEPSEEK_API_KEY` line with the `sed` command above and restart the proxy LaunchAgent with the two `launchctl` commands above, which rebuilds `runtime-config.yaml` without the DeepSeek entry.
 
 ## Session affinity
 

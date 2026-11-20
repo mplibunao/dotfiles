@@ -122,7 +122,16 @@ Do not encode a provider/model default in Nix and do not install external plugin
    opencode run -m deepseek/deepseek-flash 'say ok'
    ```
 
-Rollback: remove `baseURL` and `apiKey` from the `deepseek` options, switch, and restart both apps. OpenCode then needs its own DeepSeek key again (`opencode providers login`).
+### Roll back to direct DeepSeek
+
+Do the client steps first, in this order, so no app keeps sending DeepSeek requests to a proxy that has lost its key:
+
+1. In `modules/llm-tools/opencode.jsonc`, remove `baseURL` and `apiKey` from the `deepseek` provider's `options`.
+2. Switch, following the [command ladder](../command-ladder.md#level-4-apply). An agent stops at the build and hands over the command, and the operator runs the switch after approval.
+3. Quit and reopen RepoPrompt CE and T3 Code. Each `opencode acp` process reads the config at launch, so an app that was already running keeps the proxy settings.
+4. Restore direct authentication with `opencode providers login` ([credential lifecycle](#opencode-credential-lifecycle)). Without its own DeepSeek key, OpenCode has nothing to send to DeepSeek.
+
+Then remove the proxy's key and restart the proxy, as [DeepSeek for OpenCode](cli-proxy-api.md#deepseek-for-opencode) describes.
 
 <a id="opencode-repoprompt-connection"></a>
 

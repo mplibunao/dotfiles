@@ -24,12 +24,12 @@ The first command checks the flake's standard outputs without building anything.
 `statix` and `deadnix` come from [`modules/nix-ops-tools/default.nix`](../../modules/nix-ops-tools/default.nix) and `nixfmt` from [`modules/neovim/default.nix`](../../modules/neovim/default.nix), so all three are on the `PATH` in my shell. `nix-verify` still checks for each one before running it, so it also works where Home Manager isn't set up.
 
 ```sh
-git ls-files -z '*.nix' | xargs -0 nixfmt   # rewrites files in place
-statix check .                              # antipatterns
-deadnix .                                   # unused bindings
+nix-verify --host m5-mbp --level 1 --nix-root "$PWD"
 ```
 
-`nix-verify` formats only tracked `.nix` files, because the checkout can hold ignored local files that `nixfmt` must not rewrite.
+This is the way to format the repository. `--level 1` runs level 0 first (the flake check from [Level 0](#level-0-evaluate), without a build), then `nixfmt` on the tracked `.nix` files, `statix check .` for lint warnings, and `deadnix .` for unused bindings. `nixfmt` rewrites files in place, so read the diff after it runs. Add `--print-only` to see the commands first.
+
+Without `--nix-root "$PWD"`, `nix-verify` works on the checkout in `$DOTFILES_DIR`, or on the live checkout `~/Projects/personal/dotfiles` when that variable is unset, even when you run it from another checkout or a worktree ([`scripts/nix-locate`](../../scripts/nix-locate)). It formats only tracked regular `.nix` files, because the checkout can hold ignored local files and symlinks that `nixfmt` must not rewrite.
 
 ## Level 2: build
 
@@ -67,7 +67,7 @@ Activates the new configuration. It needs my approval and an interactive `sudo` 
 | Action | Command | Changes the live system |
 |---|---|---|
 | Evaluate | `nix flake check --no-build --all-systems` and `nix eval --raw .#darwinConfigurations.m5-mbp.system.drvPath` | No |
-| Format | `git ls-files -z '*.nix' \| xargs -0 nixfmt` | No (rewrites files) |
+| Format and lint | `nix-verify --host m5-mbp --level 1 --nix-root "$PWD"` (runs level 0 first) | No (rewrites files) |
 | Lint | `statix check .` | No |
 | Dead code | `deadnix .` | No |
 | Build | `darwin-rebuild build --flake .#m5-mbp` | No |
