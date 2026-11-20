@@ -1,9 +1,13 @@
-{ config, lib, ... }:
+{
+  config,
+  dotfilesCheckoutDir,
+  lib,
+  ...
+}:
 
 let
   cfg = config.mp.cloudflared;
   mkOOS = config.lib.file.mkOutOfStoreSymlink;
-  dotfilesDir = "${config.home.homeDirectory}/Projects/personal/dotfiles";
 in
 {
   options.mp.cloudflared = {
@@ -12,7 +16,7 @@ in
 
   config = lib.mkIf cfg.enable {
     home.file.".cloudflared/config.yml" = {
-      source = mkOOS "${dotfilesDir}/modules/cloudflared/config.yml";
+      source = mkOOS "${dotfilesCheckoutDir}/modules/cloudflared/config.yml";
       force = true;
     };
   };

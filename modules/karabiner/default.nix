@@ -1,8 +1,7 @@
-{ config, ... }:
+{ config, dotfilesCheckoutDir, ... }:
 
 let
   mkOOS = config.lib.file.mkOutOfStoreSymlink;
-  dotfilesDir = "${config.home.homeDirectory}/Projects/personal/dotfiles";
 in
 {
   # Karabiner-Elements configuration - DIRECTORY SYMLINK
@@ -24,7 +23,7 @@ in
   #   home.file.".config/karabiner/rimshot.mp3".source = mkOOS "...";
   #   # But you'll need to manually create the directory structure
   home.file.".config/karabiner" = {
-    source = mkOOS "${dotfilesDir}/modules/karabiner/config";
+    source = mkOOS "${dotfilesCheckoutDir}/modules/karabiner/config";
     force = true;
   };
 }

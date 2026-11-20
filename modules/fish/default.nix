@@ -1,8 +1,13 @@
-{ config, pkgs, ... }:
+{
+  config,
+  dotfilesCheckoutDir,
+  pkgs,
+  ...
+}:
 
 let
   mkOOS = config.lib.file.mkOutOfStoreSymlink;
-  fishModuleDir = "${config.home.homeDirectory}/Projects/personal/dotfiles/modules/fish";
+  fishModuleDir = "${dotfilesCheckoutDir}/modules/fish";
 in
 {
   # Fish functions and completions are linked from this repo into

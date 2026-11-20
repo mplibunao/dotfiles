@@ -1,9 +1,14 @@
-{ config, pkgs, ... }:
+{
+  config,
+  dotfilesCheckoutDir,
+  pkgs,
+  ...
+}:
 
 let
   mkOOS = config.lib.file.mkOutOfStoreSymlink;
   # Scripts live in dotfiles/scripts/
-  scriptsDir = "${config.home.homeDirectory}/Projects/personal/dotfiles/scripts";
+  scriptsDir = "${dotfilesCheckoutDir}/scripts";
 in
 {
   # Nix operational scripts - exposed as commands in ~/.local/bin

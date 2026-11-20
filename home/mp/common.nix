@@ -1,7 +1,15 @@
-{ lib, ... }:
+{ config, lib, ... }:
 
+let
+  # Conventional live checkout, relative to the home directory.
+  dotfilesCheckoutRel = "Projects/personal/dotfiles";
+in
 {
   # Cross-platform Home Manager configuration
+
+  # Absolute live checkout path. Modules that link out of the store take it as
+  # a module argument instead of repeating the path.
+  _module.args.dotfilesCheckoutDir = "${config.home.homeDirectory}/${dotfilesCheckoutRel}";
 
   home = {
     username = "mp";
@@ -12,7 +20,7 @@
 
     # Environment variables
     sessionVariables = {
-      DOTFILES_DIR = "$HOME/Projects/personal/dotfiles";
+      DOTFILES_DIR = "$HOME/${dotfilesCheckoutRel}";
 
       # FZF Catppuccin Mocha theme
       FZF_DEFAULT_OPTS = builtins.concatStringsSep " " [
