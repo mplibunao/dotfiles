@@ -1,6 +1,6 @@
 # ADR-010: Canonical agent instructions at nix/AGENTS.md
 
-**Status:** accepted
+**Status:** superseded by [ADR-027](027-thin-root-router-and-docs-by-topic.md)
 **Date:** 2025-12-26
 
 ## Context
