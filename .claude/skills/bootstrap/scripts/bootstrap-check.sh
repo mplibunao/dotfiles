@@ -122,7 +122,7 @@ check_flake_build() {
   # package built from the repository root would leave a different link.
   local target
   target="$(readlink "$HOME/Projects/personal/dotfiles/result")" || return 1
-  [[ "$target" == *-darwin-system-* ]]
+  [[ "$target" == *-darwin-system-* && -x "$HOME/Projects/personal/dotfiles/result/activate" ]]
 }
 
 check_claude_code() {

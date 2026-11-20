@@ -4,7 +4,7 @@ Home Manager generates Kitty's configuration from [`modules/kitty/default.nix`](
 
 ## Applying a change
 
-A change to `kitty.nix` takes effect after `darwin-rebuild switch`. Most settings then apply on a configuration reload (`cmd+control+,`). Some `cmd` bindings are also macOS menu shortcuts, and Kitty picks up a change to those only after a full quit and relaunch.
+A change to the Kitty module takes effect after `darwin-rebuild switch`. Most settings then apply on a configuration reload (`cmd+control+,`). Some `cmd` bindings are also macOS menu shortcuts, and Kitty picks up a change to those only after a full quit and relaunch.
 
 ## Close and quit protection
 

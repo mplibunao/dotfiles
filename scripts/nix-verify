@@ -152,15 +152,19 @@ if have git; then
 fi
 
 if [[ "$allow_untracked" != "true" && -n "$repo_root" ]]; then
-  untracked="$(
-    git --no-pager -c color.ui=false -C "$repo_root" status --porcelain --untracked-files=all 2>/dev/null \
-      | awk '$1 == "??" {print substr($0,4)}' \
-      | grep -E '^(flake\.lock$|(hosts|home|modules|packages|scripts|data)/)|\.nix$' || true
-  )"
+  # NUL-delimited raw paths: line output quotes paths with unusual
+  # characters, which would slip past the prefix match.
+  source_re='^(flake\.lock$|(hosts|home|modules|packages|scripts|data)/)'
+  untracked=""
+  while IFS= read -r -d '' path; do
+    if [[ "$path" =~ $source_re || "$path" == *.nix ]]; then
+      untracked+="${path}"$'\n'
+    fi
+  done < <(git --no-pager -C "$repo_root" ls-files -z --others --exclude-standard 2>/dev/null)
   if [[ -n "${untracked:-}" ]]; then
     echo "Error: untracked Nix sources detected; flakes ignore untracked files." >&2
     echo "Stage new files first (or pass --allow-untracked):" >&2
-    echo "$untracked" >&2
+    printf '%s' "$untracked" >&2
     exit 1
   fi
 fi
@@ -196,7 +200,7 @@ darwin_rebuild() {
             # Tracked sources only: the flake root is the repository root,
             # which can also hold ignored local files nixfmt must not rewrite.
             while IFS= read -r -d '' file; do
-              [[ -f "$file" ]] && nix_files+=("$file")
+              [[ -f "$file" && ! -L "$file" ]] && nix_files+=("$file")
             done < <(git --no-pager -C "$nix_root" ls-files -z -- '*.nix')
           else
             while IFS= read -r -d '' file; do
