@@ -20,7 +20,7 @@ A plan changes while the work runs, so a committed plan either drifts from what 
 
 The folder isn't listed in `.gitignore`, `.repo_ignore`, or `.cursorignore`. RepoPrompt honors those files, so an ignored plan would drop out of its search and file selection. The [`pre-commit` hook](#hooks) keeps plans out of commits instead.
 
-Delete a plan only when the work is done and its decisions are in a ledger or an ADR.
+Delete a plan only after I've said the work is done, and only once its decisions are in a ledger or an ADR.
 
 ## Run ledgers
 
@@ -73,6 +73,6 @@ git config core.hooksPath .githooks
 ```
 
 - `pre-commit` reads the whole index and fails when any entry is `docs/plans` or sits under `docs/plans/`, compared without regard to letter case, however the entry was added. It prints the paths, and `git rm -r --cached -- <path>` removes them from the index while keeping the files. Committing the removal passes, and untracked plans never block a commit.
-- `pre-push` runs `gitleaks git --redact` over the commits a push sends and blocks the push on any finding. For a new branch, or a remote branch tip this clone hasn't fetched, it scans everything reachable from the pushed commit. It also blocks when gitleaks isn't installed. The tier 2 package set provides gitleaks.
+- `pre-push` runs `gitleaks git --redact` over the commits a push sends, including what each merge commit changes against its first parent, and blocks the push on any finding. For a new branch, or a remote branch tip this clone hasn't fetched, it scans everything reachable from the pushed commit. It also blocks when gitleaks isn't installed (the tier 2 package set provides it), when a pushed ref doesn't point at a commit, or when it can't parse the ref list Git passes it. It doesn't scan annotated tag messages.
 
 `--no-verify` and edits made on GitHub skip both hooks. Merges, rebases, and cherry-picks don't run `pre-commit` either. A plan that arrives that way fails the next ordinary commit until it is removed from the index.

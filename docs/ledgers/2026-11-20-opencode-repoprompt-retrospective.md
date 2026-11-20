@@ -19,7 +19,7 @@ RepoPrompt CE can run OpenCode as an agent over the Agent Client Protocol (ACP).
 
 ## 2. Activation
 
-- Evidence (recorded in the plan, 2026-08-25): a switch dry-run without root exited 1 before showing a preview, then the activation was approved and run. Afterwards `opencode` reported `1.18.21`, `~/.local/bin/opencode` resolved to the Nix package, no other OpenCode executable was on the path, and `opencode acp --help` passed with both the normal and a minimal `PATH`. `opencode auth list` showed one OpenCode Zen credential, stored with mode 0600. No secret was read.
+- Evidence (recorded in the plan, 2026-08-25): a switch dry-run without root exited 1 before showing a preview, then the activation was approved and run. Afterwards `opencode` reported `1.18.21`, `~/.local/bin/opencode` resolved to the Nix package, `~/.opencode/bin/opencode`, which would take precedence, was absent, and `opencode acp --help` passed with both the normal and a minimal `PATH`. `opencode auth list` showed one OpenCode Zen credential, stored with mode 0600. The check didn't read the secret.
 
 ## 3. RepoPrompt connection and agent runs
 

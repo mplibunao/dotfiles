@@ -2,7 +2,7 @@
 
 Request: none · Plan: `docs/exec-plans/completed/dictation-and-leader-key-cleanup-2026-08-26.md` in `mplibunao/dotfiles-private`
 
-Whispering was a dictation app and Leader Key a launcher bound to a CapsLock tap. This work, planned on 2026-08-26 and merged on 2026-08-27, removed both. It kept transcription working by making the Whisper model a Nix-managed file, and it returned CapsLock to Escape when tapped and Hyper when held. The plan was marked complete on 2026-08-27.
+Whispering was a dictation app and Leader Key a launcher bound to a CapsLock tap. This work, planned on 2026-08-26 and merged on 2026-08-27, removed both. It provisioned the Whisper model as a Nix-managed file for the transcription tools that remain, and it restored the Karabiner rule that sends Escape when CapsLock is tapped and Hyper when it's held. The plan was marked complete on 2026-08-27.
 
 | Item | Outcome |
 |------|---------|
@@ -30,6 +30,7 @@ Whispering was a dictation app and Leader Key a launcher bound to a CapsLock tap
 - Decision: hard cutover. Remove `leaderkey.nix`, the `leader-key` cask, the Leader Key source and extractor in the keybinding tool, and the AeroSpace integration, and restore CapsLock's earlier tap-Escape, hold-Hyper rule in Karabiner. Source: the plan. [ADR-019](../../nix/docs/decisions/019-store-managed-file-mappings-by-default.md) keeps `leaderkey.nix` as a historical example with a retirement note.
 - Evidence: `feat: retire Leader Key integration` and `fix: remove retired Leader Key source` (2026-08-27). The keybinding tool's tests gained checks that the retired source is gone. That tool isn't part of this repository.
 - Evidence (checked 2026-11-20): `/Applications/Leader Key.app` isn't installed.
+- Deferred: no CapsLock key-press result is recorded: not verified.
 
 ## 4. Activation
 

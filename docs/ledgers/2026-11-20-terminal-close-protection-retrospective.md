@@ -14,7 +14,7 @@ Request: none · Plan: `docs/exec-plans/completed/accidental-terminal-close-prot
 ## 1. Kitty settings and bindings
 
 - Decision: map the accidental-close shortcuts to `discard_event` rather than `no_op`, because `no_op` passes the key through to a terminal app running in the tab. Set `confirm_os_window_close = -1` so Kitty asks only when a pane looks busy, and pin `close_on_child_death = no`. Source: the plan.
-- Decision: no terminal multiplexer. Once the keybinding fix removes the trigger, a closed tab no longer kills the process in the reported failure. If this is revisited, herdr is the candidate, after its open issues on session restore, missing Claude messages, idle reporting during MCP calls, and CPU growth are fixed. Source: the plan.
+- Decision: keeping processes alive after their tab closes is out of scope, so no terminal multiplexer. The keybinding fix removes the trigger of the reported failure. Source: the plan.
 - Evidence: `feat(kitty): neutralize accidental close shortcuts, confirm when busy` (2026-08-23), merged on 2026-08-25.
 - Evidence (checked 2026-11-20): the running system matches this repository's configuration, and the generated `~/.config/kitty/kitty.conf` maps `cmd+w`, `ctrl+shift+q` and `shift+cmd+w` to `discard_event` and `cmd+q` to `quit`, with `confirm_os_window_close -1` and `close_on_child_death no`.
 

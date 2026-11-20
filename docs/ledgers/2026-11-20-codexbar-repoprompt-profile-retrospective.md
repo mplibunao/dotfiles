@@ -21,7 +21,7 @@ CodexBar is a menu-bar app that shows Codex usage and statistics read from Codex
 
 - Decision: the merge never changes the selected Codex source, which the plan recorded as the combined OAuth and OpenAI web source. Selecting the RepoPrompt profile is a choice made in CodexBar and stays CodexBar's local state. Local session cost estimates stay off, because turning them on uses every Codex session on this Mac instead of the selected profile's. Source: the plan.
 - Evidence (recorded in the plan, 2026-08-26): CodexBar 0.54.0 could keep showing the previous profile's statistics after a profile switch, and 0.54.1 fixed that upstream ([steipete/CodexBar#3132](https://github.com/steipete/CodexBar/pull/3132)). A 60 fps screen recording of 0.54.1 showed that selecting the RepoPrompt profile cleared the system profile's usage block and settled on "No usage yet." The popup's Refresh action then filled in RepoPrompt's own chart and history.
-- Decision: selecting a profile doesn't start a local token scan, so a newly selected profile with no snapshot needs Refresh. Source: the plan.
+- Decision: selecting a profile doesn't guarantee a local token scan, so a newly selected profile with no snapshot needs Refresh. Source: the plan and ADR-022.
 
 ## 3. Statistics that come from RepoPrompt's SQLite data
 

@@ -2,7 +2,7 @@
 
 Request: none · Plans: `nix/plans/aerospace-wm.md`, `nix/plans/aerospace-enhancements.md`, `nix/plans/leaderkey-install.md`, and `nix/plans/leaderkey-aerospace-integration.md` in `mplibunao/dotfiles-private`
 
-Between 2025-12-26 and 2026-01-06, this work replaced yabai and skhd with the AeroSpace tiling window manager and added the Leader Key launcher. The plans behind it are undated. The ADRs record the lasting decisions, and this ledger records what changed and when. [The AeroSpace cheat sheet](../../nix/docs/aerospace-cheatsheet.md) and [layout notes](../../nix/docs/aerospace-layouts.md) describe the current setup.
+Between 2025-12-26 and 2026-01-02, this work replaced yabai and skhd with the AeroSpace tiling window manager and added the Leader Key launcher. The plans behind it are undated. The ADRs record the lasting decisions, and this ledger records what changed and when. [The AeroSpace cheat sheet](../../nix/docs/aerospace-cheatsheet.md) and [layout notes](../../nix/docs/aerospace-layouts.md) describe the current setup.
 
 | Item | Outcome |
 |------|---------|
@@ -23,7 +23,7 @@ Between 2025-12-26 and 2026-01-06, this work replaced yabai and skhd with the Ae
 
 ## 3. Mission Control previews
 
-- Evidence: `fix(defaults): add expose-group-apps for Mission Control with AeroSpace` (2025-12-31). AeroSpace parks windows of inactive workspaces off screen, which made Mission Control's previews tiny. Grouping windows by application fixes that. The setting is in `nix/hosts/m5-mbp/defaults.nix`.
+- Evidence: `fix(defaults): add expose-group-apps for Mission Control with AeroSpace` (2025-12-31). AeroSpace parks windows of inactive workspaces off screen, which made Mission Control's previews tiny. Grouping windows by application is the configured workaround, set in `nix/hosts/m5-mbp/defaults.nix`. No record shows the previews after activation: not verified.
 
 ## 4. Leader Key and its AeroSpace integration
 
