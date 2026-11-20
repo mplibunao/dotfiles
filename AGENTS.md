@@ -8,6 +8,7 @@
 - **For Nix-specific guidance, see [`nix/AGENTS.md`](nix/AGENTS.md)** - contains safety rules, command ladder, and conventions
 - **For fresh Mac setup, use the `/bootstrap` command** or see `.claude/skills/bootstrap/SKILL.md`
 - When adding new configuration, add it as a Nix module rather than a manual symlink
+- **Plans, ledgers, ADRs, and investigations:** where each goes and what gets committed is in [`docs/architecture/docs-and-records.md`](docs/architecture/docs-and-records.md)
 
 ## Keyboard Layout
 

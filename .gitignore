@@ -1,11 +1,7 @@
-# bv (beads viewer) local config and caches
-.bv/
-.beads/last-touched
-
 # Nix build output symlink
 result
 
-# Python bytecode cache (regenerated on import by keybinds/ tooling)
+# Python bytecode cache
 __pycache__/
 *.py[cod]
 
@@ -16,14 +12,7 @@ karabiner/automatic_backups/
 *.old
 *.orig
 
-.bv-preview/
-
 # Local reports / artifacts
 vibe-log-report-*.html
-
-# Local (untracked) planning docs
-nix/plans/impl-plan-update.md
-nix/plans/implementation-plan-update.md
-nix/plans/project-local-skill-setup.md
 
 test.md
