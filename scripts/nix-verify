@@ -31,7 +31,7 @@ Options:
   --nix-root PATH     Override nix flake root directory
   --print-only        Print commands without running them
   --no-all-systems    For level 0, omit --all-systems
-  --allow-untracked   Allow untracked files in the flake's source folders (not recommended)
+  --allow-untracked   Allow untracked Nix sources (not recommended)
   -h, --help          Show help
 
 Notes:
@@ -153,12 +153,12 @@ fi
 
 if [[ "$allow_untracked" != "true" && -n "$repo_root" ]]; then
   untracked="$(
-    git --no-pager -c color.ui=false -C "$repo_root" status --porcelain 2>/dev/null \
+    git --no-pager -c color.ui=false -C "$repo_root" status --porcelain --untracked-files=all 2>/dev/null \
       | awk '$1 == "??" {print substr($0,4)}' \
-      | grep -E '^(flake\.(nix|lock)$|(hosts|home|modules|packages|scripts|data)/)' || true
+      | grep -E '^(flake\.lock$|(hosts|home|modules|packages|scripts|data)/)|\.nix$' || true
   )"
   if [[ -n "${untracked:-}" ]]; then
-    echo "Error: untracked files detected in the flake's source folders; flakes ignore them." >&2
+    echo "Error: untracked Nix sources detected; flakes ignore untracked files." >&2
     echo "Stage new files first (or pass --allow-untracked):" >&2
     echo "$untracked" >&2
     exit 1

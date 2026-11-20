@@ -69,7 +69,7 @@ render() {
   local snippet
   snippet="$(nix eval --impure --raw --expr "
     let
-      lib = (builtins.getFlake \"path:${repo_root}\").inputs.nixpkgs.lib;
+      lib = (builtins.getFlake \"git+file://${repo_root}\").inputs.nixpkgs.lib;
       loadAgent = import ${repo_root}/modules/cli-proxy/launch-agent.nix { inherit lib; };
     in
     loadAgent \"t\" {

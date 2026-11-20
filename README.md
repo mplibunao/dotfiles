@@ -13,9 +13,8 @@ Personal macOS configuration managed with Nix (nix-darwin and Home Manager) for 
    - See [`.claude/skills/bootstrap/SKILL.md`](.claude/skills/bootstrap/SKILL.md)
    - Or use Claude Code: run `/bootstrap`
 
-3. **For existing Nix setups:**
+3. **For existing Nix setups**, from the repository root:
    ```bash
-   cd ~/Projects/personal/dotfiles
    darwin-rebuild build --flake .#m5-mbp  # Build (safe)
    sudo darwin-rebuild switch --flake .#m5-mbp  # Apply
    ```
