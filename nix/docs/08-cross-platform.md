@@ -303,13 +303,7 @@ nix eval --raw ./nix#darwinConfigurations.m5-mbp.system.drvPath
 
 ### Continuous Integration
 
-[`.github/workflows/nix-check.yml`](../../.github/workflows/nix-check.yml) runs on pushes to `main` and pull requests that touch `nix/` or the workflow, and on manual runs. It has one job on `ubuntu-latest`:
-
-- the shell tests from `nix/tests/` that the workflow lists
-- `nix eval` of the `m5-mbp` Darwin system's derivation path
-- `nix flake check --no-build --all-systems`
-
-Import from derivation is off, so evaluation never needs a macOS builder. CI doesn't build or activate the system. Build it on the Mac with `nix/scripts/nix-verify`.
+[`.github/workflows/nix-check.yml`](../../.github/workflows/nix-check.yml) defines the CI job. Linux CI runs the shell checks and evaluates the Darwin system with import from derivation disabled, so evaluation never needs a macOS builder. CI doesn't build or activate macOS. Build it on the Mac with `nix/scripts/nix-verify`.
 
 ---
 
