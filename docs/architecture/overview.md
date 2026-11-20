@@ -113,7 +113,7 @@ Following the imports from the flake shows where each setting comes from:
 
 1. [`flake.nix`](../../flake.nix) defines `darwinConfigurations."m5-mbp"`, which combines the host module with the Home Manager nix-darwin module.
 2. [`hosts/m5-mbp/configuration.nix`](../../hosts/m5-mbp/configuration.nix) imports [`homebrew.nix`](../../hosts/m5-mbp/homebrew.nix) and [`defaults.nix`](../../hosts/m5-mbp/defaults.nix), and sets `home-manager.users.mp` to [`home/mp/darwin.nix`](../../home/mp/darwin.nix).
-3. `home/mp/darwin.nix` imports [`common.nix`](../../home/mp/common.nix), the two [package tier](packages-and-tiers.md) files, and one module per tool from `modules/`.
+3. `home/mp/darwin.nix` imports [`common.nix`](../../home/mp/common.nix), the two [package tier](packages-and-tiers.md) files, and the tool modules in `modules/<tool>/`. The CLIProxyAPI tool has two imports, [`api.nix`](../../modules/cli-proxy/api.nix) and [`dashboard.nix`](../../modules/cli-proxy/dashboard.nix).
 
 [Repository layout](repository-layout.md) says where a new change goes, and [Cross-platform](cross-platform.md#platform-boundaries) says where shared code ends and macOS-only code begins.
 

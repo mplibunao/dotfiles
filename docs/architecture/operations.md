@@ -264,7 +264,7 @@ error: builder for '/nix/store/...' failed
 | `nix-ops status` | Shows diagnostics |
 | `nix-ops update-inputs --yes` | Updates `flake.lock`; `--input NAME` updates one input and `--build` builds afterwards |
 | `nix-ops generations` | Lists nix-darwin generations |
-| `nix-ops rollback` | Prints the rollback commands; `--apply` runs them after asking |
+| `nix-ops rollback` | Prints `sudo darwin-rebuild switch --rollback`, `darwin-rebuild --list-generations`, and `sudo darwin-rebuild switch --switch-generation N`. With `--apply` it asks you to type `ROLLBACK`. It then runs only `sudo darwin-rebuild switch --rollback`, or the `nix run` form of it when `darwin-rebuild` is missing. Like any switch, it needs my approval |
 | `nix-ops gc` | Prints `nix-collect-garbage -d` and `darwin-rebuild --list-generations`. With `--apply` it asks you to type `GC`. It then runs only `nix-collect-garbage -d`, without `sudo`. That deletes the current user's old profile generations, not the nix-darwin system generations ([Storage](storage.md#aggressive-gc)) |
 | `nix-ops switch` | Prints the switch command without running it |
 

@@ -20,12 +20,12 @@ Which platforms the flake supports, where code for one platform belongs, and wha
 
 | Location | Purpose | Platform |
 |----------|---------|----------|
-| `home/mp/common.nix` | Shared settings: user, state version, session variables | Shared |
-| `home/mp/darwin.nix` | macOS entry point; imports every module | Darwin only |
+| `home/mp/common.nix` | Common user settings: user, home directory (`/Users/mp`), state version, session variables | Imported by `darwin.nix` |
+| `home/mp/darwin.nix` | macOS entry point; imports `common.nix` and every module | Darwin only |
 | `hosts/<hostname>/` | Machine-specific settings, including nix-darwin modules | Per machine |
-| `modules/<tool>/` | Home Manager modules, one per tool | Any platform, unless the tool is macOS-only |
+| `modules/<tool>/` | Home Manager modules, grouped by tool | Used by the Darwin configuration |
 
-[Overview](overview.md#wiring) shows how these connect. No module checks which platform it runs on, because `darwin.nix` is the only home entry point. Put macOS-only options in `darwin.nix`, a host file, or a macOS-only module.
+[Overview](overview.md#wiring) shows how these connect. `common.nix` sets the home directory to `/Users/mp`, and the flake has no Linux Home Manager entry point, so `darwin.nix` is the only consumer of these settings. No module checks which platform it runs on. Put macOS-only options in `darwin.nix`, a host file, or a macOS-only module.
 
 Homebrew (under `/opt/homebrew`, declared in [`homebrew.nix`](../../hosts/m5-mbp/homebrew.nix)), launchd user services, and [AeroSpace](aerospace.md) exist only on macOS.
 

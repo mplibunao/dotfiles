@@ -1,6 +1,6 @@
 # Dotfiles
 
-My macOS configuration as a Nix flake: Determinate Nix, nix-darwin for the system, and Home Manager for my user, with one module per tool in `modules/<tool>/`. It builds one host, `m5-mbp`, and the live checkout is `~/Projects/personal/dotfiles`, which some modules link into directly.
+My macOS configuration as a Nix flake: Determinate Nix, nix-darwin for the system, and Home Manager for my user, with Home Manager modules grouped by tool in `modules/<tool>/`. It builds one host, `m5-mbp`, and the live checkout is `~/Projects/personal/dotfiles`, which some modules link into directly.
 
 This file states the rules that appear in no other document, and for every other topic it links to the document that defines it. Read that document before acting on its topic.
 

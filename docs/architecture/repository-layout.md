@@ -1,6 +1,6 @@
 # Repository layout
 
-The flake is at the repository root. Each tool has one Home Manager module in `modules/<tool>/`, and the files that module reads or links sit beside it.
+The flake is at the repository root. Home Manager modules live in a directory per tool, `modules/<tool>/`, beside the files they read or link. A directory can contain more than one module: `modules/cli-proxy/` has `api.nix` and `dashboard.nix`.
 
 ```text
 dotfiles/
@@ -10,10 +10,10 @@ dotfiles/
 │   ├── defaults.nix         # macOS defaults and activation-time settings
 │   └── homebrew.nix         # Homebrew casks and the few allowed brews
 ├── home/mp/
-│   ├── common.nix           # settings that would also work on Linux
+│   ├── common.nix           # common user settings, imported by darwin.nix
 │   ├── darwin.nix           # macOS entry point; imports every module
 │   └── package-tiers/       # tier1.nix and tier2.nix package lists
-├── modules/<tool>/          # default.nix plus the files it reads or links
+├── modules/<tool>/          # one or more modules plus the files they read or link
 ├── packages/                # custom derivations (callPackage targets)
 ├── scripts/                 # operational scripts, linked into ~/.local/bin
 ├── tests/                   # shell and Python tests for the scripts and modules

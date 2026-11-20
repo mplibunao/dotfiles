@@ -136,4 +136,4 @@ After the approved switch, `which http` finds it.
 3. After review and explicit operator approval, follow the [approval-gated activation procedure](command-ladder.md#level-4-apply).
 4. After activation and validation, use the [storage management guide](storage.md) to decide whether to clean up storage.
 
-Ordinary `nix-collect-garbage` removes unreachable store paths. The `-d` form and explicit generation deletion also remove rollback generations. Treat cleanup as a separate decision, and never manually delete paths from `/nix/store`.
+Ordinary `nix-collect-garbage` removes unreachable store paths. The `-d` form and explicit generation deletion also remove old generations, which are rollback targets. Without `sudo`, `-d` removes only the current user's profile generations, and the nix-darwin system generations need `sudo` ([Storage](storage.md#aggressive-gc) says which command removes what). Treat cleanup as a separate decision, and never manually delete paths from `/nix/store`.

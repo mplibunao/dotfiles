@@ -8,25 +8,23 @@ A third LaunchAgent, `com.mp.cli-proxy-env`, publishes Claude Code's route into 
 
 ```mermaid
 flowchart LR
-  CC[Claude Code with the route on / OpenCode DeepSeek] -->|client API key| P[CLIProxyAPI<br/>127.0.0.1:8317]
+  CC[Claude Code with the route on / OpenCode DeepSeek] -->|client API key| P[CLIProxyAPI]
   P --> A[Claude + Codex accounts]
-  D[Dashboard<br/>127.0.0.1:8788] -->|management key| P
-  S[(~/.config/cli-proxy-api/secrets.env<br/>mode 0600)] -.read at startup.-> P
+  D[Dashboard] -->|management key| P
+  S[(secrets file)] -.read at startup.-> P
   S -.read at startup.-> D
   S -.read at login.-> E[Env agent<br/>com.mp.cli-proxy-env]
   E -.launchctl setenv.-> CC
   L[LaunchAgents<br/>from Home Manager] -->|start + restart| P
   L -->|start + restart| D
-  D --> DB[(~/.local/share/<br/>cli-proxy-dashboard)]
+  D --> DB[(dashboard data)]
 ```
 
-Solid arrows are traffic or control. Dotted arrows are keys being read from the secrets file or published into the GUI session.
+Solid arrows are traffic or control. Dotted arrows are keys being read from the secrets file or published into the GUI session. [`api.nix`](../../../modules/cli-proxy/api.nix) and [`dashboard.nix`](../../../modules/cli-proxy/dashboard.nix) set the listener addresses and the launch settings.
 
 ## Before the first switch
 
-The dashboard listens on `127.0.0.1:8788`. The surf OpenAI gateway keeps `8787`. If those two ports are set to the same value, evaluation warns and both LaunchAgents cannot bind it.
-
-Activation refuses to switch until the secret file exists and the dashboard clone has `package.json`, `config/production.env` and `node_modules`. Create those first. The checks run before Home Manager writes files, so a missing checkout does not leave a half-applied generation.
+Create the secret file and the dashboard checkout first. Activation checks both before Home Manager writes any file. A missing one stops the switch and leaves no half-applied generation. `checkCliProxyApiRuntime` in [`api.nix`](../../../modules/cli-proxy/api.nix) checks that the proxy binary runs and that the secret file has both keys. `checkCliProxyDashboardRuntime` in [`dashboard.nix`](../../../modules/cli-proxy/dashboard.nix) checks the dashboard clone and the management key. Read them for the complete list. The same modules set the listener defaults, including the dashboard port, which must differ from the surf OpenAI gateway's.
 
 ### Secret file
 
@@ -36,7 +34,7 @@ The management key and the client key are not in git and not in the Nix store. T
 ~/Projects/personal/dotfiles/scripts/cli-proxy-dashboard-setup init-secret
 ```
 
-`init-client-key` then adds `CLIPROXY_CLIENT_KEY`. It appends one line and leaves the management key in place. It refuses when the client line is already there, and it does not print the value. To rotate, delete the `CLIPROXY_CLIENT_KEY` line without printing the file, then follow [Apply a new client key](#apply-a-new-client-key).
+`init-client-key` then adds `CLIPROXY_CLIENT_KEY`. It appends one line and leaves the management key in place. It refuses when the client line is already there, and it does not print the value. Run both commands before the first switch, because the proxy check needs both keys. To rotate, delete the `CLIPROXY_CLIENT_KEY` line without printing the file, then follow [Apply a new client key](#apply-a-new-client-key).
 
 ```fish
 ~/Projects/personal/dotfiles/scripts/cli-proxy-dashboard-setup init-client-key
@@ -48,7 +46,7 @@ v8.0.53 accepts client keys only as `access.api-keys` (the old top-level `api-ke
 
 The live dashboard runs from its own clone, `~/.local/share/cli-proxy-dashboard/app`, which only follows `main`. Work on the dashboard happens in a different checkout, such as `~/Projects/personal/cli-proxy-dashboard`, so switching branches there never changes what the live dashboard runs. The live copy is a separate git clone, which worktree cleanup leaves alone.
 
-`scripts/cli-proxy-dashboard-setup` deploys `main` to that clone. It clones over SSH on the first run, and after that fast-forwards to `origin/main`. Then it runs `pnpm install` and `pnpm run build` with Node 24's pnpm, restarts the dashboard LaunchAgent if it is loaded, and prints the SHA. It refuses a clone with local changes or on a branch other than `main`. It does not touch secrets. The path below works before the `~/.local/bin` shim exists. After a switch, `cli-proxy-dashboard-setup` is on `PATH`.
+[`scripts/cli-proxy-dashboard-setup`](../../../scripts/cli-proxy-dashboard-setup) deploys `main` to that clone. Its header and `--help` describe the clone, build, and checks it makes. If the dashboard LaunchAgent is already loaded, it restarts that job. The path below works before the `~/.local/bin` shim exists. After a switch, `cli-proxy-dashboard-setup` is on `PATH`.
 
 Open a fish shell once so Corepack installs `pnpm` beside mise Node 24 if it is not there yet, then:
 
@@ -58,9 +56,9 @@ Open a fish shell once so Corepack installs `pnpm` beside mise Node 24 if it is 
 
 Nix does not pin a dashboard commit. Rerun the command to deploy a newer `main`. There is no flake input to bump.
 
-The LaunchAgent runs `bun --env-file=config/production.env src/server/index.ts` in the clone. Bun is `pkgs.bun` by absolute store path, from the flake's nixpkgs pin. Naming an env file also keeps Bun from loading the clone's `.env`. The management key still comes from the secrets file through the launch wrapper. `CPA_BASE_URL` is `http://127.0.0.1:8317`. The management key is passed as `CPA_MANAGEMENT_KEY`. `HOST` and `PORT` are `127.0.0.1` and `8788`. `DATA_DIR` is `~/.local/share/cli-proxy-dashboard`, created mode `0700` before the job starts. The dashboard's own default is a relative `data` folder, which launchd would create inside the clone. If the entry point changes, set `mp.cliProxyDashboard.arguments`.
+[`dashboard.nix`](../../../modules/cli-proxy/dashboard.nix) sets the default checkout, the Bun command, and the environment the job runs with.
 
-Feature switches live in the dashboard repo's `config/production.env`, not in Nix. The soonest-reset routing controller is on there (`SOONEST_RESET_ROUTING=1`, `SOONEST_RESET_DRY_RUN=0`). To change a switch, edit that file in the dashboard repo, merge to `main`, and run `cli-proxy-dashboard-setup`. You don't need a Nix switch for it. The plist doesn't set any feature switch, because a variable already in the process environment would override the file. Bun ignores a missing `--env-file`, so activation refuses to switch when `config/production.env` is missing from the clone.
+Feature switches live in the dashboard repo's `config/production.env`, not in Nix. The soonest-reset routing controller is on there (`SOONEST_RESET_ROUTING=1`, `SOONEST_RESET_DRY_RUN=0`). To change a switch, edit that file in the dashboard repo, merge to `main`, and run `cli-proxy-dashboard-setup`. You don't need a Nix switch for it. The plist sets none of them, because a variable already in the process environment would override the file.
 
 Moving the live dashboard from `~/Projects/personal/cli-proxy-dashboard` to the clone takes one deploy and one switch. Run `cli-proxy-dashboard-setup` first, so the clone has `config/production.env` and `node_modules`. Its restart still hits the old checkout, which is harmless. Then switch. The plist changed, and the switch reloads the job from the clone. Check that one `bun` process remains, running in the clone:
 

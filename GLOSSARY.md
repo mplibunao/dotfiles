@@ -34,7 +34,7 @@ _Avoid_: snapshot, revision, version
 
 ## Host
 
-One machine's nix-darwin configuration: a folder in `hosts/` and an entry in `darwinConfigurations` in `flake.nix`. `m5-mbp` is the only host ([Hosts](docs/architecture/hosts.md)).
+One machine's nix-darwin configuration: a folder in `hosts/` and an entry in `darwinConfigurations` in `flake.nix`. [Hosts](docs/architecture/hosts.md) names the current host and says how to add one.
 
 _Avoid_: machine config, system (for the folder)
 
@@ -44,13 +44,13 @@ Evaluation that has to build a derivation before it can continue, such as import
 
 ## Module
 
-A Nix file, usually `default.nix`, that sets options for nix-darwin or Home Manager. The Home Manager modules are in `modules/<tool>/`, one per tool, and the nix-darwin ones are in `hosts/m5-mbp/`.
+A Nix file, usually `default.nix`, that declares or sets options for nix-darwin or Home Manager. [Repository layout](docs/architecture/repository-layout.md) says where each kind of module lives.
 
 _Avoid_: plugin, config file
 
 ## Out-of-store link
 
-A home-directory path that Home Manager links straight to a file in this checkout with `config.lib.file.mkOutOfStoreSymlink`, so an edit takes effect without a rebuild. The default is a store-managed mapping, which links to a copy in the store ([ADR-019](docs/decisions/019-store-managed-file-mappings-by-default.md)).
+A home-directory path that Home Manager links straight to a file in this checkout with `config.lib.file.mkOutOfStoreSymlink`, so an edit takes effect without a rebuild. A store-managed mapping, the default, links to a copy in the store instead. [Coding standards](CODING_STANDARDS.md#home-manager-modules-and-file-mappings) says when to use each.
 
 _Avoid_: mutable symlink, live symlink
 
