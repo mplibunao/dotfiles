@@ -324,9 +324,7 @@ source /etc/static/bashrc  # or fish equivalent
 ```
 
 ### Wrong architecture packages
-Check `nixpkgs.hostPlatform` in host config matches your machine:
-- Apple Silicon: `aarch64-darwin`
-- Intel: `x86_64-darwin`
+Check that the machine is Apple Silicon (`uname -m` prints `arm64`) and that `nixpkgs.hostPlatform` in the host config is `aarch64-darwin`. An Intel Mac needs its own host and packages; see [System Requirements](#system-requirements).
 
 ### Home Manager collision errors
 If HM refuses to overwrite existing files, move the file aside. Then, once the user approves, give them the switch command to run, because it needs interactive `sudo`:
