@@ -2,8 +2,8 @@
 
 let
   mkOOS = config.lib.file.mkOutOfStoreSymlink;
-  # Scripts live in dotfiles/nix/scripts/
-  scriptsDir = "${config.home.homeDirectory}/Projects/personal/dotfiles/nix/scripts";
+  # Scripts live in dotfiles/scripts/
+  scriptsDir = "${config.home.homeDirectory}/Projects/personal/dotfiles/scripts";
 in
 {
   # Nix operational scripts - exposed as commands in ~/.local/bin
@@ -12,7 +12,7 @@ in
   # without requiring a darwin-rebuild.
   #
   # Scripts:
-  #   nix-locate                 - Find dotfiles/nix root
+  #   nix-locate                 - Find the dotfiles flake root
   #   nix-verify                 - Verification ladder runner
   #   nix-ops                    - Operational console
   #   cli-proxy-dashboard-setup  - Deploy main to the live usage dashboard

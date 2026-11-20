@@ -24,7 +24,7 @@ in
   #   home.file.".config/karabiner/rimshot.mp3".source = mkOOS "...";
   #   # But you'll need to manually create the directory structure
   home.file.".config/karabiner" = {
-    source = mkOOS "${dotfilesDir}/karabiner";
+    source = mkOOS "${dotfilesDir}/modules/karabiner/config";
     force = true;
   };
 }

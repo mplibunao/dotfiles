@@ -2,7 +2,7 @@
 
 let
   mkOOS = config.lib.file.mkOutOfStoreSymlink;
-  fishModuleDir = "${config.home.homeDirectory}/Projects/personal/dotfiles/nix/home/mp/modules/fish";
+  fishModuleDir = "${config.home.homeDirectory}/Projects/personal/dotfiles/modules/fish";
 in
 {
   # Fish functions and completions are linked from this repo into
@@ -14,7 +14,7 @@ in
   #
   # functions/  → single-dir mkOutOfStoreSymlink (no `recursive`).
   #   The whole directory is one live symlink. Add, edit, rename, or
-  #   delete *.fish files in nix/home/mp/modules/fish/functions/ and
+  #   delete *.fish files in modules/fish/functions/ and
   #   they are visible to fish immediately, no rebuild required.
   #   Already-loaded functions in a running shell still need re-source:
   #     functions --erase <name>
@@ -51,7 +51,7 @@ in
     # Fish completions (store-managed; per-file via recursive so the
     # generated mise entry below can layer alongside).
     "fish/completions" = {
-      source = ./fish/completions;
+      source = ./completions;
       recursive = true;
     };
 

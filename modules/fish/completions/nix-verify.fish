@@ -10,5 +10,5 @@ complete -c nix-verify -l host -d "Hostname for flake target" -xa "(hostname -s)
 complete -c nix-verify -l nix-root -d "Override nix flake root" -r -F
 complete -c nix-verify -l print-only -d "Print commands without running"
 complete -c nix-verify -l no-all-systems -d "Omit --all-systems for level 0"
-complete -c nix-verify -l allow-untracked -d "Allow untracked files under nix/"
+complete -c nix-verify -l allow-untracked -d "Allow untracked files in the flake's source folders"
 complete -c nix-verify -s h -l help -d "Show help"

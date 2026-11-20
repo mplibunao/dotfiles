@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
-# Runs the activation snippet from home/mp/modules/cli-proxy/launch-agent.nix
+# Runs the activation snippet from modules/cli-proxy/launch-agent.nix
 # against a fake launchctl that behaves like launchd: bootstrap copies the
 # plist into a "loaded definition" and never looks at the file again.
 #
 # Needs nix (to render the snippet) and awk. No launchd, no network.
 set -euo pipefail
 
-repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 tmp="$(mktemp -d)"
 trap 'rm -rf "$tmp"' EXIT
 
@@ -69,8 +69,8 @@ render() {
   local snippet
   snippet="$(nix eval --impure --raw --expr "
     let
-      lib = (builtins.getFlake \"path:${repo_root}/nix\").inputs.nixpkgs.lib;
-      loadAgent = import ${repo_root}/nix/home/mp/modules/cli-proxy/launch-agent.nix { inherit lib; };
+      lib = (builtins.getFlake \"path:${repo_root}\").inputs.nixpkgs.lib;
+      loadAgent = import ${repo_root}/modules/cli-proxy/launch-agent.nix { inherit lib; };
     in
     loadAgent \"t\" {
       label = \"${label}\";

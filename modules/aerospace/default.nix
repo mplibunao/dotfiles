@@ -29,8 +29,8 @@ let
       throw "AeroSpace TOML parse failed - check syntax in ${toString tomlPath}";
 
   # Workspace registry - single source of truth for workspace names
-  # Path: from nix/home/mp/modules/aerospace/ up to nix/data/
-  workspacesFile = ../../../../data/workspaces.toml;
+  # Path: from modules/aerospace/ up to data/
+  workspacesFile = ../../data/workspaces.toml;
   inherit (builtins.fromTOML (builtins.readFile workspacesFile)) workspaces;
 
   # Strict ownership enforcement. These become Home Manager module assertions

@@ -2,8 +2,8 @@
 # Exercises cli-proxy-dashboard-setup without a network or a real key.
 set -euo pipefail
 
-repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-helper="${repo_root}/nix/scripts/cli-proxy-dashboard-setup"
+repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+helper="${repo_root}/scripts/cli-proxy-dashboard-setup"
 tmp="$(mktemp -d)"
 trap 'rm -rf "$tmp"' EXIT
 

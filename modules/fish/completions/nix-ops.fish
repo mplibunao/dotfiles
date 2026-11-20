@@ -23,7 +23,7 @@ complete -c nix-ops -s h -l help -d "Show help"
 
 # update-inputs options
 complete -c nix-ops -n "__fish_seen_subcommand_from update-inputs" -l yes -d "Confirm update"
-complete -c nix-ops -n "__fish_seen_subcommand_from update-inputs" -l input -d "Update specific input" -xa "(cd ~/Projects/personal/dotfiles/nix 2>/dev/null && nix flake metadata --json 2>/dev/null | jq -r '.locks.nodes | keys[]' 2>/dev/null)"
+complete -c nix-ops -n "__fish_seen_subcommand_from update-inputs" -l input -d "Update specific input" -xa "(cd ~/Projects/personal/dotfiles 2>/dev/null && nix flake metadata --json 2>/dev/null | jq -r '.locks.nodes | keys[]' 2>/dev/null)"
 complete -c nix-ops -n "__fish_seen_subcommand_from update-inputs" -l build -d "Build after update"
 
 # rollback/gc options

@@ -58,7 +58,7 @@ let
         meta.mainProgram = "codexbar-config";
       }
       ''
-        src=${../../../scripts/codexbar-config}
+        src=${../../scripts/codexbar-config}
         # The prologue takes over line 1, so a changed shebang has to fail the
         # build instead of silently landing as a stray directive mid-script.
         head -n 1 "$src" | grep -qx '#!/usr/bin/env bash' \

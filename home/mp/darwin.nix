@@ -4,31 +4,31 @@
   imports = [
     hunk.homeManagerModules.default
     ./common.nix
-    ./packages/tier1.nix
-    ./packages/tier2.nix
-    ./modules/fish.nix
-    ./modules/git.nix
-    ./modules/starship.nix
-    ./modules/neovim.nix
-    ./modules/kitty.nix
-    ./modules/node.nix
-    ./modules/llm-tools.nix
-    ./modules/direnv.nix
-    ./modules/bat.nix
-    ./modules/nix-ops-tools.nix
-    ./modules/whisper-model.nix
-    ./modules/karabiner.nix
-    ./modules/aerospace
-    ./modules/ssh.nix
-    ./modules/kokoro-tts.nix
-    ./modules/cloudflared.nix
-    ./modules/surf-openai-gateway.nix
-    ./modules/executor.nix
-    ./modules/cli-proxy-api.nix
-    ./modules/cli-proxy-dashboard.nix
-    ./modules/vale.nix
-    ./modules/codexbar.nix
-    ./modules/tinycast
+    ./package-tiers/tier1.nix
+    ./package-tiers/tier2.nix
+    ../../modules/fish
+    ../../modules/git
+    ../../modules/starship
+    ../../modules/neovim
+    ../../modules/kitty
+    ../../modules/node
+    ../../modules/llm-tools
+    ../../modules/direnv
+    ../../modules/bat
+    ../../modules/nix-ops-tools
+    ../../modules/whisper-model
+    ../../modules/karabiner
+    ../../modules/aerospace
+    ../../modules/ssh
+    ../../modules/kokoro-tts
+    ../../modules/cloudflared
+    ../../modules/surf-openai-gateway
+    ../../modules/executor
+    ../../modules/cli-proxy/api.nix
+    ../../modules/cli-proxy/dashboard.nix
+    ../../modules/vale
+    ../../modules/codexbar
+    ../../modules/tinycast
   ];
 
   # macOS-specific Home Manager configuration

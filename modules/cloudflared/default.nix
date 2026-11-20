@@ -12,7 +12,7 @@ in
 
   config = lib.mkIf cfg.enable {
     home.file.".cloudflared/config.yml" = {
-      source = mkOOS "${dotfilesDir}/nix/home/mp/modules/cloudflared/config.yml";
+      source = mkOOS "${dotfilesDir}/modules/cloudflared/config.yml";
       force = true;
     };
   };

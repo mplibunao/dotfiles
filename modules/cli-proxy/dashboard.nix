@@ -32,8 +32,8 @@
 
 let
   cfg = config.mp.cliProxyDashboard;
-  key = import ./cli-proxy/management-key.nix { inherit lib; };
-  loadAgent = import ./cli-proxy/launch-agent.nix { inherit lib; };
+  key = import ./management-key.nix { inherit lib; };
+  loadAgent = import ./launch-agent.nix { inherit lib; };
 
   label = "com.mp.cli-proxy-dashboard";
   home = config.home.homeDirectory;
@@ -72,7 +72,7 @@ let
     RunAtLoad = true;
     KeepAlive = true;
     ThrottleInterval = 30;
-    # 63 is 0o077. See modules/cli-proxy-api.nix.
+    # 63 is 0o077. See api.nix.
     Umask = 63;
     ExitTimeOut = 20;
     StandardOutPath = "${logDir}/cli-proxy-dashboard.out.log";
@@ -208,7 +208,7 @@ in
       checkCliProxyDashboardRuntime = lib.hm.dag.entryBefore [ "writeBoundary" ] ''
         if [ ! -f ${lib.escapeShellArg "${cfg.repoDir}/package.json"} ]; then
           echo "mp.cliProxyDashboard: ${cfg.repoDir}/package.json is missing." >&2
-          echo "  Run nix/scripts/cli-proxy-dashboard-setup. See nix/docs/runbooks/cli-proxy-api.md." >&2
+          echo "  Run scripts/cli-proxy-dashboard-setup. See nix/docs/runbooks/cli-proxy-api.md." >&2
           exit 1
         fi
         if [ ! -f ${lib.escapeShellArg "${cfg.repoDir}/src/server/index.ts"} ]; then
@@ -220,12 +220,12 @@ in
         # start with every feature switch off.
         if [ ! -f ${lib.escapeShellArg "${cfg.repoDir}/config/production.env"} ]; then
           echo "mp.cliProxyDashboard: ${cfg.repoDir}/config/production.env is missing." >&2
-          echo "  Run nix/scripts/cli-proxy-dashboard-setup, then switch again." >&2
+          echo "  Run scripts/cli-proxy-dashboard-setup, then switch again." >&2
           exit 1
         fi
         if [ ! -d ${lib.escapeShellArg "${cfg.repoDir}/node_modules"} ]; then
           echo "mp.cliProxyDashboard: ${cfg.repoDir}/node_modules is missing." >&2
-          echo "  Run nix/scripts/cli-proxy-dashboard-setup, then switch again." >&2
+          echo "  Run scripts/cli-proxy-dashboard-setup, then switch again." >&2
           exit 1
         fi
         ${key.readCommand "_cpd_management_key" cfg.secretsFile}

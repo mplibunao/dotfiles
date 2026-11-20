@@ -1,6 +1,6 @@
 """Exercise CLM's process boundary without starting Claude or touching credentials.
 
-Run with python3 nix/tests/test_clm.py --mirror /path/to/claude-toolkit/scripts/clm/clm.sh.
+Run with python3 tests/test_clm.py --mirror /path/to/claude-toolkit/scripts/clm/clm.sh.
 The executable doubles validate dispatch only.
 """
 
@@ -21,7 +21,7 @@ OPTIONS, TEST_ARGS = PARSER.parse_known_args()
 MIRROR_SOURCE = OPTIONS.mirror.resolve()
 if not MIRROR_SOURCE.is_file():
     PARSER.error(f"CLM mirror not found: {MIRROR_SOURCE}")
-FISH_SOURCE = Path(__file__).resolve().parents[1] / "home/mp/modules/fish/functions/clm.fish"
+FISH_SOURCE = Path(__file__).resolve().parents[1] / "modules/fish/functions/clm.fish"
 SHELLS = [(shutil.which("fish"), FISH_SOURCE), ("/bin/bash", MIRROR_SOURCE), ("/bin/zsh", MIRROR_SOURCE)]
 
 

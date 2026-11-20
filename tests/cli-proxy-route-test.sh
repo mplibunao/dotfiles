@@ -8,9 +8,9 @@
 set -euo pipefail
 export LC_ALL=C
 
-repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-publisher="${repo_root}/nix/scripts/cli-proxy-env-launch"
-switch="${repo_root}/nix/scripts/claude-proxy-route"
+repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+publisher="${repo_root}/scripts/cli-proxy-env-launch"
+switch="${repo_root}/scripts/claude-proxy-route"
 tmp="$(mktemp -d)"
 trap 'chmod -R u+rwx "$tmp" 2>/dev/null || true; rm -rf "$tmp"' EXIT
 

@@ -7,7 +7,7 @@
 }:
 
 let
-  openCodePackage = pkgs.callPackage ../../../packages/opencode { opencodeFlake = opencode; };
+  openCodePackage = pkgs.callPackage ../../packages/opencode { opencodeFlake = opencode; };
   # claude-launch/codex-launch are developed in the claude-toolkit checkout.
   # Out-of-store symlinks (ADR-019: iterated scripts) put them on PATH by name
   # without copying them into the store, so toolkit edits apply immediately.
@@ -27,15 +27,15 @@ in
   #   - codex: npm global → ~/.npm-global/bin/codex - requires Node runtime
   #       npm install -g @openai/codex
   #   - phone-harness: uv-managed Python environment; Nix owns uv only (ADR-024).
-  #       See docs/runbooks/phone-harness.md; no MCP entry or activation hook.
+  #       See nix/docs/runbooks/phone-harness.md; no MCP entry or activation hook.
   #   - gno: Bun global → $BUN_INSTALL/bin/gno - requires Bun runtime
   #       bun install -g @gmickel/gno
-  #   - executor: pinned release package and LaunchAgent in modules/executor.nix,
+  #   - executor: pinned release package and LaunchAgent in modules/executor,
   #       not npm or `executor install`
   #   - cli-proxy-api: pinned release package and LaunchAgent in
-  #       modules/cli-proxy-api.nix. The management key stays in a local 0600
+  #       modules/cli-proxy/api.nix. The management key stays in a local 0600
   #       file. The usage dashboard LaunchAgent runs its own clone of main
-  #       (modules/cli-proxy-dashboard.nix); see the cli-proxy-api runbook.
+  #       (modules/cli-proxy/dashboard.nix); see the cli-proxy-api runbook.
   #   - rtk: Homebrew (homebrew.nix) - Rust binary, not in nixpkgs
   #       Token-compression proxy for LLM CLI output. After installing it or
   #       running `brew upgrade rtk`, run the `rtk-resync` fish function. It

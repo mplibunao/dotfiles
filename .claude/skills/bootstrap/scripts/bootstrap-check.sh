@@ -98,7 +98,7 @@ check_github_access() {
 }
 
 check_dotfiles() {
-  [[ -d "$HOME/Projects/personal/dotfiles/nix" ]]
+  [[ -f "$HOME/Projects/personal/dotfiles/flake.nix" ]]
 }
 
 check_claude_toolkit() {
@@ -119,7 +119,7 @@ check_darwin_rebuild() {
 
 check_flake_build() {
   # Check if result symlink exists from a previous build
-  [[ -L "$HOME/Projects/personal/dotfiles/nix/result" ]]
+  [[ -L "$HOME/Projects/personal/dotfiles/result" ]]
 }
 
 check_claude_code() {
@@ -195,7 +195,7 @@ elif ! check_nix; then
   next_step="Install Determinate Nix: curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install"
 elif ! check_flake_build; then
   phase=5
-  next_step="Build flake: cd ~/Projects/personal/dotfiles/nix && nix run nix-darwin#darwin-rebuild -- build --flake .#\$(hostname -s)"
+  next_step="Build flake: cd ~/Projects/personal/dotfiles && nix run nix-darwin#darwin-rebuild -- build --flake .#\$(hostname -s)"
 elif ! check_claude_code && ! check_codex; then
   phase=6
   next_step="Install Claude Code (or Codex): curl -fsSL https://claude.ai/install.sh | bash"

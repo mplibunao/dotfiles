@@ -10,7 +10,7 @@ in
 {
   home.packages = with pkgs; [
     # Modern CLI replacements
-    # bat configured via modules/bat.nix
+    # bat configured via modules/bat
     lsd # ls replacement with icons
     fd # find replacement
     ripgrep # grep replacement

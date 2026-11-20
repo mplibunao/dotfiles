@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -u
 
-repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-helper="$repo_root/nix/scripts/codexbar-config"
+repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+helper="$repo_root/scripts/codexbar-config"
 raw_tmp="$(mktemp -d "${TMPDIR:-/tmp}/codexbar-config-test.XXXXXX")" || exit 1
 tmp="$(cd "$raw_tmp" && pwd -P)" || exit 1
 [[ -n "$tmp" && "$tmp" != / ]] || exit 1
@@ -1285,7 +1285,7 @@ scenario_process_probe_contract() {
 scenario_syntax() {
   local fake_name fake_path
   bash -n "$helper" || return 1
-  bash -n "$repo_root/nix/tests/codexbar-config-test.sh" || return 1
+  bash -n "$repo_root/tests/codexbar-config-test.sh" || return 1
   for fake_name in "${generated_bash_fake_names[@]}"; do
     fake_path="$fake_bin/$fake_name"
     [[ -f "$fake_path" ]] || fail "generated Bash fake is missing: $fake_name" || return 1

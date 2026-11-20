@@ -14,9 +14,9 @@ done < <(env)
 export GIT_CONFIG_GLOBAL=/dev/null
 export GIT_CONFIG_NOSYSTEM=1
 
-repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-functions_dir="$repo_root/nix/home/mp/modules/fish/functions"
-completion_file="$repo_root/nix/home/mp/modules/fish/completions/hd.fish"
+repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+functions_dir="$repo_root/modules/fish/functions"
+completion_file="$repo_root/modules/fish/completions/hd.fish"
 raw_tmp="$(mktemp -d "${TMPDIR:-/tmp}/worktree-review-dx.XXXXXX")" || {
   printf 'Error: failed to create temporary directory\n' >&2
   exit 1

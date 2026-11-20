@@ -101,8 +101,8 @@ in
 
     package = lib.mkOption {
       type = lib.types.package;
-      default = pkgs.callPackage ../../../packages/executor { };
-      defaultText = lib.literalExpression "pkgs.callPackage ../../../packages/executor { }";
+      default = pkgs.callPackage ../../packages/executor { };
+      defaultText = lib.literalExpression "pkgs.callPackage ../../packages/executor { }";
       description = "Executor release to install and run.";
     };
 

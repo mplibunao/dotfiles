@@ -1,5 +1,5 @@
 # DEPRECATED: Tide prompt is not supported under Nix.
-# Starship is the canonical prompt, managed by nix/home/mp/modules/starship.nix
+# Starship is the canonical prompt, managed by modules/starship/default.nix
 #
 # Original implementation kept below for reference only.
 # This function now returns exit code 2 and does nothing.

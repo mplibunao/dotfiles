@@ -110,7 +110,7 @@ if [[ ! -d "$nix_root" ]]; then
   exit 1
 fi
 
-dotfiles_root="$(dirname "$nix_root")"
+dotfiles_root="$nix_root"
 
 case "$cmd" in
   help)

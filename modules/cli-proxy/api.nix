@@ -30,7 +30,7 @@
 # OpenCode's DeepSeek provider reads. It does not route Codex. Afterwards, a
 # macOS notification names each watched app that started with other values,
 # such as an app macOS reopened at login before the agent ran. The publisher
-# is nix/scripts/cli-proxy-env-launch. launch-agent.nix is not used for this
+# is scripts/cli-proxy-env-launch. launch-agent.nix is not used for this
 # agent: that helper fails a job that exits, and this one is meant to. The
 # key is never written into this module's strings.
 #
@@ -44,8 +44,8 @@
 
 let
   cfg = config.mp.cliProxyApi;
-  key = import ./cli-proxy/management-key.nix { inherit lib; };
-  loadAgent = import ./cli-proxy/launch-agent.nix { inherit lib; };
+  key = import ./management-key.nix { inherit lib; };
+  loadAgent = import ./launch-agent.nix { inherit lib; };
 
   label = "com.mp.cli-proxy-api";
   home = config.home.homeDirectory;
@@ -56,7 +56,7 @@ let
   authDir = "${home}/.cli-proxy-api";
   plistPath = "${home}/Library/LaunchAgents/${label}.plist";
   runtimeScript = pkgs.writeShellScriptBin "cli-proxy-runtime-config" (
-    builtins.readFile ../../../scripts/cli-proxy-runtime-config
+    builtins.readFile ../../scripts/cli-proxy-runtime-config
   );
 
   # v8 layout. secret-key is intentionally empty. Client API keys are not
@@ -114,7 +114,7 @@ let
 
   envLabel = "com.mp.cli-proxy-env";
   envPublisher = pkgs.writeShellScriptBin "cli-proxy-env-launch" (
-    builtins.readFile ../../../scripts/cli-proxy-env-launch
+    builtins.readFile ../../scripts/cli-proxy-env-launch
   );
   # Process names of apps whose Claude sessions take the route from the
   # environment the app started with. RepoPromptDebug is RepoPrompt CE's Debug
@@ -182,8 +182,8 @@ in
 
     package = lib.mkOption {
       type = lib.types.package;
-      default = pkgs.callPackage ../../../packages/cli-proxy-api { };
-      defaultText = lib.literalExpression "pkgs.callPackage ../../../packages/cli-proxy-api { }";
+      default = pkgs.callPackage ../../packages/cli-proxy-api { };
+      defaultText = lib.literalExpression "pkgs.callPackage ../../packages/cli-proxy-api { }";
       description = "CLIProxyAPI release to install and run.";
     };
 

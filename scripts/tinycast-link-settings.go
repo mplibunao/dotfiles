@@ -80,7 +80,7 @@ func run() error {
 	checkOnly := flag.Bool("check", false, "Verify the settings link without changing files")
 	flag.Parse()
 	if flag.NArg() != 0 {
-		return fmt.Errorf("run from the dotfiles root: go run nix/scripts/tinycast-link-settings.go [--check]")
+		return fmt.Errorf("run from the dotfiles root: go run scripts/tinycast-link-settings.go [--check]")
 	}
 	repo, err := os.Getwd()
 	if err != nil {
@@ -91,7 +91,7 @@ func run() error {
 		return err
 	}
 	return linkSettings(
-		filepath.Join(repo, "nix/home/mp/modules/tinycast/settings.json"),
+		filepath.Join(repo, "modules/tinycast/settings.json"),
 		filepath.Join(home, ".config/tinycast/settings.json"), *checkOnly)
 }
 

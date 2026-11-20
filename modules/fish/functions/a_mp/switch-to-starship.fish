@@ -1,5 +1,5 @@
 # DEPRECATED: Starship is already Nix-managed.
-# Prompt configuration is in nix/home/mp/modules/starship.nix
+# Prompt configuration is in modules/starship/default.nix
 #
 # Original implementation kept below for reference only.
 # This function now returns exit code 2 and does nothing.

@@ -2,8 +2,8 @@
 # Exercises cli-proxy-runtime-config without a network or a logged key.
 set -euo pipefail
 
-repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-helper="${repo_root}/nix/scripts/cli-proxy-runtime-config"
+repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+helper="${repo_root}/scripts/cli-proxy-runtime-config"
 tmp="$(mktemp -d)"
 trap 'rm -rf "$tmp"' EXIT
 
