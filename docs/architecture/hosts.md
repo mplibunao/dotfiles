@@ -23,6 +23,6 @@ A host is one Mac's nix-darwin configuration: a folder in `hosts/` and a `darwin
    git add hosts/<new-hostname>/ flake.nix
    ```
 
-   Then follow the [command ladder](command-ladder.md), using `--host <new-hostname>` in place of `m5-mbp` in its [opening `nix-verify` examples](command-ladder.md#command-ladder).
+   Then follow the [command ladder](command-ladder.md), substituting `<new-hostname>` for `m5-mbp` wherever a command contains it. That covers the `nix-verify` examples, the evaluation, build, and dry-run commands, and the [level 4 apply](command-ladder.md#level-4-apply) command, which still needs approval.
 
 On a Mac that isn't set up yet, the [bootstrap skill](../../.claude/skills/bootstrap/SKILL.md) covers everything before the first build.

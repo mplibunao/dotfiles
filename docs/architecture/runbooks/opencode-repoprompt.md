@@ -8,7 +8,7 @@ See [ADR-021](../../decisions/021-opencode-upstream-flake-for-repoprompt-acp.md)
 
 - Do not run `darwin-rebuild switch` without explicit user approval.
 - Do not put API keys, OAuth records, provider/model defaults, or OpenCode auth/config paths in Nix or Git.
-- Do not add a login wrapper, external OpenCode plugins, a daemon, or a persistent RepoPrompt MCP entry for normal use. This runbook is the intentional exception to the [non-declarative steps rule](../../../CODING_STANDARDS.md#non-declarative-steps) for interactive provider selection, browser OAuth, and secret entry: those operator-driven steps cannot be safely scripted, and the upstream CLI is the operational mechanism.
+- Do not add a login wrapper, external OpenCode plugins, a daemon, or a persistent RepoPrompt MCP entry for normal use. Interactive provider selection, browser OAuth, and secret entry are steps only the operator performs, and they cannot be safely scripted. This runbook is the written procedure the [non-declarative steps rule](../../../CODING_STANDARDS.md#non-declarative-steps) asks for when a person has to do a step, and the upstream CLI is the operational mechanism.
 - Run initial checks in a disposable, non-sensitive repository with a read-only task. Do not select full-access mode.
 - Current promotions, prices, quotas, retention, and privacy terms are external state; verify them before using proprietary or sensitive code.
 
