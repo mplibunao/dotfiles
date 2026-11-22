@@ -38,7 +38,7 @@ Closing the last OS window quits Kitty, because `macos_quit_when_last_window_clo
 
 ## Remote control
 
-`allow_remote_control = socket-only` with `listen_on = unix:/tmp/kitty-<user>`, so only clients that connect through that per-user socket can control Kitty. The `kt` and `kdev` Fish functions in `modules/fish/functions/a_mp/` use it.
+`allow_remote_control = socket-only` with `listen_on = unix:/tmp/kitty-<user>`, so only clients that connect through that per-user socket can control Kitty. Kitty appends its process ID to the path, so the socket is `/tmp/kitty-<user>-<pid>`. A program running in a Kitty window finds it in `$KITTY_LISTEN_ON`, which `kitty @` reads when `--to` is absent. The `kt` and `kdev` Fish functions in `modules/fish/functions/a_mp/` use it.
 
 ## Developer Tools permission
 
