@@ -133,11 +133,4 @@ git -C "$tap_dir" rev-parse HEAD
 git -C "$tap_dir" log -1 --oneline
 ```
 
-### Expected Verification Records
-
-| Item | Type | Verification | Status |
-|------|------|--------------|--------|
-| CodexBar | cask | TeamIdentifier | Pending |
-| RepoPrompt CE | cask | `/Applications/RepoPrompt CE.app` TeamIdentifier + Gatekeeper | Pending |
-
-Re-verify after tap updates.
+Run the cask and formula checks above when you add a tap, and again after a tap update.
