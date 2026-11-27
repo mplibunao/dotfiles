@@ -169,7 +169,7 @@ After the first switch, builds use `darwin-rebuild` directly, as in [level 2 of 
 ### Apply (Level 4 - REQUIRES USER APPROVAL)
 Some mappings skip Home Manager's collision check. Before the first switch, read [Forced Mappings](../../../../docs/architecture/dotfiles-mapping.md#forced-mappings), which lists them and says what activation does with whatever is at their paths.
 
-The switch needs `sudo` and the user's approval. After the build passes, run it as [level 4 of the command ladder](../../../../docs/architecture/command-ladder.md#level-4-apply) describes, with this command in place of `darwin-rebuild switch`:
+The switch needs `sudo` and the user's approval. After the build passes, run it as [level 4 of the command ladder](../../../../docs/architecture/command-ladder.md#level-4-apply) describes, with `nix run nix-darwin#darwin-rebuild --` in place of `darwin-rebuild`, as in this command:
 ```bash
 sudo nix run nix-darwin#darwin-rebuild -- switch --flake .#m5-mbp
 ```
