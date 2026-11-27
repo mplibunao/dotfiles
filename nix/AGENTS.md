@@ -90,15 +90,18 @@ sudo darwin-rebuild switch
 home-manager switch
 ```
 
-The only exception: the user explicitly says "apply", "switch", or "go ahead and switch".
+The user approves a switch in one of two ways:
 
-Activation needs `sudo`. After verification and explicit approval, the agent runs the switch itself when its harness has a private password prompt. In T3 Code that is the `request_secret` tool with file delivery:
+- The user types the `sudo` password into a private password prompt that the agent opened for that switch. The prompt blocks the agent until the user answers. Typing the password approves the switch, and dismissing the prompt declines it.
+- The user explicitly says "apply", "switch", or "go ahead and switch".
+
+Activation needs `sudo`. After verification, the agent opens the private password prompt and runs the switch itself when its harness has one. The prompt says which command the password is for. In T3 Code the prompt is the `request_secret` tool with file delivery:
 
 ```bash
 sudo -S -p '' darwin-rebuild switch --flake .#m5-mbp < "$file"
 ```
 
-The agent passes the file to `sudo` on standard input and never reads or prints it. It deletes the file after the command if the harness left it on disk. Where the harness has no private prompt, hand the user the exact switch command to run.
+The agent passes the file to `sudo` on standard input and never reads or prints it. It deletes the file after the command if the harness left it on disk. Where the harness has no private prompt, wait for the explicit approval, then hand the user the exact switch command to run.
 
 ### Rule 2: Always Verify Before Proposing Apply
 
@@ -224,7 +227,7 @@ darwin-rebuild switch --dry-run --flake .#m5-mbp
 sudo darwin-rebuild switch --flake .#m5-mbp
 ```
 
-**Purpose:** Activates the new configuration. **Only run when user explicitly approves.**
+**Purpose:** Activates the new configuration. **Only run with the user's approval, as Rule 1 defines it.**
 
 ---
 
