@@ -177,7 +177,7 @@ The command doesn't change running processes. Restart apps afterward (see [Resta
 
 ### Per-launch overrides
 
-`claude-launch` and `codex-launch` are claude-toolkit scripts. Home Manager links them into `~/.local/bin` from `~/Projects/personal/ai/claude-toolkit/scripts/`. With `CLI_PROXY` unset, `claude-launch` reads the route setting on every launch. `CLI_PROXY=0` sends one launch direct and `CLI_PROXY=1` sends it through the proxy, without reading the setting. `codex-launch` goes direct unless `CLI_PROXY=1`. claude-toolkit's [`mcp-configs/secrets-wrapper.md`](https://github.com/mplibunao/claude-tooling/blob/main/mcp-configs/secrets-wrapper.md#cliproxyapi-routing) covers the accepted values, the environment each launcher passes to the agent, and the launcher errors.
+`claude-launch` and `codex-launch` are claude-toolkit scripts. Home Manager links them into `~/.local/bin` from `~/Projects/personal/ai/claude-toolkit/scripts/`. With `CLI_PROXY` unset, `claude-launch` reads the route setting on every launch. `CLI_PROXY=0` sends one launch direct and `CLI_PROXY=1` sends it through the proxy, without reading the setting. `codex-launch` goes direct unless `CLI_PROXY=1`. claude-toolkit's `mcp-configs/secrets-wrapper.md` (section "CLIProxyAPI routing") covers the accepted values, the environment each launcher passes to the agent, and the launcher errors.
 
 - `ccy` is `claude-launch --dangerously-skip-permissions`. It doesn't go through `clm`, so it has no `context/repo-prompt-ce` and no `--strict-mcp-config`, and Claude loads its ordinary MCP configuration. `ccnt` still uses `clm`.
 - `clm` and plain `claude` use the environment they inherit, so `CLI_PROXY=0 clm` has no effect. For a direct session with explicit MCP selection, run `CLI_PROXY=0 claude-launch --mcp-config <file> --strict-mcp-config`.
@@ -238,7 +238,7 @@ Then restart apps as under [Restart after a change](#restart-after-a-change). An
 
 ### Codex
 
-Codex goes direct by default. claude-toolkit's synced Codex config has no `cliproxy` provider (claude-tooling PR #93 removed it), so Codex Desktop, RepoPrompt's Codex agent and plain `codex` use the ChatGPT login. The Claude route setting doesn't affect them. `cdx` runs `codex-launch`, which goes direct unless `CLI_PROXY=1` adds per-run provider overrides for the proxy. That route uses the Responses API over HTTP and doesn't support Codex's WebSocket transport. Run `codex login` only if `codex login status` doesn't show ChatGPT.
+Codex goes direct by default. claude-toolkit's synced Codex config has no `cliproxy` provider, so Codex Desktop, RepoPrompt's Codex agent and plain `codex` use the ChatGPT login. The Claude route setting doesn't affect them. `cdx` runs `codex-launch`, which goes direct unless `CLI_PROXY=1` adds per-run provider overrides for the proxy. That route uses the Responses API over HTTP and doesn't support Codex's WebSocket transport. Run `codex login` only if `codex login status` doesn't show ChatGPT.
 
 Keep the Codex login in `~/.cli-proxy-api`. The proxy holds it so the dashboard can read Codex limits.
 

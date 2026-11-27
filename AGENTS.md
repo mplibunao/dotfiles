@@ -4,10 +4,10 @@
 
 **IMPORTANT**: This dotfiles repo is actively being migrated to Nix (nix-darwin + Home Manager).
 
-- **Configurations outside `nix/` are mostly legacy** and may be deprecated
+- **All configuration is in `nix/`**, except `karabiner/`, which Home Manager links into `~/.config/karabiner` from `~/Projects/personal/dotfiles/karabiner`
 - **For Nix-specific guidance, see [`nix/AGENTS.md`](nix/AGENTS.md)** - contains safety rules, command ladder, and conventions
 - **For fresh Mac setup, use the `/bootstrap` command** or see `.claude/skills/bootstrap/SKILL.md`
-- When adding new configurations, prefer the Nix approach over legacy methods (Makefile, manual symlinks, etc.)
+- When adding new configuration, add it as a Nix module rather than a manual symlink
 
 ## Keyboard Layout
 

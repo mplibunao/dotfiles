@@ -12,8 +12,8 @@ This configuration is structured to support multiple platforms while keeping mac
 
 | Platform | System | Status |
 |----------|--------|--------|
-| macOS (Apple Silicon) | `aarch64-darwin` | Primary target |
-| macOS (Intel) | `x86_64-darwin` | Supported, not tested |
+| macOS (Apple Silicon) | `aarch64-darwin` | The only host in the flake (`m5-mbp`) |
+| macOS (Intel) | `x86_64-darwin` | Not supported; needs its own host, and some packages (such as CLIProxyAPI) only fetch Apple Silicon or Linux archives |
 
 ### Planned Future
 
@@ -285,7 +285,6 @@ home-manager switch --flake .#mp@linux-host
 | Tool | macOS | Linux |
 |------|-------|-------|
 | AeroSpace | Supported | N/A |
-| Yabai | Supported | N/A |
 | i3/Sway | N/A | Supported |
 
 ---
@@ -296,28 +295,15 @@ home-manager switch --flake .#mp@linux-host
 
 ```bash
 # Check all outputs evaluate
-nix flake check --all-systems
+nix flake check ./nix --no-build --all-systems
 
-# Check specific system
-nix eval .#darwinConfigurations.macbook.config.home-manager.users.mp.home.packages
-nix eval .#homeConfigurations."mp@linux".config.home.packages
+# Evaluate the Darwin system without building it
+nix eval --raw ./nix#darwinConfigurations.m5-mbp.system.drvPath
 ```
 
-### CI Strategy
+### Continuous Integration
 
-```yaml
-# .github/workflows/check.yml
-jobs:
-  check:
-    strategy:
-      matrix:
-        system: [aarch64-darwin, x86_64-darwin, x86_64-linux]
-    runs-on: ${{ matrix.system == 'x86_64-linux' && 'ubuntu-latest' || 'macos-latest' }}
-    steps:
-      - uses: actions/checkout@v4
-      - uses: DeterminateSystems/nix-installer-action@main
-      - run: nix flake check
-```
+[`.github/workflows/nix-check.yml`](../../.github/workflows/nix-check.yml) defines the CI job. Linux CI runs the shell checks and evaluates the Darwin system with import from derivation disabled, so evaluation never needs a macOS builder. CI doesn't build or activate macOS. Build it on the Mac with `nix/scripts/nix-verify`.
 
 ---
 

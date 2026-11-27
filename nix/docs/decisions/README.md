@@ -27,7 +27,7 @@ Per-file Architecture Decision Records (ADRs) for the Nix-based dotfiles setup. 
 | [012](012-script-exposure-via-local-bin-shims.md) | Script exposure via HM-managed shims in ~/.local/bin | accepted (exception in [022](022-codexbar-profile-home-merge-boundary.md)) |
 | [013](013-aerospace-config-via-nix-not-file-import.md) | AeroSpace config via Nix (not file import) | superseded by [014](014-aerospace-toml-as-canonical-authored-config.md) |
 | [014](014-aerospace-toml-as-canonical-authored-config.md) | AeroSpace TOML as canonical authored config | accepted |
-| [015](015-manually-managed-gui-apps-system.md) | Manually managed GUI apps system | accepted |
+| [015](015-manually-managed-gui-apps-system.md) | Manually managed GUI apps system | accepted (tool retired 2026-11-20; see its note) |
 | [016](016-homebrew-formulae-for-third-party-tap-tools.md) | Homebrew formulae for third-party tap tools | accepted |
 | [017](017-aerospace-keepalive-false-for-gaming-mode.md) | AeroSpace KeepAlive=false for gaming mode | accepted |
 | [018](018-full-access-codex-abbreviations-in-fish.md) | Full-access Codex abbreviations in Fish | accepted |

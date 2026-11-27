@@ -159,40 +159,9 @@ These cannot be managed via Homebrew:
 |-----|--------|----------------|
 | App Store apps | App Store only | Manual via App Store |
 | Licensed apps | Activation required | Manual + license key |
+| AudioPriorityBar | No Homebrew cask or Nix package | `AudioPriorityBar.zip` from [tobi/AudioPriorityBar releases](https://github.com/tobi/AudioPriorityBar/releases), unzipped to `/Applications/AudioPriorityBar.app` |
 
----
-
-## Manually Managed Apps
-
-Apps tracked in `dotfiles/manual-apps/` - used when no Homebrew cask is available.
-See ADR-015 for decision rationale.
-
-| App | Update Mechanism | Why Not Homebrew/Nix |
-|-----|-----------------|---------------------|
-| AudioPriorityBar | GitHub releases | No Homebrew cask available |
-
-### Commands
-
-```bash
-# Check for updates
-./manual-apps/manual-apps.py check
-
-# Update specific app
-./manual-apps/manual-apps.py update AudioPriorityBar
-
-# Update all
-./manual-apps/manual-apps.py update-all
-```
-
-### When to Use
-
-Use `manual-apps/` when:
-- No Homebrew cask exists for the app
-- The cask is unsuitable (broken, outdated, wrong variant)
-
-Otherwise, prefer Homebrew casks in `homebrew.nix`.
-
-See `manual-apps/README.md` for adding new apps.
+AudioPriorityBar keeps the external microphone as the default input, so dictation and recording apps don't switch to the iPhone microphone. Its release builds are ad-hoc signed, with no Developer ID, so Gatekeeper rejects the app; on first launch, allow it with **Open Anyway** in System Settings → Privacy & Security. To update, download the latest release and replace the app.
 
 ---
 
