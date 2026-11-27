@@ -92,7 +92,13 @@ home-manager switch
 
 The only exception: the user explicitly says "apply", "switch", or "go ahead and switch".
 
-Activation on this machine requires interactive `sudo` authentication. After verification and explicit approval, hand the user the exact switch command to run; don't claim the agent can complete the activation.
+Activation needs `sudo`. After verification and explicit approval, the agent runs the switch itself when its harness has a private password prompt. In T3 Code that is the `request_secret` tool with file delivery:
+
+```bash
+sudo -S -p '' darwin-rebuild switch --flake .#m5-mbp < "$file"
+```
+
+The agent passes the file to `sudo` on standard input and never reads or prints it. It deletes the file after the command if the harness left it on disk. Where the harness has no private prompt, hand the user the exact switch command to run.
 
 ### Rule 2: Always Verify Before Proposing Apply
 
@@ -135,6 +141,17 @@ This prevents gaps between what Nix manages and what requires manual interventio
 - Bootstrap steps → `/bootstrap` command (`.claude/skills/bootstrap/`)
 - Operational steps → `nix/scripts/` + this guide
 - Migration steps → `docs/01-migration-phases.md`
+
+### Rule 5: Switch From the Branch Before the Merge
+
+Test a change from its branch before it is merged:
+
+1. Bring the branch up to date with `main`.
+2. Build it and compare the build with the running system (Level 2).
+3. Switch from the branch, under Rule 1.
+4. Check the behaviour the change is for.
+
+Agents don't merge pull requests in this repository. The user reviews each pull request and merges it, or tells the agent to merge that pull request.
 
 ---
 
@@ -182,6 +199,14 @@ darwin-rebuild build --flake /Users/mp/Projects/personal/dotfiles/nix#m5-mbp
 ```
 
 **Purpose:** Verifies the full closure can be built. Creates a `result` symlink but does **not** modify the system.
+
+After the build, compare it with the running system:
+
+```bash
+nix store diff-closures /run/current-system ./result
+```
+
+If the build removes a package the change did not intend to remove, stop. The branch is missing work that the running system has. Merge that work into the branch before you switch.
 
 ### Level 3: Dry-Run Preview (Safe)
 
@@ -447,6 +472,7 @@ Once `nix/scripts/` is set up:
 - [ ] All new files staged with `git add`
 - [ ] `nix flake check --no-build` passes
 - [ ] `darwin-rebuild build` succeeds
+- [ ] `nix store diff-closures` against the running system shows no package removed by accident
 - [ ] No collision warnings in build output
 - [ ] Changes documented in commit message
 - [ ] User has approved the apply step
