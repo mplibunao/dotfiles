@@ -130,7 +130,7 @@ These apps are installed via Nix (Home Manager or nix-darwin):
 
 | App | Status | Notes |
 |-----|--------|-------|
-| TinyCast | ✅ Configured | Primary launcher via [Tier 1](../home/mp/packages/tier1.nix); [setup guide](tinycast.md) |
+| TinyCast | ✅ Configured | Primary launcher via [Tier 1](../../home/mp/package-tiers/tier1.nix); [setup guide](tinycast.md) |
 
 ### Hunk (post-install smoke)
 

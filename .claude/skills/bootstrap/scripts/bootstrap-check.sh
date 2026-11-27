@@ -75,6 +75,10 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
+# A fresh Mac has no Home Manager configuration yet, so the probe uses the
+# conventional clone location rather than DOTFILES_DIR or the current directory.
+dotfiles_dir="$HOME/Projects/personal/dotfiles"
+
 # Check functions
 check_xcode_clt() {
   xcode-select -p >/dev/null 2>&1
@@ -98,7 +102,7 @@ check_github_access() {
 }
 
 check_dotfiles() {
-  [[ -d "$HOME/Projects/personal/dotfiles/nix" ]]
+  [[ -f "$dotfiles_dir/flake.nix" ]]
 }
 
 check_claude_toolkit() {
@@ -118,8 +122,11 @@ check_darwin_rebuild() {
 }
 
 check_flake_build() {
-  # Check if result symlink exists from a previous build
-  [[ -L "$HOME/Projects/personal/dotfiles/nix/result" ]]
+  # darwin-rebuild build leaves result pointing at the system output; a
+  # package built from the repository root would leave a different link.
+  local result="$dotfiles_dir/result" target
+  target="$(readlink "$result")" || return 1
+  [[ "$target" == *-darwin-system-* && -x "$result/activate" ]]
 }
 
 check_claude_code() {
@@ -195,7 +202,7 @@ elif ! check_nix; then
   next_step="Install Determinate Nix: curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install"
 elif ! check_flake_build; then
   phase=5
-  next_step="Build flake: cd ~/Projects/personal/dotfiles/nix && nix run nix-darwin#darwin-rebuild -- build --flake .#\$(hostname -s)"
+  next_step="Build flake: cd ~/Projects/personal/dotfiles && nix run nix-darwin#darwin-rebuild -- build --flake .#\$(hostname -s)"
 elif ! check_claude_code && ! check_codex; then
   phase=6
   next_step="Install Claude Code (or Codex): curl -fsSL https://claude.ai/install.sh | bash"

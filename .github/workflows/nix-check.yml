@@ -7,11 +7,27 @@ on:
   push:
     branches: [main]
     paths:
-      - 'nix/**'
+      - 'flake.nix'
+      - 'flake.lock'
+      - 'hosts/**'
+      - 'home/**'
+      - 'modules/**'
+      - 'packages/**'
+      - 'scripts/**'
+      - 'tests/**'
+      - 'data/**'
       - '.github/workflows/nix-check.yml'
   pull_request:
     paths:
-      - 'nix/**'
+      - 'flake.nix'
+      - 'flake.lock'
+      - 'hosts/**'
+      - 'home/**'
+      - 'modules/**'
+      - 'packages/**'
+      - 'scripts/**'
+      - 'tests/**'
+      - 'data/**'
       - '.github/workflows/nix-check.yml'
   workflow_dispatch:
 
@@ -36,21 +52,21 @@ jobs:
 
       - name: Test CodexBar config reconciliation
         run: >-
-          nix shell --no-write-lock-file --inputs-from ./nix
+          nix shell --no-write-lock-file --inputs-from .
           nixpkgs#bash
           nixpkgs#coreutils
           nixpkgs#jq
           nixpkgs#python3
-          --command bash nix/tests/codexbar-config-test.sh
+          --command bash tests/codexbar-config-test.sh
 
       - name: Test Claude proxy route publisher and switch
-        run: bash nix/tests/cli-proxy-route-test.sh
+        run: bash tests/cli-proxy-route-test.sh
 
       - name: Test LaunchAgent reload on plist change
-        run: bash nix/tests/launch-agent-reload-test.sh
+        run: bash tests/launch-agent-reload-test.sh
 
       - name: Evaluate the Darwin system
-        run: nix eval --no-write-lock-file --raw ./nix#darwinConfigurations.m5-mbp.system.drvPath
+        run: nix eval --no-write-lock-file --raw .#darwinConfigurations.m5-mbp.system.drvPath
 
       - name: Check flake
-        run: nix flake check ./nix --no-write-lock-file --no-build --all-systems
+        run: nix flake check . --no-write-lock-file --no-build --all-systems
