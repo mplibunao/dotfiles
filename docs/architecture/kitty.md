@@ -25,7 +25,7 @@ Kitty maps these shortcuts to `discard_event`, which drops the keystroke before 
 
 ### Keys under Dvorak
 
-The keyboard is ANSI QWERTY hardware with the Dvorak layout selected in macOS, and the two tools name keys at different stages. A Karabiner `key_code` is a physical QWERTY position, read before macOS applies Dvorak: physical `comma` types Dvorak `w`, and physical `x` types Dvorak `q`. A Kitty key name is the character the layout produces. So the Karabiner rules match `comma` and `x` with Command held, while Kitty maps `cmd+w` and `cmd+q`. The Karabiner rules accept either Command key.
+Karabiner names a key by its physical QWERTY position and Kitty by the character Dvorak produces ([Keybindings](keybindings.md#naming-a-key)). Physical `comma` types Dvorak `w`, and physical `x` types Dvorak `q`, so the Karabiner rules match `comma` and `x` with Command held, while Kitty maps `cmd+w` and `cmd+q`. The Karabiner rules accept either Command key.
 
 ## Deliberate ways to close
 
@@ -38,4 +38,14 @@ Closing the last OS window quits Kitty, because `macos_quit_when_last_window_clo
 
 ## Remote control
 
-`allow_remote_control = socket-only` with `listen_on = unix:/tmp/kitty-<user>`, so only clients that connect through that per-user socket can control Kitty. The `kt` and `kdev` Fish functions in `modules/fish/functions/a_mp/` use it.
+`allow_remote_control = socket-only` with `listen_on = unix:/tmp/kitty-<user>`, so only clients that connect through that per-user socket can control Kitty. Kitty appends its process ID to the path, so the socket is `/tmp/kitty-<user>-<pid>`. A program running in a Kitty window finds it in `$KITTY_LISTEN_ON`, which `kitty @` reads when `--to` is absent. The `kt` and `kdev` Fish functions in `modules/fish/functions/a_mp/` use it.
+
+## Developer Tools permission
+
+Gatekeeper checks each newly compiled binary that a terminal starts, which slows Rust and C++ builds noticeably. Listing Kitty under Developer Tools skips those checks. Nix can't set this, so on a new Mac:
+
+1. Open System Settings → Privacy & Security → Developer Tools.
+2. Click `+` and add `/Applications/kitty.app`.
+3. Turn it on.
+
+[Faster Rust builds on Mac](https://nnethercote.github.io/2025/09/04/faster-rust-builds-on-mac.html) explains the effect.

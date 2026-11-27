@@ -13,11 +13,7 @@ Personal macOS configuration managed with Nix (nix-darwin and Home Manager) for 
    - See [`.claude/skills/bootstrap/SKILL.md`](.claude/skills/bootstrap/SKILL.md)
    - Or use Claude Code: run `/bootstrap`
 
-3. **For existing Nix setups**, from the repository root:
-   ```bash
-   darwin-rebuild build --flake .#m5-mbp  # Build (safe)
-   sudo darwin-rebuild switch --flake .#m5-mbp  # Apply
-   ```
+3. **For a Mac that already builds**, check a change with the [command ladder](docs/architecture/command-ladder.md). Its last step, the switch, needs approval ([`AGENTS.md`](AGENTS.md)).
 
 ## What's Included
 
@@ -32,31 +28,16 @@ Personal macOS configuration managed with Nix (nix-darwin and Home Manager) for 
 
 ## Project Structure
 
-```
-dotfiles/
-├── flake.nix               # Entry point
-├── hosts/m5-mbp/           # Host-specific config
-├── home/mp/                # Home Manager entry point and package tiers
-├── modules/<tool>/         # One Home Manager module per tool, with the files it reads or links
-├── packages/               # Custom package derivations
-├── scripts/                # Operational scripts (nix-verify, nix-ops, ...)
-├── tests/                  # Tests for the scripts and modules
-├── data/                   # Data shared by modules (AeroSpace workspace registry)
-├── nix/                    # Nix documentation and agent instructions
-│
-├── .claude/                # Claude Code commands and the bootstrap skill
-│
-└── .github/workflows/      # Nix flake check on Linux
-```
+[Repository layout](docs/architecture/repository-layout.md) shows what each folder contains and where a change goes.
 
 ## Documentation
 
 | Topic | Location |
 |-------|----------|
-| Nix Quick Start | [`nix/README.md`](nix/README.md) |
-| Agent Instructions | [`nix/AGENTS.md`](nix/AGENTS.md) |
-| Architecture | [`nix/docs/00-architecture.md`](nix/docs/00-architecture.md) |
-| Migration Phases | [`nix/docs/01-migration-phases.md`](nix/docs/01-migration-phases.md) |
+| Agent Instructions | [`AGENTS.md`](AGENTS.md) |
+| Architecture Docs | [`docs/architecture/index.md`](docs/architecture/index.md) |
+| Checking and Applying a Change | [`docs/architecture/command-ladder.md`](docs/architecture/command-ladder.md) |
+| Decisions | [`docs/decisions/README.md`](docs/decisions/README.md) |
 | Bootstrap Guide | [`.claude/skills/bootstrap/SKILL.md`](.claude/skills/bootstrap/SKILL.md) |
 
 ## For Forkers
@@ -65,6 +46,4 @@ If you fork this repo, update these values before bootstrapping:
 
 1. **GitHub username** in clone URLs
 2. **Email** for SSH key generation
-3. **Hostname** in flake commands (run `hostname -s` to get yours)
-
-See the bootstrap guide for a personalization checklist.
+3. **Host name** in flake commands: the `darwinConfigurations` name you give your host in `flake.nix`, which doesn't have to match `hostname -s` ([Hosts](docs/architecture/hosts.md#declare-and-stage-the-host))

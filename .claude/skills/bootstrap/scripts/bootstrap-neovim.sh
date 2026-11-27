@@ -279,7 +279,6 @@ if [[ "$sync_plugins" == "true" ]]; then
     # Lazy restore may skip builds if plugins aren't "dirty" (no git changes)
     # This ensures plugins with build steps (native binaries, etc.) are built
     echo "Force-building plugins with build steps..."
-    local build_lua
     build_lua="$(mktemp -t nvim-build.XXXXXX.lua)"
     cat > "$build_lua" <<'LUA'
 local lazy = require("lazy")

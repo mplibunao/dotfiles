@@ -29,7 +29,7 @@ Phases:
   2: No dotfiles clone
   3: No Homebrew
   4: No Nix
-  5: Nix exists but build not tested
+  5: Nix exists but no build, or built but never switched
   6: Build works, post-bootstrap tooling missing
   7: Complete - ready for handover
 EOF
@@ -202,7 +202,10 @@ elif ! check_nix; then
   next_step="Install Determinate Nix: curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install"
 elif ! check_flake_build; then
   phase=5
-  next_step="Build flake: cd ~/Projects/personal/dotfiles && nix run nix-darwin#darwin-rebuild -- build --flake .#\$(hostname -s)"
+  next_step="Build flake (put your host's name in place of m5-mbp if you added one): cd ~/Projects/personal/dotfiles && nix run nix-darwin#darwin-rebuild -- build --flake .#m5-mbp"
+elif ! check_darwin_rebuild; then
+  phase=5
+  next_step="First switch: follow the Apply step in Phase 5 of the bootstrap runbook, which needs the user's approval"
 elif ! check_claude_code && ! check_codex; then
   phase=6
   next_step="Install Claude Code (or Codex): curl -fsSL https://claude.ai/install.sh | bash"
@@ -217,7 +220,7 @@ elif ! check_nvim_lazy_lock; then
   next_step="Neovim plugins not installed. Run: .claude/skills/bootstrap/scripts/bootstrap-neovim.sh --sync"
 else
   phase=7
-  next_step="Handover complete. Use nix skill for ongoing work."
+  next_step="Handover complete. Follow AGENTS.md for ongoing work."
 fi
 
 # Output

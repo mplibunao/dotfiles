@@ -12,7 +12,7 @@
 # ownership of the rest of its config — accounts, credentials, provider state,
 # preferences — which is why the file is neither store-managed (ADR-019's
 # default) nor tracked in git. ADR-022 records the full boundary; operational
-# commands live in nix/docs/gui-apps.md.
+# commands live in docs/architecture/runbooks/codexbar.md.
 {
   config,
   lib,
@@ -147,7 +147,7 @@ in
     ];
 
     # Exposed as a command so the supervised reconcile, removal, and post-update
-    # revalidation documented in nix/docs/gui-apps.md have a stable invocation.
+    # revalidation documented in docs/architecture/runbooks/codexbar.md have a stable invocation.
     home.packages = [ codexbarConfig ];
 
     # Runs after the link generation so the reconciliation happens once the rest
@@ -170,7 +170,7 @@ in
           echo "mp.codexbar: reconciliation refused to write; the CodexBar config is unchanged." >&2
           echo "  A missing config means CodexBar has never run on this machine — launch it" >&2
           echo "  once so it writes its own skeleton, then switch again." >&2
-          echo "  See nix/docs/gui-apps.md for the recovery and removal commands." >&2
+          echo "  See docs/architecture/runbooks/codexbar.md for the recovery and removal commands." >&2
           exit 1
         fi
       fi

@@ -21,8 +21,8 @@ in
   #   The whole directory is one live symlink. Add, edit, rename, or
   #   delete *.fish files in modules/fish/functions/ and
   #   they are visible to fish immediately, no rebuild required.
-  #   Already-loaded functions in a running shell still need re-source:
-  #     functions --erase <name>
+  #   A running shell reloads an edited function by itself, at the first
+  #   call after fish's 15-second recheck. `source <file>` loads it at once.
   #
   # completions/ stays store-managed (recursive = true) because:
   #   1. The generated mise.fish below needs to layer into the same
