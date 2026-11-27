@@ -95,7 +95,7 @@ The user approves a switch in one of two ways:
 - The user types the `sudo` password into a private password prompt that the agent opened for that switch. The prompt blocks the agent until the user answers. Typing the password approves the switch, and dismissing the prompt declines it.
 - The user explicitly says "apply", "switch", or "go ahead and switch".
 
-Activation needs `sudo`. After verification, the agent opens the private password prompt and runs the switch itself when its harness has one. The prompt says which command the password is for. An approval covers one attempt. If the switch fails, ask again before a retry. In T3 Code the prompt is the `request_secret` tool with file delivery:
+Activation needs `sudo`. After verification, the agent opens the private password prompt and runs the switch itself when its harness has one. The prompt says which command the password is for and which commit was built. An approval covers one attempt of that build. If the switch fails, ask again before a retry. If the checkout changed after the build, build and compare again before you ask. In T3 Code the prompt is the `request_secret` tool with file delivery:
 
 ```bash
 sudo -k
@@ -157,15 +157,15 @@ Test a change that alters the built system from its branch before it is merged. 
 
 Use one absolute flake path for the build, the comparison and the switch, so all three act on the same checkout. `.#m5-mbp` depends on the current directory, and `nix-verify` builds `$DOTFILES_DIR` or the primary checkout, not the current directory.
 
-Fish functions and `nix/scripts/` are symlinked to the primary checkout (ADR-019). Checking out a branch there makes its versions of those files live at once, before any switch, and a rollback does not restore them. Tell the user before you check out a branch that changes them.
+Fish functions and `nix/scripts/` are symlinked to the primary checkout (ADR-019). Checking out a branch there makes its versions of those files live at once, before any switch, and a rollback does not restore them. Ask the user before you check out a branch that changes them.
 
-An agent merges a pull request only after the user has reviewed and approved that pull request.
+If the check in step 4 fails, the pull request is not ready to merge. An agent merges a pull request only after the user says that pull request is reviewed and approved.
 
 ---
 
 ## Command Ladder
 
-Use these commands in order, stopping at "build" unless the user approves apply:
+Use these commands in order. Stop at "build" unless the user approves the preview (Level 3) or the switch (Level 4):
 
 ### Level 0: Static Evaluation (Fast)
 
@@ -216,7 +216,7 @@ nix store diff-closures /run/current-system ./result
 
 If the build removes a package the change did not intend to remove, stop. The branch is missing work that the running system has. Merge that work into the branch before you switch.
 
-Run the comparison in the directory where that build wrote `result`, straight after the build. `nix-verify --to 2` builds but does not run it. The comparison shows Nix packages only. Check `homebrew.nix` separately, because a switch uninstalls Homebrew packages that it no longer declares. Files linked to the checkout are outside the comparison too. A first install has no running system to compare with.
+Run the comparison in the directory where that build wrote `result`, straight after the build. `nix-verify --to 2` builds but does not run it. The comparison shows Nix packages only. Check `homebrew.nix` separately, because a switch uninstalls Homebrew packages that it no longer declares. Files linked to the checkout are outside the comparison too. A first install has no running system to compare with. The `/bootstrap` command covers that case.
 
 ### Level 3: Dry-Run Preview (Safe)
 
