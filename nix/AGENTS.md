@@ -86,9 +86,19 @@ sudo darwin-rebuild switch
 home-manager switch
 ```
 
-The only exception: the user explicitly says "apply", "switch", or "go ahead and switch".
+The user approves a switch in one of two ways:
 
-Activation on this machine requires interactive `sudo` authentication. After verification and explicit approval, hand the user the exact switch command to run; don't claim the agent can complete the activation.
+- The user types the `sudo` password into a private password prompt that the agent opened for that switch. The prompt blocks the agent until the user answers. Typing the password approves the switch, and dismissing the prompt declines it.
+- The user explicitly says "apply", "switch", or "go ahead and switch".
+
+Activation needs `sudo`. After verification, the agent opens the private password prompt and runs the switch itself when its harness has one. The prompt says which command the password is for and which commit was built. An approval covers one attempt of that build. If the switch fails, ask again before a retry. If the checkout changed after the build, build and compare again before you ask. In T3 Code the prompt is the `request_secret` tool with file delivery:
+
+```bash
+sudo -k
+sudo -S -p '' darwin-rebuild switch --flake "$flake" < "$file"
+```
+
+`$flake` is the absolute flake path of the checkout that was built and compared, such as `/Users/mp/Projects/personal/dotfiles/nix#m5-mbp`. `sudo -k` drops a cached login first, so `sudo` reads the password itself and the switch does not receive it. The agent passes the file to `sudo` on standard input and never reads or prints it. It deletes the file after the command, whether the command succeeded or failed, if the harness left it on disk. Where the harness has no private prompt, wait for the explicit approval, then hand the user the exact switch command to run.
 
 ### Rule 2: Always Verify Before Proposing Apply
 
@@ -132,11 +142,26 @@ This prevents gaps between what Nix manages and what requires manual interventio
 - Operational steps → `nix/scripts/` + this guide
 - Migration steps → `docs/01-migration-phases.md`
 
+### Rule 5: Switch From the Branch Before the Merge
+
+Test a change that alters the built system from its branch before it is merged. A docs-only change doesn't need a switch.
+
+1. Bring the branch up to date with `main`.
+2. Build it and compare the build with the running system (Level 2).
+3. Switch from the branch, under Rule 1.
+4. Check the behaviour the change is for.
+
+Use one absolute flake path for the build, the comparison and the switch, so all three act on the same checkout. `.#m5-mbp` depends on the current directory, and `nix-verify` builds `$DOTFILES_DIR` or the primary checkout, not the current directory.
+
+Fish functions and `nix/scripts/` are symlinked to the primary checkout (ADR-019). Checking out a branch there makes its versions of those files live at once, before any switch, and a rollback does not restore them. Ask the user before you check out a branch that changes them.
+
+If the check in step 4 fails, the pull request is not ready to merge. An agent merges a pull request only after the user says that pull request is reviewed and approved.
+
 ---
 
 ## Command Ladder
 
-Use these commands in order, stopping at "build" unless the user approves apply:
+Use these commands in order. Stop at "build" unless the user approves the preview (Level 3) or the switch (Level 4):
 
 ### Level 0: Static Evaluation (Fast)
 
@@ -179,14 +204,24 @@ darwin-rebuild build --flake /Users/mp/Projects/personal/dotfiles/nix#m5-mbp
 
 **Purpose:** Verifies the full closure can be built. Creates a `result` symlink but does **not** modify the system.
 
+After the build, compare it with the running system:
+
+```bash
+nix store diff-closures /run/current-system ./result
+```
+
+If the build removes a package the change did not intend to remove, stop. The branch is missing work that the running system has. Merge that work into the branch before you switch.
+
+Run the comparison in the directory where that build wrote `result`, straight after the build. `nix-verify --to 2` builds but does not run it. The comparison shows Nix packages only. Check `homebrew.nix` separately, because a switch uninstalls Homebrew packages that it no longer declares. Files linked to the checkout are outside the comparison too. A first install has no running system to compare with. The `/bootstrap` command covers that case.
+
 ### Level 3: Dry-Run Preview (Safe)
 
 ```bash
 # Preview what would change
-darwin-rebuild switch --dry-run --flake .#m5-mbp
+sudo darwin-rebuild switch --dry-run --flake .#m5-mbp
 ```
 
-**Purpose:** Shows activation script effects without applying.
+**Purpose:** Shows activation script effects without applying. On this host `darwin-rebuild` refuses `switch --dry-run` without root. The preview needs `sudo` and its own approval. A password typed for a preview does not approve a switch.
 
 ### Level 4: Apply (REQUIRES USER APPROVAL)
 
@@ -195,7 +230,7 @@ darwin-rebuild switch --dry-run --flake .#m5-mbp
 sudo darwin-rebuild switch --flake .#m5-mbp
 ```
 
-**Purpose:** Activates the new configuration. **Only run when user explicitly approves.**
+**Purpose:** Activates the new configuration. **Only run with the user's approval, as Rule 1 defines it.**
 
 ---
 
@@ -433,16 +468,17 @@ Once `nix/scripts/` is set up:
 | Lint | `statix check nix/` | Yes |
 | Dead code | `deadnix nix/` | Yes |
 | Build | `darwin-rebuild build --flake .#m5-mbp` | Yes |
-| Dry-run | `darwin-rebuild switch --dry-run --flake .#m5-mbp` | Yes |
+| Dry-run | `sudo darwin-rebuild switch --dry-run --flake .#m5-mbp` | Yes, needs root |
 | Apply | `sudo darwin-rebuild switch --flake .#m5-mbp` | **NO - User approval required** |
 
 ---
 
-## Checklist Before Proposing Apply
+## Checklist Before Switching
 
 - [ ] All new files staged with `git add`
 - [ ] `nix flake check --no-build` passes
 - [ ] `darwin-rebuild build` succeeds
+- [ ] `nix store diff-closures` against the running system shows no package removed by accident
 - [ ] No collision warnings in build output
 - [ ] Changes documented in commit message
 - [ ] User has approved the apply step
