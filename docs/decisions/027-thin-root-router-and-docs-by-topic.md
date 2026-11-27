@@ -11,7 +11,7 @@ Two later changes removed the reasons for a `nix/` folder. The flake moved to th
 
 ## Decision
 
-- The root `AGENTS.md`, with `CLAUDE.md` as a symlink to it, is a router. It says what the repository is, states only the rules no other document owns (approval before any switch, staging new files before evaluation, and the Dvorak layout), and lists the documents by topic.
+- The root `AGENTS.md`, with `CLAUDE.md` as a symlink to it, is a router. It says what the repository is, states only the rules no other document owns (approval before any switch, switching a change from its branch before the merge, staging new files before evaluation, and the Dvorak layout), and lists the documents by topic.
 - Docs that describe how the configuration works now live in `docs/architecture/`, one topic per file, listed in `docs/architecture/index.md`. Runbooks live in `docs/architecture/runbooks/`.
 - Judgment rules for changes live in the root `CODING_STANDARDS.md`, and Nix terms in the root `GLOSSARY.md`.
 - ADRs live in `docs/decisions/`, keeping their numbers.
