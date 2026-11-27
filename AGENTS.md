@@ -6,7 +6,8 @@ This file states the rules that appear in no other document, and for every other
 
 ## Rules
 
-- Never run `darwin-rebuild switch`, `sudo darwin-rebuild switch`, or `home-manager switch`, rollbacks included, unless I explicitly say to apply or switch. Activation needs an interactive `sudo` prompt, so once the [command ladder](docs/architecture/command-ladder.md) passes and I approve, give me the exact command to run, and don't claim you completed it.
+- Run `darwin-rebuild switch`, `sudo darwin-rebuild switch`, or `home-manager switch`, rollbacks included, only with my approval. I approve a switch in one of two ways: I type the `sudo` password into a private password prompt that you opened for that switch, or I say "apply", "switch", or "go ahead and switch". Dismissing the prompt declines the switch. An approval covers one attempt of one build. If the switch fails, ask again before a retry. If the checkout changed after the build, build and compare again before you ask. [Level 4 of the command ladder](docs/architecture/command-ladder.md#level-4-apply) has the procedure, including what to do when your harness has no private prompt.
+- Before a change that alters the built system merges, switch from its branch and check the behavior the change is for. A docs-only change doesn't need a switch. Merge any pull request only after I say that pull request is reviewed and approved. [Switching from a branch](docs/architecture/command-ladder.md#switching-from-a-branch) has the steps.
 - Stage every new file with `git add` before any `nix` command evaluates the flake. A flake sees only the files Git tracks. An untracked file fails evaluation with a confusing "No such file or directory" error for a store path.
 - I type on a Dvorak layout. Before suggesting or adding a keybinding, read [Keybindings](docs/architecture/keybindings.md).
 
