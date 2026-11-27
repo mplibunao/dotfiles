@@ -1,0 +1,81 @@
+#!/bin/sh
+# Scan every outbound commit with gitleaks before it reaches the public
+# repository, and block the push on any finding. See
+# docs/architecture/docs-and-records.md.
+#
+# Git passes one line per ref on stdin: <local ref> <local oid> <remote ref>
+# <remote oid>. An all-zero oid means the ref is being created (remote side)
+# or deleted (local side).
+
+if ! command -v gitleaks >/dev/null 2>&1; then
+  echo "pre-push: gitleaks is not on PATH, so outbound commits cannot be scanned. Push blocked." >&2
+  exit 1
+fi
+
+if ! top=$(git rev-parse --show-toplevel); then
+  echo "pre-push: could not find the repository root. Push blocked." >&2
+  exit 1
+fi
+
+is_zero() {
+  case $1 in
+    *[!0]*) return 1 ;;
+    *) return 0 ;;
+  esac
+}
+
+is_oid() {
+  case $1 in
+    '' | *[!0-9a-f]*) return 1 ;;
+    *) return 0 ;;
+  esac
+}
+
+status=0
+while IFS= read -r line || [ -n "$line" ]; do
+  # The local ref is the push source as typed and can contain spaces (for
+  # example main@{1 minute ago}), so take the other three fields from the end
+  # of the line.
+  remote_oid=${line##* }
+  rest=${line% *}
+  remote_ref=${rest##* }
+  rest=${rest% *}
+  local_oid=${rest##* }
+  local_ref=${rest% *}
+  if ! is_oid "$local_oid" || ! is_oid "$remote_oid" || [ "$local_ref" = "$rest" ]; then
+    echo "pre-push: could not parse the ref list from git. Push blocked." >&2
+    status=1
+    continue
+  fi
+  # Deleting a remote ref sends no commits.
+  is_zero "$local_oid" && continue
+  [ "$local_oid" = "$remote_oid" ] && continue
+
+  # gitleaks scans commits. A ref that points at a tree or blob would pass
+  # with nothing scanned, so refuse it.
+  if ! git cat-file -e "$local_oid^{commit}" 2>/dev/null; then
+    echo "pre-push: $local_ref doesn't point at a commit, so it can't be scanned. Push blocked." >&2
+    status=1
+    continue
+  fi
+
+  # Scan only what the remote lacks when its tip is known locally. A new ref,
+  # or a remote tip this clone has never fetched, gets the full history
+  # reachable from the local tip instead.
+  if ! is_zero "$remote_oid" && git cat-file -e "$remote_oid^{commit}" 2>/dev/null; then
+    range="$remote_oid..$local_oid"
+  else
+    range="$local_oid"
+  fi
+
+  # git log shows no diff for merge commits by default, so a secret added
+  # while resolving a merge would go unscanned; diffing each merge against its
+  # first parent covers it. gitleaks must not read the ref list that this loop
+  # is consuming.
+  if ! gitleaks git --redact --no-banner --log-opts="--diff-merges=first-parent $range" "$top" </dev/null; then
+    echo "pre-push: gitleaks reported a finding or failed while scanning $local_ref -> $remote_ref. Push blocked." >&2
+    status=1
+  fi
+done
+
+exit $status
