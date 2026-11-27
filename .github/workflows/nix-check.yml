@@ -1,0 +1,56 @@
+name: Nix Flake Check
+
+# Runs on Linux, so the Darwin system is evaluated, not built. Import from
+# derivation stays off for the whole job, including the nix eval inside
+# launch-agent-reload-test.sh, so evaluation never needs a macOS builder.
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'nix/**'
+      - '.github/workflows/nix-check.yml'
+  pull_request:
+    paths:
+      - 'nix/**'
+      - '.github/workflows/nix-check.yml'
+  workflow_dispatch:
+
+jobs:
+  check:
+    name: nix flake check
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}
+      cancel-in-progress: true
+    env:
+      NIX_CONFIG: allow-import-from-derivation = false
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+
+      - uses: cachix/install-nix-action@08dcb3a5e62fa31e2da3d490afc4176ef55ecd72 # v30
+
+      - name: Test CodexBar config reconciliation
+        run: >-
+          nix shell --no-write-lock-file --inputs-from ./nix
+          nixpkgs#bash
+          nixpkgs#coreutils
+          nixpkgs#jq
+          nixpkgs#python3
+          --command bash nix/tests/codexbar-config-test.sh
+
+      - name: Test Claude proxy route publisher and switch
+        run: bash nix/tests/cli-proxy-route-test.sh
+
+      - name: Test LaunchAgent reload on plist change
+        run: bash nix/tests/launch-agent-reload-test.sh
+
+      - name: Evaluate the Darwin system
+        run: nix eval --no-write-lock-file --raw ./nix#darwinConfigurations.m5-mbp.system.drvPath
+
+      - name: Check flake
+        run: nix flake check ./nix --no-write-lock-file --no-build --all-systems
