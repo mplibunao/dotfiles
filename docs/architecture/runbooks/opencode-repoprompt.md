@@ -56,9 +56,9 @@ Then run the [command ladder](../command-ladder.md) through the build, and inspe
 nix path-info -rsSh ./result | grep -i opencode
 ```
 
-The operator runs the ladder's [level 3 dry-run](../command-ladder.md#level-3-dry-run), because on this host it needs root and an interactive `sudo` prompt. An agent provides the command and records its output rather than claiming to have run it.
+Then run the ladder's [level 3 dry-run](../command-ladder.md#level-3-dry-run) and record its output. On this host it needs root, so it needs `sudo` and its own approval.
 
-Review formatter changes, the OpenCode lock node, the built closure, and collision checks. Only after these checks, including the operator-run dry-run, pass and the user explicitly approves activation should the operator run the [level 4 apply](../command-ladder.md#level-4-apply) command from that checkout. Authentication starts only after this approved activation exposes the pinned CLI.
+Review formatter changes, the OpenCode lock node, the built closure, and collision checks. Only after these checks, including the dry-run, pass and the user approves the switch, run the [level 4 apply](../command-ladder.md#level-4-apply) from that checkout. Authentication starts only after this approved activation exposes the pinned CLI.
 
 <a id="opencode-executable-verification"></a>
 
@@ -125,7 +125,7 @@ Do not encode a provider/model default in Nix and do not install external plugin
 Do the client steps first, in this order, so no app keeps sending DeepSeek requests to a proxy that has lost its key:
 
 1. In `modules/llm-tools/opencode.jsonc`, remove `baseURL` and `apiKey` from the `deepseek` provider's `options`.
-2. Switch, following the [command ladder](../command-ladder.md#level-4-apply). An agent stops at the build and hands over the command, and the operator runs the switch after approval.
+2. Switch, following the [command ladder](../command-ladder.md#level-4-apply).
 3. Quit and reopen RepoPrompt CE and T3 Code. Each `opencode acp` process reads the config at launch, so an app that was already running keeps the proxy settings.
 4. Restore direct authentication with `opencode providers login` ([credential lifecycle](#opencode-credential-lifecycle)). Without its own DeepSeek key, OpenCode has nothing to send to DeepSeek.
 

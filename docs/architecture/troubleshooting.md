@@ -398,7 +398,7 @@ This also covers a missing `darwin-rebuild`. Run the switch through `nix run`, w
 sudo nix run nix-darwin#darwin-rebuild -- switch --flake .#m5-mbp
 ```
 
-This is a switch, so it needs my approval ([`AGENTS.md`](../../AGENTS.md)), and I run it myself because it needs an interactive `sudo` prompt. On a Mac that has never had nix-darwin, [Phase 5 of the bootstrap runbook](../../.claude/skills/bootstrap/references/bootstrap-runbook.md#phase-5-bootstrap-flake) builds first with `nix run`, then gives the first switch.
+This is a switch, so it needs `sudo` and my approval, and it runs as [level 4 of the command ladder](command-ladder.md#level-4-apply) describes. On a Mac that has never had nix-darwin, [Phase 5 of the bootstrap runbook](../../.claude/skills/bootstrap/references/bootstrap-runbook.md#phase-5-bootstrap-flake) builds first with `nix run`, then gives the first switch.
 
 ### If Nix Broken
 

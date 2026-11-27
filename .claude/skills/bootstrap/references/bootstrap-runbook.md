@@ -169,7 +169,7 @@ After the first switch, builds use `darwin-rebuild` directly, as in [level 2 of 
 ### Apply (Level 4 - REQUIRES USER APPROVAL)
 Some mappings skip Home Manager's collision check. Before the first switch, read [Forced Mappings](../../../../docs/architecture/dotfiles-mapping.md#forced-mappings), which lists them and says what activation does with whatever is at their paths.
 
-The switch needs interactive `sudo`. After the build passes and the user approves, give them this command to run:
+The switch needs `sudo` and the user's approval. Run it as [level 4 of the command ladder](../../../../docs/architecture/command-ladder.md#level-4-apply) describes, with this command in place of `darwin-rebuild switch`:
 ```bash
 sudo nix run nix-darwin#darwin-rebuild -- switch --flake .#m5-mbp
 ```
@@ -337,7 +337,7 @@ Check that the machine is Apple Silicon (see [Architecture Check](#architecture-
 ### Home Manager collision errors
 If activation stops because a file is in the way, follow ["file is in the way"](../../../../docs/architecture/troubleshooting.md#file-is-in-the-way) in the troubleshooting doc. Home Manager already moves most conflicting files aside by itself.
 
-Then, once the user approves, give them the switch command that failed to run again. It needs interactive `sudo`. On the first switch, that's the `nix run` command from Phase 5's Apply step. After that, it's the [level 4 command](../../../../docs/architecture/command-ladder.md#level-4-apply).
+Then run the switch that failed again. A retry needs a new approval, and it runs as [level 4 of the command ladder](../../../../docs/architecture/command-ladder.md#level-4-apply) describes. On the first switch, that's the `nix run` command from Phase 5's Apply step. After that, it's the [level 4 command](../../../../docs/architecture/command-ladder.md#level-4-apply).
 
 ### Neovim validation fails
 
