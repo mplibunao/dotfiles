@@ -95,13 +95,14 @@ The user approves a switch in one of two ways:
 - The user types the `sudo` password into a private password prompt that the agent opened for that switch. The prompt blocks the agent until the user answers. Typing the password approves the switch, and dismissing the prompt declines it.
 - The user explicitly says "apply", "switch", or "go ahead and switch".
 
-Activation needs `sudo`. After verification, the agent opens the private password prompt and runs the switch itself when its harness has one. The prompt says which command the password is for. In T3 Code the prompt is the `request_secret` tool with file delivery:
+Activation needs `sudo`. After verification, the agent opens the private password prompt and runs the switch itself when its harness has one. The prompt says which command the password is for. An approval covers one attempt. If the switch fails, ask again before a retry. In T3 Code the prompt is the `request_secret` tool with file delivery:
 
 ```bash
-sudo -S -p '' darwin-rebuild switch --flake .#m5-mbp < "$file"
+sudo -k
+sudo -S -p '' darwin-rebuild switch --flake "$flake" < "$file"
 ```
 
-The agent passes the file to `sudo` on standard input and never reads or prints it. It deletes the file after the command if the harness left it on disk. Where the harness has no private prompt, wait for the explicit approval, then hand the user the exact switch command to run.
+`$flake` is the absolute flake path of the checkout that was built and compared, such as `/Users/mp/Projects/personal/dotfiles/nix#m5-mbp`. `sudo -k` drops a cached login first, so `sudo` reads the password itself and the switch does not receive it. The agent passes the file to `sudo` on standard input and never reads or prints it. It deletes the file after the command, whether the command succeeded or failed, if the harness left it on disk. Where the harness has no private prompt, wait for the explicit approval, then hand the user the exact switch command to run.
 
 ### Rule 2: Always Verify Before Proposing Apply
 
@@ -147,14 +148,18 @@ This prevents gaps between what Nix manages and what requires manual interventio
 
 ### Rule 5: Switch From the Branch Before the Merge
 
-Test a change from its branch before it is merged:
+Test a change that alters the built system from its branch before it is merged. A docs-only change doesn't need a switch.
 
 1. Bring the branch up to date with `main`.
 2. Build it and compare the build with the running system (Level 2).
 3. Switch from the branch, under Rule 1.
 4. Check the behaviour the change is for.
 
-Agents don't merge pull requests in this repository. The user reviews each pull request and merges it, or tells the agent to merge that pull request.
+Use one absolute flake path for the build, the comparison and the switch, so all three act on the same checkout. `.#m5-mbp` depends on the current directory, and `nix-verify` builds `$DOTFILES_DIR` or the primary checkout, not the current directory.
+
+Fish functions and `nix/scripts/` are symlinked to the primary checkout (ADR-019). Checking out a branch there makes its versions of those files live at once, before any switch, and a rollback does not restore them. Tell the user before you check out a branch that changes them.
+
+An agent merges a pull request only after the user has reviewed and approved that pull request.
 
 ---
 
@@ -211,14 +216,16 @@ nix store diff-closures /run/current-system ./result
 
 If the build removes a package the change did not intend to remove, stop. The branch is missing work that the running system has. Merge that work into the branch before you switch.
 
+Run the comparison in the directory where that build wrote `result`, straight after the build. `nix-verify --to 2` builds but does not run it. The comparison shows Nix packages only. Check `homebrew.nix` separately, because a switch uninstalls Homebrew packages that it no longer declares. Files linked to the checkout are outside the comparison too. A first install has no running system to compare with.
+
 ### Level 3: Dry-Run Preview (Safe)
 
 ```bash
 # Preview what would change
-darwin-rebuild switch --dry-run --flake .#m5-mbp
+sudo darwin-rebuild switch --dry-run --flake .#m5-mbp
 ```
 
-**Purpose:** Shows activation script effects without applying.
+**Purpose:** Shows activation script effects without applying. On this host `darwin-rebuild` refuses `switch --dry-run` without root. The preview needs `sudo` and its own approval. A password typed for a preview does not approve a switch.
 
 ### Level 4: Apply (REQUIRES USER APPROVAL)
 
@@ -465,12 +472,12 @@ Once `nix/scripts/` is set up:
 | Lint | `statix check nix/` | Yes |
 | Dead code | `deadnix nix/` | Yes |
 | Build | `darwin-rebuild build --flake .#m5-mbp` | Yes |
-| Dry-run | `darwin-rebuild switch --dry-run --flake .#m5-mbp` | Yes |
+| Dry-run | `sudo darwin-rebuild switch --dry-run --flake .#m5-mbp` | Yes, needs root |
 | Apply | `sudo darwin-rebuild switch --flake .#m5-mbp` | **NO - User approval required** |
 
 ---
 
-## Checklist Before Proposing Apply
+## Checklist Before Switching
 
 - [ ] All new files staged with `git add`
 - [ ] `nix flake check --no-build` passes
