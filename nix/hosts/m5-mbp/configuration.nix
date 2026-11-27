@@ -22,7 +22,7 @@
       # already in this machine's store.
       # TODO: Remove once the cctools ld crash is fixed or Hydra caches the
       # pinned rev.
-      (final: prev: {
+      (_final: prev: {
         inherit (nixpkgs-pre2611.legacyPackages.${prev.stdenv.hostPlatform.system})
           terminal-notifier
           whisper-cpp
