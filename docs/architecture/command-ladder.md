@@ -84,7 +84,7 @@ Where the harness has no private prompt, the agent waits for me to say "apply", 
 3. Switch from the branch ([level 4](#level-4-apply)).
 4. Check the behavior the change is for. If the check fails, the pull request isn't ready to merge.
 
-Use one absolute flake path for the build, the comparison, and the switch, so all three act on the same checkout. `.#m5-mbp` depends on the current directory, and `nix-verify` builds `$DOTFILES_DIR` or the live checkout unless `--nix-root` names another ([level 1](#level-1-format-and-lint)).
+Use one absolute flake path for the build and the switch, and compare the `result` that build wrote, so all three act on the same checkout. `.#m5-mbp` depends on the current directory, and `nix-verify` builds `$DOTFILES_DIR` or the live checkout unless `--nix-root` names another ([level 1](#level-1-format-and-lint)).
 
 Home Manager links the Fish functions and `scripts/` to the live checkout ([ADR-019](../decisions/019-store-managed-file-mappings-by-default.md)). Checking out a branch there makes its versions of those files live at once, before any switch, and a rollback doesn't restore them. Ask me before you check out a branch there that changes them.
 

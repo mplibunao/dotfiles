@@ -205,7 +205,7 @@ elif ! check_flake_build; then
   next_step="Build flake (put your host's name in place of m5-mbp if you added one): cd ~/Projects/personal/dotfiles && nix run nix-darwin#darwin-rebuild -- build --flake .#m5-mbp"
 elif ! check_darwin_rebuild; then
   phase=5
-  next_step="First switch: after the user approves, give them the Apply command from Phase 5 of the bootstrap runbook"
+  next_step="First switch: follow the Apply step in Phase 5 of the bootstrap runbook, which needs the user's approval"
 elif ! check_claude_code && ! check_codex; then
   phase=6
   next_step="Install Claude Code (or Codex): curl -fsSL https://claude.ai/install.sh | bash"

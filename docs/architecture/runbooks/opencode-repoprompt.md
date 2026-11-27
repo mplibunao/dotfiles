@@ -43,10 +43,9 @@ Identify the owner of every path from `type -a` and both fixed hints before chan
 
 ## 2. Verify, then request activation approval
 
-Work from the live checkout, because the commands here use paths relative to it. First inspect the OpenCode lock node:
+Work from the root of the checkout that holds the change, because the commands here use paths relative to it. [Switching from a branch](../command-ladder.md#switching-from-a-branch) says what to check before you check out a branch in the live checkout. First inspect the OpenCode lock node:
 
 ```bash
-cd /Users/mp/Projects/personal/dotfiles
 nix flake metadata --json | jq '.locks.nodes.opencode'
 ```
 
