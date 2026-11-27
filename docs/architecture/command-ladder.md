@@ -86,7 +86,7 @@ Where the harness has no private prompt, the agent waits for me to say "apply", 
 
 Use one absolute flake path for the build and the switch, and compare the `result` that build wrote, so all three act on the same checkout. `.#m5-mbp` depends on the current directory, and `nix-verify` builds `$DOTFILES_DIR` or the live checkout unless `--nix-root` names another ([level 1](#level-1-format-and-lint)).
 
-Home Manager links the Fish functions and `scripts/` to the live checkout ([ADR-019](../decisions/019-store-managed-file-mappings-by-default.md)). Checking out a branch there makes its versions of those files live at once, before any switch, and a rollback doesn't restore them. Ask me before you check out a branch there that changes them.
+Home Manager links the Fish functions and `scripts/` to the live checkout ([ADR-019](../decisions/019-store-managed-file-mappings-by-default.md)). Checking out a branch there makes its versions of those files live at once, before any switch, and a rollback doesn't restore them. A branch that changes them can only be tested from the live checkout. Check it out there without asking me first, build, and open the password prompt straight away. Say in the prompt that the live checkout is on the branch. If I dismiss the prompt or don't answer it within ten minutes, put the live checkout back on the commit it was on.
 
 ## Before switching
 
