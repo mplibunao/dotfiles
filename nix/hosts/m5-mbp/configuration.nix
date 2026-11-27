@@ -1,4 +1,9 @@
-{ pkgs, nixpkgs-pre2611, ... }:
+{
+  lib,
+  pkgs,
+  nixpkgs-pre2611,
+  ...
+}:
 
 {
   imports = [
@@ -30,6 +35,8 @@
     config.allowUnfreePredicate =
       pkg:
       builtins.elem (pkg.pname or (builtins.parseDrvName pkg.name).name) [
+        "br"
+        "bv"
         "terraform"
       ];
   };
@@ -50,6 +57,13 @@
   # Add fish to acceptable shells
   programs.fish.enable = true;
   environment.shells = [ pkgs.fish ];
+
+  # set-environment replaces PATH in any shell started without
+  # __NIX_DARWIN_SET_ENVIRONMENT_DONE, such as a bash whose stdin is a socket
+  # (Node child processes, Turborepo tasks). Putting mise's shims first keeps
+  # node and pnpm resolvable there, in the same order Home Manager's
+  # sessionPath gives interactive shells.
+  environment.systemPath = lib.mkBefore [ "$HOME/.local/share/mise/shims" ];
 
   # Fonts (Nerd Font patched versions)
   fonts.packages = with pkgs; [

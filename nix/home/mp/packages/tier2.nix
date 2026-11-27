@@ -52,6 +52,10 @@
     # TUI Tools
     lazydocker # Docker TUI
 
+    # Agent ticket tracking
+    (pkgs.callPackage ../../../packages/br { }) # Local issue tracker for agents; BEADS_DIR keeps its data outside the project
+    (pkgs.callPackage ../../../packages/bv { }) # Reads br data: dependency graphs and Markdown export
+
     # Code search / rewrite
     ast-grep # Structural search/rewriter
 
