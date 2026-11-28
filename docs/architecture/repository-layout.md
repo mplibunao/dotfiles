@@ -21,7 +21,7 @@ dotfiles/
 ├── docs/                    # architecture docs, ADRs, ledgers, investigations
 ├── .claude/                 # Claude Code commands and the bootstrap skill
 ├── .githooks/               # pre-commit and pre-push hooks (Docs and records, Hooks)
-└── .github/workflows/       # CI: flake evaluation on Linux
+└── .github/workflows/       # CI on Linux: flake evaluation and a secret scan
 ```
 
 [Overview](overview.md) explains how these layers fit together, and [Docs and records](docs-and-records.md) covers `docs/`.
